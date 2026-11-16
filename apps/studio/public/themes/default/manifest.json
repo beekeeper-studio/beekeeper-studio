@@ -1,0 +1,10 @@
+  {
+    "id": "default",
+    "name": "Default",
+    "author": {
+      "name": "Beekeeper Studio",
+      "url": "https://www.beekeeperstudio.io"
+    },
+    "description": "The default Beekeeper Studio theme.",
+    "version": "1.0.0"
+  }

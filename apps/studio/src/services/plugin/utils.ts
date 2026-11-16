@@ -7,6 +7,27 @@ import rawLog from "@bksLogger";
 
 const log = rawLog.scope("plugin/utils");
 
+/**
+ * A plugin id is used verbatim as a single directory-name segment under the
+ * plugins directory (see `getDirectoryOf`) and as an identity key. It is read
+ * from attacker-controlled `manifest.json`, so it must be constrained to a
+ * single safe path component: alphanumeric first character, then alphanumerics
+ * plus `.` `_` `-`. This forbids path separators and `.`/`..`, which are the
+ * only traversal-capable strings once separators are excluded.
+ */
+const MANIFEST_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
+
+/** Max length mirrors the npm package-name limit; ample for any real plugin. */
+const MANIFEST_ID_MAX_LENGTH = 214;
+
+export function isValidManifestId(id: unknown): id is string {
+  return (
+    typeof id === "string" &&
+    id.length <= MANIFEST_ID_MAX_LENGTH &&
+    MANIFEST_ID_PATTERN.test(id)
+  );
+}
+
 export function mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
   views: PluginView[];
   menu: PluginMenuItem[];

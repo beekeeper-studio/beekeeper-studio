@@ -73,6 +73,7 @@ export enum AppEvent {
   openKeyboardShortcuts = 'openKeyboardShortcuts',
   openThemePlayground = 'openThemePlayground',
   openAppearanceModal = 'openAppearanceModal',
+  themeFileChanged = 'themeFileChanged',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',

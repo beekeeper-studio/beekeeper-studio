@@ -39,6 +39,7 @@ export interface IPlatformInfo {
   homeDirectory: string,
   pluginsDirectory: string,
   themesDirectory: string,
+  builtinThemesDirectory: string,
   driverDepsDirectory: string,
   testMode: boolean,
   appDbPath: string,

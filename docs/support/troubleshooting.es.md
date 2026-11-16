@@ -29,7 +29,7 @@ Aqui estan las herramientas que recomiendo para tomar capturas de pantalla rapid
 Solo copia/pega la grabacion de pantalla en tu issue de GitHub y GitHub se encargara del resto.
 
 
-## Como Depurar Beekeeper Studio
+## Como Depurar Beekeeper Studio { #debugging-ref }
 
 ### Verificar Developer Tools en busca de errores
 

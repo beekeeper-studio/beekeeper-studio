@@ -1,4 +1,4 @@
-import { PluginRepository, RawPluginRegistryEntry } from "@/services/plugin";
+import { ExtensionRepository, RawPluginRegistryEntry } from "@/services/plugin";
 import { AxiosInstance } from "axios";
 import { res, url } from "../ClientHelpers";
 import rawLog from "@bksLogger";
@@ -20,7 +20,7 @@ export class PluginsController {
     return res(response, "plugins");
   }
 
-  async getRepository(owner: string, repo: string): Promise<PluginRepository> {
+  async getRepository(owner: string, repo: string): Promise<ExtensionRepository> {
     const response = await this.axios.get(url(this.path, 'repositories', owner, repo));
 
     return res(response, "repository");

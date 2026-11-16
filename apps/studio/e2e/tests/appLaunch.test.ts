@@ -112,7 +112,7 @@ test.describe("Privileged schemes", () => {
     test("serves theme:// pages as a secure context", async () => {
         electronApp = await launchElectron();
 
-        const page = await inspectPage(electronApp, 'theme://dracula.css');
+        const page = await inspectPage(electronApp, 'theme://dracula/style.css');
 
         expect(page).toEqual({ protocol: 'theme:', isSecureContext: true });
     });

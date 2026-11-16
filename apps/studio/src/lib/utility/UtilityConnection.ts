@@ -1,7 +1,7 @@
 import { uuidv4 } from "../uuid";
 import rawLog from '@bksLogger';
 import _ from 'lodash';
-import { PluginError, PluginSystemError } from "../errors";
+import { ExtensionRegistryError, ExtensionRepositoryError, PluginError, PluginSystemError, ThemeSystemError } from "../errors";
 
 const log = rawLog.scope('renderer/utilityconnection');
 
@@ -62,8 +62,14 @@ export class UtilityConnection {
           let err: Error;
           if (errorName === "PluginSystemError") {
             err = new PluginSystemError(errorCode, error);
+          } else if (errorName === "ExtensionRegistryError") {
+            err = new ExtensionRegistryError(errorCode, error);
+          } else if (errorName === "ExtensionRepositoryError") {
+            err = new ExtensionRepositoryError(errorCode, error);
           } else if (errorName === "PluginError") {
             err = new PluginError(errorCode, error);
+          } else if (errorName === "ThemeSystemError") {
+            err = new ThemeSystemError(errorCode, error);
           } else {
             err = new Error(error);
           }

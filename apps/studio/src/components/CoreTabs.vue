@@ -84,7 +84,7 @@
     <x-progressbar v-if="activeTab?.isLoading" />
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
-        <div class="expand layout-center">
+        <div class="empty-tabs-content expand layout-center">
           <shortcut-hints type="core-tabs" />
         </div>
       </div>
