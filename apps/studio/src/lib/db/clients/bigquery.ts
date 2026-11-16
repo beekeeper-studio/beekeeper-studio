@@ -68,6 +68,9 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, bigqueryContext, server, database);
+
+    this.dialect = 'bigquery';
+    this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
   async versionString(): Promise<string> {
@@ -201,7 +204,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return this.parseForeignKeys(data.rows);
   }
 
-  async query(queryText: string, options: any = {}): Promise<CancelableQuery> {
+  async query(queryText: string, _tabId: number, options: any = {}): Promise<CancelableQuery> {
     log.debug('bigQuery query: ' + queryText);
     let job = null;
     const cancelable = createCancelablePromise({
@@ -213,6 +216,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
     return {
       execute: async () => {
+        this.readOnlyCheck(queryText, {})
+
         // Get a query job first
         const jobOptions = { query: queryText, ...options };
         [job] = await this.client.createQueryJob(jobOptions)
@@ -227,7 +232,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
           log.debug("wait for executeQuery job.id: ", job.id)
           const data = await Promise.race([
             cancelable.wait(),
-            this.driverExecuteSingle(queryText, job),
+            this.driverExecuteSingle(queryText, { job }),
           ])
           return _.isArray(data) ? data : [data];
         } catch (err) {
@@ -498,8 +503,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   protected async rawExecuteQuery(q: string, options: any): Promise<BigQueryResult | BigQueryResult[]> {
     log.info("BIGQUERY, executing", q);
     let job: bq.Job = options?.job;
-    const queryArgs = {query: q, ...options };
     if (!job) {
+      const queryArgs = {query: q, ...options };
       [job] = await this.client.createQueryJob(queryArgs);
     }
 
@@ -537,8 +542,9 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   // @ts-ignore
   private parseDryRunMetadata(metadata) {
     const queryStatistics = metadata.statistics.query;
-    // bytes -> TiB * bq price per TiB processed
-    const onDemandPricingEstimateUSD = queryStatistics.totalBytesBilled / (1024 ^ 4) * 6.25;
+    // bytes -> TiB * bq on-demand price per TiB processed
+    const BYTES_PER_TIB = 1024 ** 4;
+    const onDemandPricingEstimateUSD = Number(queryStatistics.totalBytesProcessed) / BYTES_PER_TIB * 6.25;
     const fields = [
       { name: 'statementType', id: 'statementType' },
       { name: 'totalBytesBilled', id: 'totalBytesBilled' },

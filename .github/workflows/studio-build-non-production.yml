@@ -32,12 +32,6 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v3
-        if: "contains(matrix.os, 'ubuntu')"
-        with:
-          channel: '8.x/stable'
-
       - name: Install Node.js, NPM, PNPM, and Python
         uses: jdx/mise-action@v5
 

@@ -14,7 +14,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 
 ### Technology Stack
 - **Frontend**: Vue.js 2.7, TypeScript, Vuex for state management
-- **Desktop**: Electron 31.7.3
+- **Desktop**: Electron 44.9.1
 - **Build**: ESBuild (main process), Vite (renderer process)
 - **Testing**: Vitest for unit and integration tests (see `apps/studio/tests/VITEST_MIGRATION.md`); Playwright for e2e. **All new tests must be Vitest specs in `apps/studio/tests/vitest/`.**
 - **Styling**: SCSS with multiple themes

@@ -1,0 +1,10 @@
+{
+  "id": "solarized",
+  "name": "Solarized",
+  "author": {
+    "name": "Beekeeper Studio",
+    "url": "https://www.beekeeperstudio.io"
+  },
+  "description": "A theme based on the Solarized palette.",
+  "version": "1.0.0"
+}

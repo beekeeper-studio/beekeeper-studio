@@ -10,7 +10,7 @@ import {
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { PluginData } from "@/common/appdb/models/PluginData";
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
-import { PluginHandlers } from "@commercial/backend/handlers/pluginHandlers";
+import { PluginHandlers } from "@/handlers/pluginHandlers";
 import { newState, removeState, state } from "@/handlers/handlerState";
 import { IConnection } from "@/common/interfaces/IConnection";
 

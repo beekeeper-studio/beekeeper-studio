@@ -137,7 +137,7 @@ function buildFilterString(
   };
 }
 
-function buildSelectTopQuery(
+export function buildSelectTopQuery(
   table: string,
   offset?: number,
   limit?: number,
@@ -184,7 +184,9 @@ function buildSelectTopQuery(
     filterParams = filterBlob.filterParams;
   }
 
-  const selectSQL = `SELECT ${selects.join(", ")}`;
+  const selectSQL = `SELECT ${selects
+    .map((s) => (s === "*" ? s : DuckDBData.wrapIdentifier(s)))
+    .join(", ")}`;
   const baseSQL = `FROM ${DuckDBData.wrapIdentifier(
     schema
   )}.${DuckDBData.wrapIdentifier(table)} ${filterString}`;

@@ -88,6 +88,11 @@
       "import": "./dist/tree.js",
       "default": "./dist/tree.js"
     },
+    "./tree/helpers": {
+      "types": "./dist/components/tree/tree.d.ts",
+      "import": "./dist/tree/helpers.js",
+      "default": "./dist/tree/helpers.js"
+    },
     "./context-menu": {
       "types": "./dist/components/context-menu/index.d.ts",
       "import": "./dist/context-menu.js",
