@@ -110,13 +110,44 @@ Puedes ajustar el tamano de fuente del editor SQL desde el menu `View`:
 ## Modo Vim
 Junto con el editor de consultas predeterminado, Beekeeper soporta el modo Vim, que te permite escribir consultas en un editor de texto tipo Vim.
 
-Para habilitar esto, puedes hacer clic en el engranaje en la esquina inferior izquierda del editor de consultas:
+Para habilitar esto, puedes hacer clic en el engranaje en la esquina inferior derecha del editor de consultas:
 
 ![seleccion de modo de editor](../../assets/images/using-the-sql-editor-155.png)
 
 Y luego estas listo para usar un editor vim en Beekeeper!
 
 El editor que prefieras se preservara en todas las conexiones/reinicios/etc.
+
+### La linea de estado
+
+En modo vim el editor muestra una linea de estado en la parte inferior con el
+modo actual, las teclas pendientes de completar un comando y el prefijo de
+repeticion. Tambien es donde se escriben los comandos `:` y las busquedas `/`.
+
+### Comandos ex
+
+| Comando | Efecto |
+| --- | --- |
+| `:w`, `:write` | Guarda la consulta actual |
+| `:q`, `:quit` | Cierra la pestana actual |
+| `:qa` | Cierra todas las pestanas |
+| `:x`, `:wq` | Guarda y luego cierra la pestana |
+| `:tabnew [nombre]` | Abre una pestana nueva, opcionalmente con nombre |
+
+Actuan sobre la pestana en la que estas escribiendo.
+
+### Cancelar una consulta en ejecucion
+
+`Esc` cancela una consulta en ejecucion. En modo vim solo lo hace desde el modo
+normal y sin nada pendiente, de forma que salir del modo insercion o visual
+sigue funcionando como corresponde. `Ctrl-Esc` cancela una consulta desde
+cualquier modo.
+
+### Ctrl+P
+
+Vim asigna `Ctrl+P` a "subir" en todos los modos. En Beekeeper Studio se
+mantiene en la busqueda rapida, ya que `k` tambien sube. Para recuperarlo,
+agrega `nnoremap <C-p> k` a tu `.beekeeper.vimrc`.
 
 ### Personalizacion
 Tambien puedes agregar tus propios atajos de teclado y movimientos al editor vim colocando un archivo `.beekeeper.vimrc` en el `userDirectory` de Beekeeper Studio y escribiendo tus mapeos personalizados.
@@ -135,4 +166,30 @@ nmap gh ^
 
 Estos comandos agregan movimientos para `gl` para ir al final de una linea, y `gh` para ir al inicio de una linea
 
-Actualmente solo soportamos los comandos `nmap`, `imap` y `vmap`, pero esperamos introducir mas en el futuro!
+Las lineas que empiezan con `"` son comentarios, y las lineas vacias se
+ignoran. Comandos soportados:
+
+| Comando | Notas |
+| --- | --- |
+| `map`, `nmap`, `imap`, `vmap` | Mapeos recursivos |
+| `noremap`, `nnoremap`, `inoremap`, `vnoremap` | Mapeos no recursivos |
+| `unmap`, `nunmap`, `iunmap`, `vunmap` | Elimina un mapeo |
+| `mapclear`, `nmapclear`, `imapclear`, `vmapclear` | Elimina todos los mapeos propios |
+| `set` | Opciones de vim, por ejemplo `set ignorecase`, `set nonumber`, `set tabstop=4` |
+| `let mapleader` | A que se expande `<leader>`. Por defecto `\` |
+
+Lo que no se pueda interpretar se informa en una notificacion que indica la
+linea, y el resto del archivo se sigue aplicando.
+
+#### Copiar al portapapeles del sistema
+
+El registro `*` esta conectado al portapapeles del sistema, asi que `"*y` y
+`"*p` funcionan como en vim. Para que una `y` sola lo use, el mapeo tiene que
+ser no recursivo:
+
+```
+nnoremap y "*y
+```
+
+Escrito como `nmap y "*y`, la `y` de la derecha se vuelve a expandir en el
+propio mapeo, sin fin. Ese caso se informa como error en lugar de aplicarse.

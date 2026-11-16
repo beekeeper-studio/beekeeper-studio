@@ -83,8 +83,8 @@ function sqlCompletionSource(columnsGetter: ColumnsGetter) {
             context.pos,
             columnsGetter
           );
-          const dialect = context.state.facet(completeConfig).dialect;
-          options = options.concat(columnsToCompletions(columns, dialect));
+          const { dialect, quoteIdentifiers, quoteCharacter } = context.state.facet(completeConfig);
+          options = options.concat(columnsToCompletions(columns, dialect, quoteIdentifiers, quoteCharacter));
         } catch (e) {
           console.error(e);
         }
@@ -119,8 +119,8 @@ function sqlCompletionSource(columnsGetter: ColumnsGetter) {
 
       try {
         const columns = (await columnsGetter(entity, options)) || [];
-        const dialect = context.state.facet(completeConfig).dialect;
-        options = options.concat(columnsToCompletions(columns, dialect));
+        const { dialect, quoteIdentifiers, quoteCharacter } = context.state.facet(completeConfig);
+        options = options.concat(columnsToCompletions(columns, dialect, quoteIdentifiers, quoteCharacter));
       } catch (e) {
         console.error(e);
       }

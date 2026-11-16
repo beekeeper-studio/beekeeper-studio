@@ -72,8 +72,9 @@ export default Vue.extend({
     artifactUrl(): string {
       if (!this.providerInfo) return '';
       const platform = window.platformInfo?.platform;
+      const arch = window.platformInfo?.isArm ? 'arm64' : 'x64';
       const artifact = this.providerInfo.artifacts?.find(
-        (a: any) => a.platform === platform
+        (a: any) => a.platform === platform && a.arch === arch
       );
       return artifact?.url || '';
     },

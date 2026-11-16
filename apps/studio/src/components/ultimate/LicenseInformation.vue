@@ -2,7 +2,7 @@
   <div class="license-information card card-flat padding">
     <h3 class="card-title flex flex-middle">
       <span class="expand">{{ license.email }}</span>
-      <a v-if="!licenseStatus.fromFile" @click.prevent="destroy" class="btn btn-danger btn-icon"><i class="material-icons">delete_outline</i><span>Remove from app</span></a>
+      <a v-if="!licenseStatus.fromFile" @click.prevent="destroy" class="btn btn-danger"><i class="material-icons">delete_outline</i><span>Remove from app</span></a>
     </h3>
     <div class="card-body">
       <table class="simple-table">
@@ -54,7 +54,7 @@ table.simple-table td {
 }
 
 table.simple-table tr:nth-child(odd) {
-  background-color: rgba(0, 0, 0, 0.025);
+  background-color: var(--bg-subtle-a);
   /* Light darkening for odd rows */
 }
 
@@ -64,6 +64,9 @@ table.simple-table td:nth-child(2) {
 
 table.simple-table th {
   text-align: left;
+}
+.card {
+  background: var(--bg-subtle-a);
 }
 </style>
 <script lang="js">

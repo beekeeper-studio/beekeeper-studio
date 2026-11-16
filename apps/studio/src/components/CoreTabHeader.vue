@@ -150,7 +150,7 @@ import _ from 'lodash'
       ...mapState('tabs', { 'activeTab': 'active' }),
       headerContextMenuId() {
         // "tab.query.header", "tab.table.header", "tab.tableProperties.header", etc..
-        return `tab.${_.camelCase(this.tab.tabType)}-header`
+        return `tab.${_.camelCase(this.tab.tabType)}.header`
       },
       contextOptions() {
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";

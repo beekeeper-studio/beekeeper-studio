@@ -15,10 +15,11 @@
     height: 1px;
     width: 100%;
     top: -1px;
-    background-color: var(--border-color);
+    background-color: var(--border-subtle);
   }
 
   .bottom-panel {
+    background: var(--bottom-panel-bg);
     overflow: auto;
     display: flex;
     flex-direction: column;

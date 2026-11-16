@@ -5,30 +5,17 @@ import { Dialect } from "sql-query-identifier";
 import {
   applyDialect,
   applyEntities,
-  applyKeywordCase,
   extensions as sqlExtensions,
-  KeywordCase,
   SQLExtensionsConfig,
 } from "./extensions";
 import { ExtensionConfiguration } from "@/components";
-import { Cassandra, MySQL, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
-import { GreengageSQL, PartiQL, SQLServer } from "./customDialects";
+import { StandardSQL } from "@codemirror/lang-sql";
+import { langIdToDialect } from "./customDialects";
 
 export interface CompletionSource {
   defaultSchema?: string;
   entities: Entity[];
 }
-
-const langIdToDialect = {
-  "text/x-sql": StandardSQL,
-  "text/x-pgsql": PostgreSQL,
-  "text/x-ggsql": GreengageSQL,
-  "text/x-mysql": MySQL,
-  "text/x-cassandra": Cassandra,
-  "text/x-sqlite": SQLite,
-  "text/x-partiql": PartiQL,
-  "text/x-mssql": SQLServer
-};
 
 export class SqlTextEditor extends TextEditor {
   private extensionsConfig: SQLExtensionsConfig;
@@ -59,10 +46,6 @@ export class SqlTextEditor extends TextEditor {
 
   setQueryIdentifierDialect(dialect: Dialect) {
     applyDialect(this.view, dialect);
-  }
-
-  setKeywordCase(keywordCase: KeywordCase) {
-    applyKeywordCase(this.view, keywordCase);
   }
 
   // --- Editor Setup ---

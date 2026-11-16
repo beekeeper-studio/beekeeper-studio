@@ -3,7 +3,7 @@ name: MongoDB Kerberos integration test
 permissions:
   contents: read
 
-# Heavy multi-container job (Samba AD DC + MongoDB Enterprise + a dockerized Jest client),
+# Heavy multi-container job (Samba AD DC + MongoDB Enterprise + a dockerized vitest client),
 # so it runs only when the MongoDB client/GSSAPI code or this suite changes, plus on demand.
 # The companion spec self-skips in the normal integration matrix unless MONGODB_KERBEROS_TEST=1.
 #
@@ -16,13 +16,13 @@ on:
       - master
     paths:
       - 'apps/studio/src-commercial/backend/lib/db/clients/mongodb.ts'
-      - 'apps/studio/tests/integration/lib/db/clients/mongodb-kerberos.spec.ts'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/mongodb-kerberos.spec.ts'
       - 'dev/docker_mongodb_kerberos/**'
       - '.github/workflows/mongodb-kerberos-tests.yaml'
   pull_request:
     paths:
       - 'apps/studio/src-commercial/backend/lib/db/clients/mongodb.ts'
-      - 'apps/studio/tests/integration/lib/db/clients/mongodb-kerberos.spec.ts'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/mongodb-kerberos.spec.ts'
       - 'dev/docker_mongodb_kerberos/**'
       - '.github/workflows/mongodb-kerberos-tests.yaml'
   workflow_dispatch:

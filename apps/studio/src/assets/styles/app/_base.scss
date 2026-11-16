@@ -42,7 +42,34 @@ $form-control-font-size: 0.831rem; // ~13.3px
 }
 body {
   font-size: 1rem;
+  background: var(--app-bg);
+  color: var(--app-fg);
 }
-.material-icons {
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 0.14rem;
+}
+.material-icons, .material-icons-outlined {
   transform: rotate(0.03deg);
+}
+
+button {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+
+  &:hover,
+  &:focus {
+    background: var(--btn-bg-hover);
+    color: var(--btn-fg-hover);
+  }
+}
+
+input, select, textarea {
+  color: var(--input-fg);
+  background: var(--input-bg);
+  border: var(--input-border);
+  &:focus {
+    border: var(--input-border-focus);
+    outline: none;
+  }
 }

@@ -11,6 +11,16 @@
       />
     </template>
     <template>
+      <div
+        v-if="sshDetailsFilledButDisabled"
+        class="row alert-row"
+      >
+        <div class="alert alert-warning">
+          <i class="material-icons-outlined">warning</i>
+          <div>SSH details are filled in, but the SSH tunnel is disabled. Enable it above to use these settings.</div>
+        </div>
+      </div>
+
       <div class="row alert-row">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
@@ -385,6 +395,20 @@ export default {
       usernameTooltip: "If blank, falls back to <code>User</code> from <code>~/.ssh/config</code>, then your OS username.",
     }
   },
+  computed: {
+    sshDetailsFilledButDisabled() {
+      const c = this.config
+      const hasDetails = !!(
+        c.sshHost ||
+        c.sshBastionHost ||
+        c.sshUsername ||
+        c.sshKeyfile ||
+        c.sshPassword ||
+        c.sshBastionUsername
+      )
+      return hasDetails && !c.sshEnabled
+    }
+  },
   methods: {
     setMode(option) {
       this.config.sshMode = option.mode
@@ -401,13 +425,7 @@ export default {
   vertical-align: middle;
 }
 
-body.theme-dark .bastion-host {
-  background-color: rgb(from var(--theme-base) r g b / 3.5%);
-}
-
-@media (prefers-color-scheme: dark) {
-  body.theme-system .bastion-host {
-    background-color: rgb(from var(--theme-base) r g b / 3.5%);
-  }
+.dark-theme .bastion-host {
+  background-color: var(--bg-subtle-a);
 }
 </style>

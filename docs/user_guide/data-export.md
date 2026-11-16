@@ -47,7 +47,7 @@ When you export a table, tables, or filtered table view, Beekeeper Studio will e
 There are a few options to get started:
 - Go to the table explorer view, click the ⚙ icon in the bottom right, and choose `Export`.
 - Right click the table and select `Export to File`.
-- [Select `Export Data` from the app toolbar.](#multitable)
+- [Select `Export Data` from the app toolbar.](#multi-table-export)
 
 ![Export Modal](../assets/images/data-export-157.png)
 
@@ -85,7 +85,7 @@ For any table in Beekeeper Studio, whether in the table explorer or the query re
 
 ### Row copy formats
 
-- [Excel-friendly TSV](#tsv)
+- [Excel-friendly TSV](#easily-export-to-excel-or-google-sheets)
 - JSON
 - Markdown
 - SQL Insert

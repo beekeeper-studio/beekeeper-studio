@@ -171,7 +171,7 @@
             Preview File With Selection
           </button>
           <button
-            class="btn btn-primary btn-icon"
+            class="btn btn-primary"
             type="button"
             :disabled="!this.fileName"
             @click.prevent="$emit('finish')"

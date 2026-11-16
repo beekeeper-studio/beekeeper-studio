@@ -7,7 +7,7 @@ import Vue from "vue";
 import mixin from "../text-editor/mixin";
 import props from "./props";
 import ProxyEmit from "../mixins/ProxyEmit";
-import { ContextMenuExtension, divider, InternalContextItem } from "../context-menu";
+import { ContextMenuExtension, divider, InternalContextItem } from "../context-menu/menu";
 import { SurrealTextEditor } from "./SurrealTextEditor";
 import { Entity } from "../types";
 import { SurrealTextEditorMenuContext } from "./types";

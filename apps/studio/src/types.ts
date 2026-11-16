@@ -1,5 +1,6 @@
 import type { SaveFileOptions } from "./backend/lib/FileHelpers";
 import type { AppEvent } from "./common/AppEvent";
+import { BksConfigSource } from "./common/bksConfig/BksConfigProvider";
 import type { TransportOpenTabInit } from "./common/transport/TransportOpenTab";
 
 interface UtilProcReadyMessage {
@@ -11,9 +12,15 @@ interface UtilProcOpenExternalMessage {
   url: string;
 }
 
+interface UtilProcConfigChanged {
+  type: "configChanged";
+  source: BksConfigSource;
+}
+
 export type UtilProcMessage =
   | UtilProcReadyMessage
-  | UtilProcOpenExternalMessage;
+  | UtilProcOpenExternalMessage
+  | UtilProcConfigChanged;
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 

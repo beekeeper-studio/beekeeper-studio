@@ -22,7 +22,7 @@
                 class="text-light"
                 v-tooltip="filterTooltip"
               >(Filtered)</span>
-              <span class="badge badge-info">Beta</span>
+              <span class="badge badge-primary badge-info">Beta</span>
             </div>
           </div>
 
@@ -33,7 +33,7 @@
             allowing you to continue to do other work.
           </p>
 
-          <span class="close-btn btn btn-fab">
+          <span class="close-btn btn btn-icon">
             <i
               class="material-icons"
               @click.prevent="closeModal"
@@ -147,7 +147,7 @@
         </div>
         <div class="vue-dialog-buttons">
           <button
-            class="btn btn-flat btn-icon"
+            class="btn btn-flat"
             type="button"
             @click.prevent="importExportTables"
           >

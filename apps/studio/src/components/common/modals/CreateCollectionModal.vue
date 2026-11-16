@@ -6,7 +6,7 @@
           <div class="dialog-c-title">
             Create Collection
             <a
-              class="close-btn btn btn-fab"
+              class="close-btn btn btn-icon"
               href="#"
               @click.prevent="close"
             >

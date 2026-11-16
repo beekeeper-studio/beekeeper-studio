@@ -10,5 +10,5 @@ export default interface ISavedQuery extends IShareable {
   queryFolderId?: number | null
   position?: number
   createdAt: Date | number | null
-  updatedAt: Date | null
+  updatedAt: Date | number | null
 }

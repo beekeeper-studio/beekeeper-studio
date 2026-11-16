@@ -1,4 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
+import { CloudClient } from "@/lib/cloud/CloudClient";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { CancelableQuery } from "@/lib/db/models";
 import { IDbConnectionPublicServer } from "@/lib/db/serverTypes";
@@ -10,6 +11,9 @@ import { MessagePortMain } from "electron";
 import { FSWatcher } from "fs";
 import fs from "fs";
 import tmp from 'tmp';
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("handlerState");
 
 export interface TempFile {
   fileObject: tmp.FileResult,
@@ -30,6 +34,9 @@ class State {
   imports: Map<string, ImportClass> = new Map();
   backupProc: ChildProcessWithoutNullStreams = null;
 
+  cloudClient: CloudClient = null;
+  workspaceId: number = null;
+
   connectionAbortController: AbortController = null;
 
   // enums
@@ -46,11 +53,23 @@ class State {
   tempFiles: Map<string, TempFile> = new Map();
 }
 
+/** State per renderer session, keyed by `sId` */
 const states = new Map<string, State>();
 
 // I kinda hate this tbh. modifying could be scary
 export function state(id: string): State {
   return states.get(id);
+}
+
+/** Send a message to every renderer session. */
+export function broadcast(message: unknown): void {
+  for (const state of states.values()) {
+    try {
+      state.port.postMessage(message);
+    } catch (e) {
+      log.debug("Failed to broadcast message", e);
+    }
+  }
 }
 
 export function newState(id: string): void {
@@ -87,6 +106,7 @@ export const errorMessages = {
 
 export function getDriverHandler(name: string) {
   return async function({sId }: { sId: string }): Promise<any> {
+    checkConnection(sId);
     return await state(sId).connection[name]();
   }
 }

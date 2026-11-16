@@ -6,9 +6,6 @@ icon: material/publish
 
 # Publishing Plugins
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
 ## Publishing Process
 
 ### 1. Create a GitHub Repository
@@ -22,7 +19,7 @@ Create a public GitHub repository. It should contain at least a `README.md` file
 
 #### Using the Starter Template
 
-If you created your project using our starter template, you already have a GitHub workflow that automates this process! Simply create and push a semver tag with "v" prefix:
+If you created your project using our [starter template](https://github.com/beekeeper-studio/bks-sample-plugin), you already have a GitHub workflow that automates this process! Simply create and push a semver tag with "v" prefix:
 
 ```bash
 git tag v1.0.0
@@ -60,7 +57,7 @@ Your release must include:
 
 1. **Fork** the registry repository: [beekeeper-studio-plugins](https://github.com/beekeeper-studio/beekeeper-studio-plugins)
 
-2. **Edit `plugins.json`** and add your plugin entry:
+2. **Edit `community-plugins.json`** and add your plugin entry:
    ```diff
    [
      {
@@ -82,7 +79,7 @@ Your release must include:
 
 Once you submit your PR:
 
-1. **Review process** - The maintainers will review your plugin for quality and security
+1. **Review process** - The maintainers will review the request to add your plugin to the community registry.
 2. **Approval and merge** - After approval, your PR will be merged
 3. **Public availability** - Your plugin becomes available in the Beekeeper Studio Plugin Manager
 

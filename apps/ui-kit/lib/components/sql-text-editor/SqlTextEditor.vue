@@ -11,7 +11,7 @@ import {
   ContextMenuExtension,
   InternalContextItem,
   divider,
-} from "../context-menu";
+} from "../context-menu/menu";
 import { format, formatDialect } from "sql-formatter";
 import ProxyEmit from "../mixins/ProxyEmit";
 import Vue from "vue";
@@ -39,12 +39,8 @@ export default Vue.extend({
       this.applyCompletionSource();
     },
     entities() {
-      if (!this.textEditor) return;
+      if (!this.textEditor || this.disableSchemaCompletion) return;
       this.applyCompletionSource();
-    },
-    keywordCase() {
-      if (!this.textEditor) return;
-      this.textEditor.setKeywordCase(this.keywordCase);
     },
     formatterConfig() {
       this.formatSql()
@@ -56,7 +52,11 @@ export default Vue.extend({
       return new SqlTextEditor({
         identiferDialect: this.identifierDialect,
         paramTypes: this.paramTypes,
-        keywordCase: this.keywordCase,
+        keywordCasing: this.keywordCasing,
+        quoteIdentifiers: this.quoteIdentifiers,
+        quoteCharacter: this.quoteCharacter,
+        disableKeywordCompletion: this.disableKeywordCompletion,
+        disableSchemaCompletion: this.disableSchemaCompletion,
         onQuerySelectionChange: (params) => {
           this.selectedQuery = params.selectedQuery.text;
           this.$emit("bks-query-selection-change", params)
@@ -64,7 +64,7 @@ export default Vue.extend({
         columnsGetter: (entity: Entity) => {
           // Pass the schema-qualified name when schema is known, so consumers
           // can disambiguate between e.g. "public.users" and "other.users".
-          const tableName = entity.schema
+          const tableName = "schema" in entity && entity.schema
             ? `${entity.schema}.${entity.name}`
             : entity.name;
           return this.columnsGetter?.(tableName) || [];
@@ -90,7 +90,6 @@ export default Vue.extend({
 
       if (this.allowPresets && this.presets?.length > 0) {
         const currentFormatterId = this.formatterConfig?.id;
-
         formatItem.items = [
           {
             label: "Format with current config",

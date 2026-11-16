@@ -22,7 +22,7 @@ export function havingCli<U>(context: BasicContext, f: (c: CloudClient) => Promi
   return having(context.rootGetters.cloudClient, f, "You are not logged in")
 }
 
-export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promise<U>) {
+export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promise<U>, onError?: (error: ClientError) => void) {
 
   const safeRunner = async (c: any) => {
     try {
@@ -32,6 +32,7 @@ export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promis
     } catch (error) {
       context.commit('error', error)
       log.error('safelyDo', error)
+      onError?.(error)
     } finally {
       context.commit('loading', false)
     }
@@ -39,7 +40,7 @@ export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promis
   return havingCli(context, safeRunner)
 }
 
-export async function safely<U>(context: BasicContext, f: () => Promise<U>) {
+export async function safely<U>(context: BasicContext, f: () => Promise<U>, onError?: (error: ClientError) => void) {
   try {
     context.commit('loading', true)
     context.commit('error', null)
@@ -47,6 +48,7 @@ export async function safely<U>(context: BasicContext, f: () => Promise<U>) {
   } catch (error) {
     context.commit('error', error)
     log.error('safely', error)
+    onError?.(error)
   } finally {
     context.commit('loading', false)
   }

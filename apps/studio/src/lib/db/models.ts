@@ -170,7 +170,22 @@ export interface BksField {
   bksType: BksFieldType;
 }
 
-export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID' | 'SURREALID';
+export type BksFieldType = 'UNKNOWN' |
+  'BINARY' |
+  'OBJECTID' |
+  'SURREALID' |
+  'STRING' |
+  'NUMBER' |
+  'INTEGER' |
+  'FLOAT' |
+  'DECIMAL' |
+  'BOOLEAN' |
+  'DATETIME' |
+  'DURATION' |
+  'UUID' |
+  'OBJECT' |
+  'ARRAY' |
+  'GEOMETRY';
 
 export interface TableChanges {
   inserts: TableInsert[];
@@ -232,11 +247,16 @@ export const RoutineTypeNames = {
 
 export interface Routine extends DatabaseEntity {
   id: string;
+  oid?: string;
   returnType: string;
   returnTypeLength?: number;
   routineParams?: RoutineParam[];
   pinned?: boolean;
   type: RoutineType;
+}
+
+export interface PluginExecuteOptions {
+  forceReadOnly?: boolean;
 }
 
 export type IncludedFilterTypes = 'standard' | 'ilike'

@@ -1,5 +1,6 @@
 import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
-import Database from "libsql";
+import { loadLibsql } from "@shared/lib/knex-libsql";
+import type Database from "libsql";
 
 export interface LibSQLCursorOptions {
   isRemote?: boolean
@@ -21,6 +22,7 @@ export class LibSQLCursor extends SqliteCursor {
   }
 
   protected _createConnection(path: string) {
+    const Database = loadLibsql();
     // @ts-expect-error not fully typed
     this.database = new Database(path, {
       // @ts-expect-error not fully typed

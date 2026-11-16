@@ -10,6 +10,7 @@ import {
   DownloadProgress,
   InstalledDriverDep,
   DriverDepProviderInfo,
+  DriverDepArtifact,
 } from "./types";
 
 const log = rawLog.scope("DriverDepManager");
@@ -74,16 +75,22 @@ export default class DriverDepManager {
 
     let latestVersion: string | undefined;
     let updateAvailable = false;
+    // A provider is only usable if it has a download for this machine (e.g.
+    // Oracle publishes no Instant Client for Windows ARM64).
+    let hasArtifact = false;
 
-    if (hasProvider && installed) {
+    if (hasProvider) {
       try {
         const provider = this.registry.getProvider(requirementId);
         const info = await provider.resolve();
-        latestVersion = info.version;
-        const installedSemver = semver.coerce(installed.version);
-        const latestSemver = semver.coerce(info.version);
-        if (installedSemver && latestSemver) {
-          updateAvailable = semver.gt(latestSemver, installedSemver);
+        hasArtifact = !!this.findArtifact(info);
+        if (installed) {
+          latestVersion = info.version;
+          const installedSemver = semver.coerce(installed.version);
+          const latestSemver = semver.coerce(info.version);
+          if (installedSemver && latestSemver) {
+            updateAvailable = semver.gt(latestSemver, installedSemver);
+          }
         }
       } catch (e) {
         log.warn(`Failed to resolve provider for "${requirementId}":`, e);
@@ -97,8 +104,14 @@ export default class DriverDepManager {
       installedPath: installed?.installedPath,
       latestVersion,
       updateAvailable,
-      providerAvailable: hasProvider,
+      providerAvailable: hasProvider && hasArtifact,
     };
+  }
+
+  private findArtifact(info: DriverDepProviderInfo): DriverDepArtifact | undefined {
+    return info.artifacts.find(
+      (a) => a.platform === this.platform && a.arch === this.arch
+    );
   }
 
   getRequirementIdForSettingKey(settingKey: string): string | null {
@@ -133,9 +146,7 @@ export default class DriverDepManager {
       }
 
       const info = await provider.resolve();
-      const artifact = info.artifacts.find(
-        (a) => a.platform === this.platform && a.arch === this.arch
-      );
+      const artifact = this.findArtifact(info);
 
       if (!artifact) {
         throw new Error(

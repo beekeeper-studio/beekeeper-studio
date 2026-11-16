@@ -2,7 +2,7 @@
   <div class="sort-buttons">
     <x-button
       v-if="noOrder !== sortBy"
-      class="actions-btn btn btn-link btn-sm"
+      class="actions-btn btn btn-sm"
       v-tooltip="sortOrderTooltip"
       @click.prevent="toggleSortOrder"
     >
@@ -16,7 +16,7 @@
       >expand_less</i>
     </x-button>
     <x-button
-      class="actions-btn btn btn-link btn-sm"
+      class="actions-btn btn btn-sm"
       v-tooltip="'Reorder items'"
     >
       <i class="material-icons-outlined">sort</i>

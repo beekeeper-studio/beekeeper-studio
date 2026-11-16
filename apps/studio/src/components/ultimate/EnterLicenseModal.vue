@@ -6,7 +6,7 @@
           License Key Management
         </div>
         <!-- CLOSE BUTTON -->
-        <a class="close-btn btn btn-fab" href="#" @click.prevent="$modal.hide('license')">
+        <a class="close-btn btn btn-icon" href="#" @click.prevent="$modal.hide('license')">
           <i class="material-icons">clear</i>
         </a>
         <div class="existing-licenses" v-if="license">

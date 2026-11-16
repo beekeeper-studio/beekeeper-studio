@@ -15,7 +15,11 @@ function escapeString(value, quote) {
 const demoQuerySql = escapeString(`
 -- You can run this script directly to see how data is queried in this database.
 -- Press "ctrl/cmd+enter" to run the query and see the results. Yum.
--- Tip: click "Edit Data" in the footer to edit cheese data inline.
+
+-- Other stuff to try:
+-- <= Double click a table in the sidebar to view (and edit!) data
+-- <= Click the <> Icon in the sidebar to see saved queries
+
 
 SELECT
     cheeses.id AS CheeseId,
@@ -28,12 +32,6 @@ FROM
     cheeses
 JOIN
     countries ON cheeses.origin_country_id = countries.id;
-
-
--- Other stuff to try:
--- <= Double click tables to view (and edit!) their data
--- <= Right click a table and click 'Export to file' to make a CSV
--- <= Click the <> Icon in the right sidebar to see saved queries
 
 -- Links:
 -- Beekeeper Studio Docs: https://docs.beekeeperstudio.io

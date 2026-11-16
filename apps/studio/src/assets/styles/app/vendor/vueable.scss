@@ -1,4 +1,3 @@
-@use "sass:color";
 
 @import '../extends';
 
@@ -17,7 +16,7 @@
     position: absolute;
     left: 0;
     top: 0;
-    background: color.adjust($theme-bg, $lightness: 10%);
+    background: var(--bg);
     padding: ($gutter-h * 0.65) 0;
     min-width: 200px;
     border-radius: 6px;
@@ -31,7 +30,7 @@
     padding: $gutter-h $gutter-w;
     transition: background 0.15s ease-in-out;
     &:hover, &:focus {
-      background: rgba($theme-base, 0.06);
+      background: var(--gray-a3);
     }
   }
 }

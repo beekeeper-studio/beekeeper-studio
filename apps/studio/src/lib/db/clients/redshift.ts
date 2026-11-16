@@ -1,16 +1,17 @@
-import { PoolConfig } from "pg";
-import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
 import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn, TableIndex } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
-import {escapeString, resolveAWSCredentials} from "./utils";
+import {escapeString} from "./utils";
 import pg from 'pg';
-import BksConfig from "@/common/bksConfig";
 import { IndexColumn, TableKey } from "@shared/lib/dialects/models";
-import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
+import { RedshiftConnector } from "./redshift/RedshiftConnector";
+import { foreignKeyColumnsSql } from "./redshift/scripts";
 
+// One row per foreign-key column. Callers append the WHERE / ORDER BY.
 export class RedshiftClient extends PostgresClient {
+  connector = new RedshiftConnector({ server: this.server, database: this.database });
+
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,
@@ -185,124 +186,29 @@ export class RedshiftClient extends PostgresClient {
   }
 
   async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (outgoing - referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      SELECT
-
-        kcu.constraint_schema AS from_schema,
-
-        kcu.table_name AS from_table,
-
-        kcu.column_name AS from_column,
-        rc.unique_constraint_schema AS to_schema,
-        tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule,
-
-        (SELECT kcu2.table_name
-         FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
-        (SELECT kcu2.column_name
-         FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
-      FROM
-        information_schema.key_column_usage AS kcu
-
-          JOIN
-        information_schema.table_constraints AS tc
-
-        ON
-          tc.constraint_name = kcu.constraint_name
-
-          JOIN
-        information_schema.referential_constraints AS rc
-        ON
-          rc.constraint_name = kcu.constraint_name
-      WHERE
-        tc.constraint_type = 'FOREIGN KEY' AND
-        kcu.table_schema NOT LIKE 'pg_%' AND
-        kcu.table_schema = $2 AND
-        kcu.table_name = $1;
+      ${foreignKeyColumnsSql}
+      AND kcu.table_schema = $2
+      AND kcu.table_name = $1
     `;
-
-    const params = [
-      table,
-      schema,
-    ];
-
-    const data = await this.driverExecuteSingle(sql, { params });
-
-    // For now, treat all keys as non-composite until we can properly test with Redshift
-    // TODO: Implement proper composite key detection for Redshift
-    return data.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule,
-      isComposite: false
-    }));
+    const data = await this.driverExecuteSingle(sql, { params: [table, schema] });
+    return this.parseForeignKeys(data.rows);
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    // Foreign keys on other tables that reference this table. The referenced
+    // table is a computed column, so it can only be filtered from an outer
+    // query.
     const sql = `
-      SELECT
-        kcu.constraint_schema AS from_schema,
-        kcu.table_name AS from_table,
-        kcu.column_name AS from_column,
-        rc.unique_constraint_schema AS to_schema,
-        tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule,
-        (SELECT kcu2.table_name
-         FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
-        (SELECT kcu2.column_name
-         FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
-      FROM
-        information_schema.key_column_usage AS kcu
-          JOIN
-        information_schema.table_constraints AS tc
-        ON
-          tc.constraint_name = kcu.constraint_name
-          JOIN
-        information_schema.referential_constraints AS rc
-        ON
-          rc.constraint_name = kcu.constraint_name
-      WHERE
-        tc.constraint_type = 'FOREIGN KEY' AND
-        kcu.table_schema NOT LIKE 'pg_%' AND
-        rc.unique_constraint_schema = $2 AND
-        to_table = $1;
+      SELECT * FROM (
+        ${foreignKeyColumnsSql}
+        AND rc.unique_constraint_schema = $2
+      ) AS fk
+      WHERE fk.to_table = $1
     `;
-
-    const params = [
-      table,
-      schema,
-    ];
-
-    const data = await this.driverExecuteSingle(sql, { params });
-
-    // For now, treat all keys as non-composite until we can properly test with Redshift
-    // TODO: Implement proper composite key detection for Redshift
-    return data.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule,
-      isComposite: false
-    }));
+    const data = await this.driverExecuteSingle(sql, { params: [table, schema] });
+    return this.parseForeignKeys(data.rows);
   }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
     const data = await this.driverExecuteSingle(`show table ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`);
@@ -335,57 +241,6 @@ export class RedshiftClient extends PostgresClient {
 
   protected countQuery(_options: STQOptions, baseSQL: string): string {
     return `SELECT COUNT(*) as total ${baseSQL}`;
-  }
-
-  protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
-    // If a temporary user is used to connect to the database, we populate it below.
-    let tempUser: string;
-
-    // If the password for the database can expire, we populate passwordResolver with a callback
-    // that can be used to resolve the latest password.
-    let passwordResolver: () => Promise<string>;
-
-    const iamOptions = server.config.iamAuthOptions;
-    const redshiftOptions = server.config.redshiftOptions;
-    if (iamOptions?.iamAuthenticationEnabled) {
-
-      const clusterConfig: ClusterCredentialConfiguration = {
-        awsRegion: iamOptions.awsRegion,
-        clusterIdentifier: redshiftOptions.clusterIdentifier,
-        dbName: database.database,
-        dbUser: server.config.user,
-        dbGroup: redshiftOptions.databaseGroup,
-        durationSeconds: server.config.options.tokenDurationSeconds,
-        isServerLess: redshiftOptions.isServerless
-      };
-
-      const credentialResolver = RedshiftCredentialResolver.getInstance();
-
-      const awsCreds = await resolveAWSCredentials(iamOptions);
-
-      // We need resolve credentials once to get the temporary database user, which does not change
-      // on each call to get credentials.
-      // This is usually something like "IAMA:<user>" or "IAMA:<user>:<group>".
-      tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
-
-      // Set the password resolver to resolve the Redshift credentials and return the password.
-      passwordResolver = async () => {
-        return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
-      }
-    }
-
-
-    const config: PoolConfig = {
-      host: server.config.host,
-      port: server.config.port || undefined,
-      password: passwordResolver || server.config.password || undefined,
-      database: database.database,
-      max: BksConfig.db.redshift.maxConnections, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
-      idleTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
-    };
-
-    return this.configurePool(config, server, tempUser);
   }
 
   protected async getTypes(): Promise<any> {

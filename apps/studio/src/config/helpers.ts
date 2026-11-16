@@ -2,6 +2,8 @@ import ini from "ini";
 import _ from "lodash";
 import { DatabaseTypes } from "../lib/db/types";
 
+const TableSections = ["tableTable", "resultTable"];
+
 // https://stackoverflow.com/a/175787/10012118
 function isNumeric(str: unknown): boolean {
   if (typeof str != "string") return false; // we only process strings!
@@ -11,8 +13,9 @@ function isNumeric(str: unknown): boolean {
   ); // ...and ensure strings of whitespace fail
 }
 
-function parseIni(text: string): Record<string, unknown> {
-  const obj = ini.parse(text);
+function parseIni(text: string, preserveComments: boolean = false): Record<string, unknown> {
+  // @ts-ignore
+  const obj = ini.parse(text, { preserveComments });
   return _.cloneDeepWith(obj, (value) => {
     if (isNumeric(value)) {
       return _.toNumber(value);
@@ -60,10 +63,12 @@ function processRawConfig(config: Record<string, unknown>): Record<string, unkno
     }
   }
 
-  const allowedPlugins = config.pluginSystem?.allow;
-  if (allowedPlugins) {
-    // Filter out any empty strings
-    config.pluginSystem.allow = allowedPlugins.filter(Boolean);
+  const uiObj = config.ui as Record<string, unknown> | undefined;
+
+  if (uiObj && _.has(uiObj, "table.default")) {
+    for (const section of TableSections) {
+      populateDefaults(config, `ui.${section}`, "ui.table.default")
+    }
   }
 
   return config;

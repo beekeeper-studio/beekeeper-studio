@@ -19,10 +19,11 @@ export class ConnectionsController extends GenericController<ICloudSavedConnecti
     return new AccessGrantsController(this.axios, this.path, connectionId);
   }
 
-  async reorder(id: number, position: { before?: number | null; after?: number } | number, connectionFolderId?: number | null): Promise<ReorderResult[]> {
+  async reorder(id: number, position: { before?: number | null; after?: number } | number, connectionFolderId?: number | null, confirm?: boolean): Promise<ReorderResult[]> {
     const response = await this.axios.patch(url(this.path, id, 'reorder'), {
       position,
-      connectionFolderId
+      connectionFolderId,
+      confirm
     })
     return res(response, 'connections')
   }

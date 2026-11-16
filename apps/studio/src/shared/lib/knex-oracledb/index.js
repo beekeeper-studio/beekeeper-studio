@@ -1,6 +1,6 @@
-import BaseClient_Oracledb from "knex/lib/dialects/oracledb";
+import BaseClient_Oracledb from "knex/lib/dialects/oracledb/index.js";
 import QueryCompiler from "./query/oracle-querycompiler";
-import { makeEscape } from "knex/lib/util/string";
+import { makeEscape } from "knex/lib/util/string.js";
 
 export default class Client_Oracledb extends BaseClient_Oracledb {
   queryCompiler(builder, formatter) {

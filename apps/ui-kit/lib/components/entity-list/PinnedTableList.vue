@@ -6,7 +6,7 @@
       <div class="actions sort-buttons">
         <button
           v-if="sortBy !== 'position'"
-          class="actions-btn btn btn-link btn-sm"
+          class="actions-btn btn btn-sm"
           :title="sortOrderLabel"
           @click.prevent="handleSortOrderClick"
         >
@@ -14,7 +14,7 @@
           <i v-else class="material-icons">expand_less</i>
         </button>
         <button
-          class="actions-btn btn btn-link btn-sm"
+          class="actions-btn btn btn-sm"
           :title="`Sorted by ${sortByLabel} (${sortOrderLabel})`"
           @click.prevent="handleSortByClick"
         >

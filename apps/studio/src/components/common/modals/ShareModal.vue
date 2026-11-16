@@ -1,5 +1,5 @@
 <template>
-  <base-modal name="share-modal" @opened="handleOpened">
+  <base-modal name="share-modal" @opened="handleOpened" :loading="initiallyLoadingGrants">
     <template #title>
       <div>
         <div class="modal-title">
@@ -15,12 +15,18 @@
               }}
             </h2>
           </template>
-          <h2 v-else>Share</h2>
+          <h2 v-else>
+            Share
+          </h2>
         </div>
-        <div class="modal-subtitle">Share & Permissions</div>
+        <div class="modal-subtitle">
+          Share & Permissions
+        </div>
       </div>
     </template>
     <template v-if="subject">
+      <error-alert :error="error" />
+
       <div class="member-access">
         <h3>Who has access</h3>
 
@@ -40,61 +46,92 @@
               <div class="hint" v-else-if="teamPermission === 'no-access'">
                 Only team members that are listed below have access
               </div>
-              <div class="hint error" v-if="teamPermissionError" v-text="teamPermissionError.userMessage" />
             </div>
             <div class="access">
               <loading-spinner v-if="loadingTeamPermission" />
-              <select class="auto-width" v-if="subject.canManage" :value="teamPermission"
-                :disabled="loadingTeamPermission" @change="changeTeamPermission($event.target.value)">
-                <option value="view">can view</option>
-                <option value="edit">can edit</option>
-                <option value="no-access">No access</option>
+              <select
+                class="auto-width" v-if="subject.canManage" :value="teamPermission"
+                :disabled="loadingTeamPermission" @change="changeTeamPermission($event.target.value)"
+              >
+                <option value="view">
+                  can view
+                </option>
+                <option value="edit">
+                  can edit
+                </option>
+                <option value="no-access">
+                  No access
+                </option>
               </select>
               <template v-else>
-                <template v-if="teamPermission === 'view'">can view</template>
+                <template v-if="teamPermission === 'view'">
+                  can view
+                </template>
                 <template v-else-if="teamPermission === 'edit'">
                   can edit
                 </template>
-                <template v-else>No access</template>
+                <template v-else>
+                  No access
+                </template>
               </template>
             </div>
           </li>
           <li class="access-grant">
-            <div class="icon">{{ getInitials(subject.membership.name) }}</div>
+            <div class="icon">
+              {{ getInitials(subject.membership.name) }}
+            </div>
             <div class="label">
               <span>{{ subject.membership.name }}</span>
               <span v-if="isItYou(subject.membership.userId)"> (You)</span>
             </div>
-            <div class="access">Owner</div>
+            <div class="access">
+              Owner
+            </div>
           </li>
           <!-- We don't want to show admin if it's the same user as the owner -->
           <li class="access-grant" v-if="subject.membership.userId !== workspace.owner.id">
-            <div class="icon">{{ getInitials(workspace.owner.name) }}</div>
+            <div class="icon">
+              {{ getInitials(workspace.owner.name) }}
+            </div>
             <div class="label">
               <span>{{ workspace.owner.name }}</span>
               <span v-if="isItYou(workspace.owner.id)"> (You)</span>
             </div>
-            <div class="access">Admin</div>
+            <div class="access">
+              Admin
+            </div>
           </li>
-          <li class="access-grant" v-for="grant of accessGrants" :key="grant.id" :class="{
-            highlight: highlightedMembers.includes(grant.membershipId),
-          }">
-            <div class="icon">{{ getInitials(grant.membership.name) }}</div>
+          <li
+            class="access-grant" v-for="grant of accessGrants" :key="grant.id" :class="{
+              highlight: highlightedMembers.includes(grant.membershipId),
+            }"
+          >
+            <div class="icon">
+              {{ getInitials(grant.membership.name) }}
+            </div>
             <div class="label">
               {{ grant.membership.name }}
               <span v-if="isItYou(grant.membership.userId)"> (You)</span>
             </div>
             <div class="access">
               <loading-spinner v-if="loadingGrants.includes(grant.id)" />
-              <select class="auto-width" :value="grantToPermission(grant)" @change="
-                $event.target.value === 'remove'
-                  ? removeAccess(grant)
-                  : changeAccess(grant, $event.target.value)
-                " v-if="subject.canManage" :disabled="loadingGrants.includes(grant.id)">
-                <option value="view">can view</option>
-                <option value="edit">can edit</option>
-                <hr />
-                <option value="remove">Remove</option>
+              <select
+                class="auto-width" :value="grantToPermission(grant)" @change="
+                  $event.target.value === 'remove'
+                    ? removeAccess(grant)
+                    : changeAccess(grant, $event.target.value)
+                " v-if="subject.canManage" :disabled="loadingGrants.includes(grant.id)"
+              >
+                <option value="view">
+                  can view
+                </option>
+                <option value="edit">
+                  can edit
+                </option>
+                <hr>
+                <option value="remove">
+                  Remove
+                </option>
               </select>
               <template v-else>
                 <template v-if="grantToPermission(grant) === 'view'">
@@ -106,16 +143,6 @@
               </template>
             </div>
           </li>
-          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
-            <div class="icon" />
-            <div class="label" />
-            <div class="access" />
-          </li>
-          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
-            <div class="icon" />
-            <div class="label" />
-            <div class="access" />
-          </li>
         </ul>
       </div>
 
@@ -124,10 +151,12 @@
           <div class="form-group">
             <label for="share-modal-search-member">Add member access</label>
             <div class="input-wrapper">
-              <multi-select input-id="share-modal-search-member" placeholder="Search a member" v-model="search"
+              <multi-select
+                input-id="share-modal-search-member" placeholder="Search a member" v-model="search"
                 option-label="name" :focus-trigger="focusTrigger" :suggestions="memberships"
                 :selected-options="selectedMembers" @item-add="handleMemberAdd" @item-remove="handleMemberRemove"
-                @keyup.esc.stop @keydown.esc.stop>
+                @keyup.esc.stop @keydown.esc.stop
+              >
                 <template #empty-state v-if="loadingMemberships">
                   Loading ...
                 </template>
@@ -136,13 +165,19 @@
                 </template>
               </multi-select>
               <select v-show="search.length > 0 || selectedMembers.length > 0" v-model="permission" class="auto-width">
-                <option value="view">can view</option>
-                <option value="edit">can edit</option>
+                <option value="view">
+                  can view
+                </option>
+                <option value="edit">
+                  can edit
+                </option>
               </select>
             </div>
           </div>
-          <button class="btn btn-primary btn-icon add-btn" type="button"
-            :disabled="selectedMembers.length === 0 || savingGrants" @click="addSelectedMembers">
+          <button
+            class="btn btn-primary add-btn" type="button"
+            :disabled="selectedMembers.length === 0 || savingGrants" @click="addSelectedMembers"
+          >
             <i class="material-icons">add</i>
             Add
           </button>
@@ -168,7 +203,7 @@ import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import rawLog from "@bksLogger";
-import { CloudError } from "@/lib/cloud/ClientHelpers";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
 
 type Permission = "view" | "edit" | "no-access";
 type AccessGrantLike = Pick<IAccessGrant, "canRead" | "canWrite">;
@@ -180,7 +215,7 @@ type Subject =
 const log = rawLog.scope("ShareModal.vue");
 
 export default Vue.extend({
-  components: { BaseModal, MultiSelect, LoadingSpinner },
+  components: { BaseModal, MultiSelect, LoadingSpinner, ErrorAlert },
   data() {
     return {
       subjectId: null,
@@ -195,7 +230,7 @@ export default Vue.extend({
       loadingGrants: [] as number[], // the access grant ids
       loadingTeamPermission: false,
       savingGrants: false,
-      teamPermissionError: null as CloudError | null,
+      error: null as Error | null,
     };
   },
   computed: {
@@ -289,7 +324,7 @@ export default Vue.extend({
       this.loadingGrants = [];
       this.loadingTeamPermission = false;
       this.savingGrants = false;
-      this.teamPermissionError = null;
+      this.error = null;
     },
     async open(options: OpenShareModalOptions) {
       if (!this.isCloud) {
@@ -308,10 +343,11 @@ export default Vue.extend({
       this.initiallyLoadingGrants = true;
       await this.$nextTick();
       try {
+        this.error = null;
         await this.loadAccessGrants(this.subjectId);
       } catch (e) {
         log.error(e);
-        this.$noty.error(e.userMessage);
+        this.error = e;
       } finally {
         this.initiallyLoadingGrants = false;
       }
@@ -359,10 +395,11 @@ export default Vue.extend({
       this.loadingGrants.push(grantId);
       await this.$nextTick();
       try {
+        this.error = null;
         await fn();
       } catch (e) {
         log.error(e);
-        this.$noty.error(e);
+        this.error = e;
       } finally {
         this.loadingGrants = this.loadingGrants.filter((id) => id !== grantId);
       }
@@ -371,7 +408,7 @@ export default Vue.extend({
       this.loadingTeamPermission = true;
       await this.$nextTick();
       try {
-        this.teamPermissionError = null;
+        this.error = null;
         const { canRead, canWrite } = this.permissionToGrant(permission);
         await this.$store.dispatch(`${this.module}/save`, {
           id: this.subject.id,
@@ -379,7 +416,7 @@ export default Vue.extend({
           teamWrite: canWrite,
         });
       } catch (e) {
-        this.teamPermissionError = e;
+        this.error = e;
         log.error(e);
       } finally {
         this.loadingTeamPermission = false;
@@ -395,6 +432,7 @@ export default Vue.extend({
       const { canRead, canWrite } = this.permissionToGrant(this.permission);
 
       try {
+        this.error = null;
         this.savingGrants = true;
         await this.saveAccessGrants({
           subjectId: this.subjectId,
@@ -406,7 +444,7 @@ export default Vue.extend({
         this.selectedMembers = [];
       } catch (e) {
         log.error(e);
-        this.$noty.error(e);
+        this.error = e;
       } finally {
         this.savingGrants = false;
       }
@@ -459,11 +497,11 @@ export default Vue.extend({
     font-size: 1rem;
 
     &[data-subject-module="data/queries"] {
-      color: var(--brand-pink);
+      color: var(--pink-text);
     }
 
     &[data-subject-module*="Folders"] {
-      color: var(--text-lighter);
+      color: var(--text-muted);
     }
   }
 }
@@ -471,10 +509,15 @@ export default Vue.extend({
 .modal-subtitle {
   font-size: 1rem;
   font-weight: normal;
-  color: var(--text-light);
+  color: var(--text-muted);
   font-size: 0.831rem;
   line-height: normal;
   margin-bottom: 0.25rem;
+}
+
+.alert.error-alert {
+  margin-top: 0;
+  margin-bottom: 1rem;
 }
 
 h3 {
@@ -502,26 +545,10 @@ h3 {
     animation: highlightFadeOut 2s ease-out forwards;
   }
 
-  &.skeleton {
-    .label {
-      background-color: rgb(from var(--theme-base) r g b / 10%);
-      width: 20ch;
-      height: 1rem;
-      border-radius: 4px;
-    }
-
-    .access {
-      background-color: rgb(from var(--theme-base) r g b / 10%);
-      width: 5ch;
-      height: 1rem;
-      border-radius: 4px;
-    }
-  }
-
   .icon {
     width: 2rem;
     height: 2rem;
-    background-color: rgb(from var(--theme-base) r g b / 10%);
+    background-color: var(--gray-a4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -539,17 +566,13 @@ h3 {
   .label {
     flex: 1;
     margin-inline: 1rem;
-    color: rgb(from var(--theme-base) r g b / 77%);
+    color: var(--text);
   }
 
   .hint {
     font-size: 0.831rem;
     margin-top: 0.1rem;
-    color: var(--text-light);
-
-    &.error {
-      color: var(--brand-danger);
-    }
+    color: var(--text-muted);
   }
 
   select {
@@ -586,7 +609,7 @@ h3 {
     .input-wrapper {
       position: relative;
       display: flex;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border-subtle);
       border-radius: 4px;
 
       &::v-deep .multi-select {
@@ -622,17 +645,17 @@ h3 {
 
 @keyframes highlightFadeOut {
   0% {
-    background-color: rgb(from var(--theme-primary) r g b / 10%);
+    background-color: var(--primary-a4);
   }
 
   /* Holds the solid 10% highlight for the first 30% of the animation time */
   30% {
-    background-color: rgb(from var(--theme-primary) r g b / 10%);
+    background-color: var(--primary-a4);
   }
 
   /* Smoothly fades out to 0% (transparent) over the remaining 70% of the time */
   100% {
-    background-color: rgb(from var(--theme-primary) r g b / 0%);
+    background-color: var(--primary-a1);
   }
 }
 </style>

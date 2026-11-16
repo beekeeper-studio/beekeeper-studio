@@ -5,7 +5,6 @@ import Vue from 'vue'
 import { Module } from 'vuex'
 import config from "@/config";
 
-
 interface State {
   settings: IGroupedUserSettings,
   initialized: boolean
@@ -68,17 +67,6 @@ const SettingStoreModule: Module<State, any> = {
   getters: {
     settings(state) {
       return state.settings
-    },
-    themeValue(state) {
-      const theme = state.settings.theme ? state.settings.theme.value : null;
-      if (!theme) return null
-      return theme;
-    },
-    /** is the theme light or dark? */
-    themeType(_state, getters) {
-      if (!getters.themeValue) return 'light'
-      if (getters.themeValue.includes('dark')) return 'dark'
-      return 'light'
     },
     /** The keymap type to be used in text editor */
     userKeymap(state) {

@@ -1,4 +1,4 @@
-import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/dist/internal";
+import type { RequestPayload, ResponseData } from "@beekeeperstudio/plugin/dist/internal";
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
@@ -33,20 +33,32 @@ export type PluginMenuItemPlacement =
   | "newTabDropdown" // Shown in the dropdown list when opening a new tab
   | "menubar.tools" // Shown in the tools menu
   | "editor.query.context" // Context menu inside the query editor
+  | "editor.query.toolbar" // Button in the query editor toolbar, next to Run
   | "results.cell.context" // Context menu on a cell
-  | "results.columnHeader.context" // Context menu on a row header
-  | "results.rowHeader.context" // Context menu on a column header
+  | "results.columnHeader.context" // Context menu on a column header
+  | "results.rowHeader.context" // Context menu on a row header
   | "results.corner.context" // Context menu on the top left corner
+  | "results.statusbar" // Visualize button in the query results status bar
   | "tableTable.cell.context" // Context menu on a cell
-  | "tableTable.columnHeader.context" // Context menu on a row header
-  | "tableTable.rowHeader.context" // Context menu on a column header
+  | "tableTable.columnHeader.context" // Context menu on a column header
+  | "tableTable.rowHeader.context" // Context menu on a row header
   | "tableTable.corner.context" // Context menu on the top left corner
+  | "tableTable.statusbar" // Visualize button in the table view status bar
   | "tab.query.header.context" // Context menu on the query tab header
   | "tab.table.header.context" // Context menu on the table tab header
   | "entity.table.context" // Context menu on a table
   | "entity.schema.context" // Context menu on a schema
   | "entity.routine.context" // Context menu on a routine
   | "structure.statusbar.menu"; // Button rendered in the structure view status bar
+
+/**
+ * Conditions a menu item can wait for with `enabledWhen`. The item stays
+ * visible but disabled until the condition holds.
+ *
+ * - `explainResult`: the result came from an `EXPLAIN` statement, or has
+ *   the columns of a query plan. Reported by `results.statusbar`.
+ */
+export type PluginMenuItemCondition = "explainResult";
 
 /** A single menu item contributed by a plugin. */
 export interface PluginMenuItem {
@@ -66,6 +78,14 @@ export interface PluginMenuItem {
   /** Location or locations in the app where this menu item should appear,
    * expressed as a string or array of strings. */
   placement: PluginMenuItemPlacement | PluginMenuItemPlacement[];
+
+  /** Material icon name shown next to the item. Falls back to the
+   * manifest's `icon`. */
+  icon?: string;
+
+  /** Keep the item disabled until this condition holds. Only menus that
+   * report the condition apply it; elsewhere the item is always enabled. */
+  enabledWhen?: PluginMenuItemCondition;
 
   /** Optional group identifier for sorting and grouping items within a
    * placement.
@@ -99,6 +119,21 @@ type LegacyViews = {
 }
 
 export type Manifest = ManifestV0 | ManifestV1;
+
+export type ExtensionManifest = {
+  id: string;
+  name: string;
+  author:
+  | string
+  | {
+    name: string;
+    url: string;
+  };
+  description: string;
+  version: string;
+};
+
+export type ThemeManifest = ExtensionManifest;
 
 export type ManifestV0 = {
   manifestVersion?: 0;
@@ -148,25 +183,64 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
 };
 
 /**
- * The structure of a plugin entry.
+ * The raw structure of a plugin/theme entry that is found in the registry files:
+ * - plugins.json
+ * - community-plugins.json
+ * - community-themes.json
  *
  * @see {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins}
  */
-export type PluginRegistryEntry = Pick<
-  Manifest,
+export type RawPluginRegistryEntry = Pick<
+  ExtensionManifest,
   "id" | "name" | "author" | "description"
 > & {
   repo: string;
 };
 
-export interface Release {
-  manifest: Manifest;
-  sourceArchiveUrl: string;
+/**
+ * The plugin entry we will typically work with, since it's useful to keep
+ * the origin around and such
+ */
+export type ExtensionRegistryEntry = RawPluginRegistryEntry & {
+  origin: ExtensionOrigin;
 }
 
-export interface PluginRepository {
-  latestRelease: Release;
+export type RegistryMap = {
+  official: ExtensionRegistryEntry[],
+  community: ExtensionRegistryEntry[]
+} & {
+  [key: string]: ExtensionRegistryEntry[]
+};
+
+export interface ExtensionUI extends ExtensionRegistryEntry, ExtensionManifest {
+  installing: boolean;
+  installed: boolean;
+  enabled: boolean;
+  loadable: boolean;
+  error: unknown;
+  updateAvailable: boolean;
+  checkingForUpdates: boolean;
+  disabled: boolean;
+}
+
+export interface Release<Manifest extends ExtensionManifest> {
+  manifest: Manifest;
+  sourceArchiveUrl: string;
+  checksum: string;
+}
+
+export interface ExtensionRepository {
+  latestRelease: Release<ExtensionManifest>;
   readme: string;
+  downloadCount?: number;
+}
+
+export interface RegistryConfig {
+  name: string,
+  origin: ExtensionOrigin,
+  owner: string,
+  repo: string,
+  file: string
 }
 
 export type OnViewRequestListener = (params: OnViewRequestListenerParams) => void | Promise<void>;
@@ -178,17 +252,19 @@ export type OnViewRequestListenerParams = {
   modifyResult: (callback: ViewResultModifier) => void;
 }
 
-export type AfterViewRequestCallback = (response: ResponsePayload) => void;
+export type AfterViewRequestCallback = (response: ResponseData) => void;
 
-export type ViewResultModifier = (result: ResponsePayload['result']) => ResponsePayload['result'] | Promise<ResponsePayload['result']>;
+export type ViewResultModifier = (result: ResponseData['result']) => ResponseData['result'] | Promise<ResponseData['result']>;
 
 export type PluginSettings = {
-  [pluginId: string]: {
-    autoUpdate: boolean;
-    disabled?: boolean;
-  }
+  autoUpdate: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
 }
 
+export type PluginSettingsMap = {
+  [pluginId: string]: PluginSettings
+}
 
 export type WebPluginContext = {
   manifest: ManifestV1;
@@ -196,6 +272,7 @@ export type WebPluginContext = {
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
+  pluginOrigin: ExtensionOrigin;
   fileHelpers: FileHelpers;
   noty: {
     success(text: string, options?: any): Noty;
@@ -211,9 +288,26 @@ export type PluginSnapshot = {
   manifest: ManifestV1;
   /** Is this compatible with the current app version? */
   loadable: boolean;
-  origin: PluginOrigin;
-  disableState: DisableState;
+  origin: ExtensionOrigin;
+  disableState: PluginDisableState;
 };
+
+export type ThemeSnapshot = {
+  manifest: ThemeManifest;
+  origin: ExtensionOrigin;
+  disableState: ThemeDisableState;
+};
+
+export type ThemeDisableState =
+  | { disabled: false }
+  | {
+      disabled: true;
+      reason:
+        | "community-themes-disabled"
+        | "unlisted-theme-disabled"
+        | "missing-style"
+        | "license-required";
+    };
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
@@ -239,20 +333,26 @@ export type CreatePluginTabOptions = {
  * By default, `disabled` is `false`.
  * This value may be modified by other modules (e.g. {@link ConfigurationModule}).
  */
-type DisableState =
+type PluginDisableState =
   | { disabled: false }
   | {
       disabled: true;
       reason:
         | "plugin-system-disabled"
+        | "official-plugins-disabled"
         | "community-plugins-disabled"
-        | "disabled-by-config";
+        | "custom-registries-disabled"
+        | "unlisted-disabled"
+        | "disabled-by-config"
+        | "max-plugins-reached";
     };
 
 /**
- * Indicates where a plugin originates from:
+ * Indicates where an extension (plugin or theme) originates from:
+ * - `bundled`: Features built with the plugin system that are bundled with the app
  * - `official`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/plugins.json}
  * - `community`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json}
+ * - `custom`: Custom plugin from a custom third party repo (Business/Dev only)
  * - `unlisted`: Not listed in either repository
  */
-export type PluginOrigin = "official" | "community" | "unlisted";
+export type ExtensionOrigin = "bundled" | "official" | "community" | "custom"| "unlisted";

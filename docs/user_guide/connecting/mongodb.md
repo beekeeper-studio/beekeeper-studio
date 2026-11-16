@@ -59,3 +59,10 @@ mongodb://user%40REALM.EXAMPLE.COM@host.example.com/?authMechanism=GSSAPI&authMe
 Kerberos relies on the server's hostname to match the SPN. An SSH tunnel rewrites the
 host the driver connects to, which breaks SPN matching — connect directly to the
 FQDN rather than tunnelling when using Kerberos.
+
+## Windows on ARM { #windows-on-arm }
+
+!!! note "Client-side encryption isn't available on Windows ARM64"
+    MongoDB's client-side field level encryption (CSFLE) and Queryable Encryption need the `mongodb-client-encryption` library, which MongoDB doesn't publish for Windows ARM64. The ARM64 version of Beekeeper Studio ships without it. Everything else on this page works the same as on x64.
+
+    If you rely on client-side encryption, use the x64 version of Beekeeper Studio, which runs on Windows on ARM PCs under emulation. See [Windows on ARM](../../installation/windows.md#windows-on-arm).

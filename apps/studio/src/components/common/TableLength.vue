@@ -1,6 +1,6 @@
 <template>
   <a
-    class="statusbar-item hoverable"
+    class="btn statusbar-item"
     @click.prevent="fetchTotalRecords"
     v-tooltip="hoverTitle"
   >
@@ -37,7 +37,7 @@ export default Vue.extend({
   methods: {
     async fetchTotalRecords() {
       this.fetchingTotalRecords = true
-      
+
       try {
         const allFilters = []
         this.error = null

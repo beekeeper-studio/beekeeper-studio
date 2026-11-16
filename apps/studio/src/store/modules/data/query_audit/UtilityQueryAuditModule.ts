@@ -21,9 +21,12 @@ export const UtilQueryAuditModule: Module<State, RootState> = {
     },
     async load() {},
     async poll() {},
-    async list(_context, queryId: number): Promise<TransportQueryAudit[]> {
+    async list(
+      _context,
+      { queryId, limit }: { queryId: number; limit?: number }
+    ): Promise<TransportQueryAudit[]> {
       return await Vue.prototype.$util.send("appdb/queryAudit/find", {
-        options: { where: { favoriteQueryId: queryId } },
+        options: { where: { favoriteQueryId: queryId }, take: limit },
       });
     },
     async get(

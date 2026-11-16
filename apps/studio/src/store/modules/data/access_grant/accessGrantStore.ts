@@ -41,7 +41,7 @@ export function accessGrantMutations(): MutationTree<State> {
   };
 }
 
-export function cloudAccessGrantActions(
+export function accessGrantActions(
   key: "connections" | "queries" | "queryFolders" | "connectionFolders"
 ): ActionTree<State, RootState> {
   return {
@@ -90,23 +90,6 @@ export function cloudAccessGrantActions(
         await cli[key].accessGrantsOf(subjectId).delete(accessGrant);
         context.commit("deleteAccessGrant", { subjectId, accessGrant });
       });
-    },
-  };
-}
-
-export function localAccessGrantActions() {
-  return {
-    async loadAccessGrants() {
-      throw new Error("Access grants are only available in cloud workspaces");
-    },
-    async saveAccessGrants() {
-      throw new Error("Access grants are only available in cloud workspaces");
-    },
-    async saveAccessGrant() {
-      throw new Error("Access grants are only available in cloud workspaces");
-    },
-    async removeAccessGrant() {
-      throw new Error("Access grants are only available in cloud workspaces");
     },
   };
 }

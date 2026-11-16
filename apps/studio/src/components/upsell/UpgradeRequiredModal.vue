@@ -4,15 +4,11 @@
       class="vue-dialog beekeeper-modal upgrade-modal"
       name="upgrade-modal"
       height="auto"
-      :width="modalWidth"
       @opened="focusDialog"
     >
-      <div
-        class="dialog-content upgrade-modal-content"
-        v-kbd-trap="true"
-      >
+      <div v-kbd-trap="true">
         <button
-          class="close-btn btn btn-fab"
+          class="close-btn btn btn-icon"
           @click.prevent="close"
           aria-label="Close"
           ref="closeButton"
@@ -37,8 +33,7 @@ export default Vue.extend({
   components: { UpgradePanel },
   data() {
     return {
-      featureName: null as string | null,
-      modalWidth: 620
+      featureName: null as string | null
     }
   },
   methods: {

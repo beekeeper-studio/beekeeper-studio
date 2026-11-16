@@ -10,17 +10,17 @@
   cursor: pointer;
   background-color: transparent;
   outline: none;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--gray-a4);
   border-radius: 4px;
-  color: $theme-secondary;
+  color: var(--primary-text);
   white-space: nowrap;
   &:hover {
-    border-color: $primary-color;
-    color: $primary-color;
+    border-color: var(--text-contrast);
+    color: var(--text-contrast);
   }
   &:disabled,
   &.disabled {
-    color: $disabled-color;
+    color: var(--text-muted);
     cursor: not-allowed;
   }
 }

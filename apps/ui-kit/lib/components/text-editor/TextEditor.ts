@@ -67,7 +67,7 @@ export class TextEditor {
 
     const state = EditorState.create({
       doc: config.initialValue || "",
-      extensions: this.extendExtensions(config) || this.getExtensions(config),
+      extensions: this.replaceExtensions(config) || this.getExtensions(config),
     });
 
     const view = new EditorView({ state, parent: config.parent });
@@ -80,7 +80,7 @@ export class TextEditor {
     this.config = config;
   }
 
-  extendExtensions(config: TextEditorConfiguration) {
+  replaceExtensions(config: TextEditorConfiguration) {
     if (typeof config.replaceExtensions === "function") {
       return config.replaceExtensions(this.getExtensions(config));
     }
@@ -130,6 +130,7 @@ export class TextEditor {
         to: this.view.state.doc.length,
         insert: value,
       },
+      annotations: Transaction.addToHistory.of(false),
     });
   }
 

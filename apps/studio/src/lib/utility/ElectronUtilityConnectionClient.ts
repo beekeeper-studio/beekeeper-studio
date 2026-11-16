@@ -90,7 +90,7 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     const id = await Vue.prototype.$util.send('conn/query', { queryText, options, tabId, hasActiveTransaction });
     return {
       execute: async () => {
-        return await Vue.prototype.$util.send('query/execute', { queryId: id, isManualCommit: options?.isManualCommit })
+        return await Vue.prototype.$util.send('query/execute', { queryId: id })
       },
       cancel: async () => {
         return await Vue.prototype.$util.send('query/cancel', { queryId: id })
@@ -158,8 +158,8 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/getMaterializedViewCreateScript', { view, schema });
   }
 
-  async getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]> {
-    return await Vue.prototype.$util.send('conn/getRoutineCreateScript', { routine, type, schema });
+  async getRoutineCreateScript(routine: string, type: string, schema?: string, id?: string): Promise<string[]> {
+    return await Vue.prototype.$util.send('conn/getRoutineCreateScript', { routine, type, schema, id });
   }
 
   async createTable(table: CreateTableSpec): Promise<void> {

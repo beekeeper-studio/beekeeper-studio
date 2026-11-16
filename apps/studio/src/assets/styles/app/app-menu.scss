@@ -1,7 +1,11 @@
-@use "sass:color";
 
 .flyout-nav {
   font-size: $form-control-font-size;
+  &:focus-visible {
+    // Opening a menu shows outline in an awkward position
+    // https://github.com/beekeeper-studio/beekeeper-studio/pull/5018#pullrequestreview-5832380368
+    --focus-ring: none;
+  }
   .disabled-app-menu {
     pointer-events:none;
     opacity: 0.5;
@@ -13,10 +17,11 @@
     display: none;
     list-style-type: none;
     white-space: nowrap;
-    background: color.adjust($theme-bg, $lightness: 5%);
-    border-radius: 6px;
+    background: var(--menu-bg);
+    color: var(--menu-fg);
+    border-radius: var(--menu-border-radius);
     min-width: 150px;
-    @include card-shadow-hover;
+    box-shadow: var(--panel-shadow);
   }
   li {
     position: relative;
@@ -24,11 +29,11 @@
     &.separator {
       margin-bottom: $gutter-h;
       padding-bottom: $gutter-h;
-      border-bottom: 1px solid $border-color;
+      border-bottom: 1px solid var(--border-subtle);
     }
     a {
       text-decoration: none;
-      color: $text;
+      color: inherit;
       position: relative;
       display: table;
       width: 100%;
@@ -40,7 +45,7 @@
       }
       .shortcut {
         text-align: right;
-        color: $text-lighter;
+        color: var(--text-muted);
       }
       .label {
         padding-left: $gutter-w * 2.6;
@@ -64,7 +69,7 @@
         }
       }
       &.hovered {
-        background: rgba($theme-base, 0.05);
+        background: var(--menu-bg-hover);
       }
     }
     &.has-children > a {
@@ -126,14 +131,13 @@
         > .label {
           display: inline-flex;
           align-items: center;
-          color: $text-lighter;
           padding: 0 ($gutter-w * 0.85);
           height: $titlebar-actions-height;
         }
         &.selected {
           background: transparent;
           .label {
-            color: $text-dark;
+            color: var(--text-contrast);
           }
         }
       }

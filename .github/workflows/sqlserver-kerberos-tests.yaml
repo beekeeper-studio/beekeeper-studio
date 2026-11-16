@@ -3,7 +3,7 @@ name: SQL Server Kerberos integration test
 permissions:
   contents: read
 
-# Heavy multi-container job (Samba AD DC + SQL Server on Linux + a dockerized Jest client),
+# Heavy multi-container job (Samba AD DC + SQL Server on Linux + a dockerized vitest client),
 # so it runs only when the integrated-auth code or this suite changes, plus on demand. The
 # companion spec self-skips in the normal integration matrix unless SQLSERVER_KERBEROS_TEST=1.
 #
@@ -21,7 +21,7 @@ on:
     paths:
       - 'apps/studio/src/lib/db/clients/sqlserver.ts'
       - 'apps/studio/src/lib/db/types.ts'
-      - 'apps/studio/tests/integration/lib/db/clients/sqlserver-kerberos.spec.ts'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/sqlserver-kerberos.spec.ts'
       - 'dev/docker_sqlserver_kerberos/**'
       - '.github/workflows/sqlserver-kerberos-tests.yaml'
   workflow_dispatch:

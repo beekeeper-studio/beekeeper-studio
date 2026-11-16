@@ -1,7 +1,7 @@
 import { uuidv4 } from "../uuid";
 import rawLog from '@bksLogger';
 import _ from 'lodash';
-import { PluginError, PluginSystemError } from "../errors";
+import { ExtensionRegistryError, ExtensionRepositoryError, PluginError, PluginSystemError, ThemeSystemError } from "../errors";
 
 const log = rawLog.scope('renderer/utilityconnection');
 
@@ -25,7 +25,7 @@ export class UtilityConnection {
 
   public get sId() {
     return this._sId;
-  } 
+  }
 
   public async hasWorkingPort(): Promise<boolean> {
     return new Promise((resolve, reject) => {
@@ -45,7 +45,15 @@ export class UtilityConnection {
 
       if (msgData.type === 'error') {
         // handle errors
-        const { id, error, stack, errorName, errorCode } = msgData;
+        const {
+          id,
+          error,
+          stack,
+          errorName,
+          errorCode,
+          errorDetail,
+          errorHint,
+        } = msgData
 
         const handler = this.replyHandlers.get(id);
         if (handler) {
@@ -54,11 +62,23 @@ export class UtilityConnection {
           let err: Error;
           if (errorName === "PluginSystemError") {
             err = new PluginSystemError(errorCode, error);
+          } else if (errorName === "ExtensionRegistryError") {
+            err = new ExtensionRegistryError(errorCode, error);
+          } else if (errorName === "ExtensionRepositoryError") {
+            err = new ExtensionRepositoryError(errorCode, error);
           } else if (errorName === "PluginError") {
             err = new PluginError(errorCode, error);
+          } else if (errorName === "ThemeSystemError") {
+            err = new ThemeSystemError(errorCode, error);
           } else {
             err = new Error(error);
           }
+
+          Object.assign(err, {
+            detail: errorDetail,
+            hint: errorHint,
+          })
+
           err.stack = stack;
           handler.reject(err);
         }

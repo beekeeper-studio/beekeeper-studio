@@ -41,7 +41,8 @@ export interface AuthConfig {
     userName?: string,
     tenantId?: string,
     msiEndpoint?: string,
-    clientSecret?: string
+    clientSecret?: string,
+    credential?: AzureTokenCredential
   }
 }
 
@@ -54,6 +55,94 @@ export interface AuthOptions {
   clientSecret?: string
   cliPath?: string,
   signal?: AbortSignal
+}
+
+// Based on https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/identity/identity/samples/AzureIdentityExamples.md#custom-credentials
+export interface AzureAccessToken {
+  token: string,
+  expiresOnTimestamp: number
+}
+
+export interface AzureTokenCredential {
+  getToken(scopes: string | string[]): Promise<AzureAccessToken>
+}
+
+function runAzGetAccessToken(cliPath: string, targetArgs: string[]): Promise<AzureAccessToken> {
+  return new Promise<AzureAccessToken>((resolve, reject) => {
+    const commandArgs = [
+      'account',
+      'get-access-token',
+      ...targetArgs,
+      '--output',
+      'json'
+    ];
+
+    if (platformInfo.isWindows && /["\r\n]/.test(cliPath)) {
+      throw new Error('Invalid azure CLI Path');
+    }
+
+    // spawn doesn't launch .cmd files, they need a shell, so we manually spawn
+    // cmd to all .cmd files to be run on windows, but not allow for escaping into
+    // the shell :)
+    const proc = platformInfo.isWindows
+      ? spawn('cmd.exe', ['/d', '/s', '/c', `""${cliPath}" ${commandArgs.join(' ')}"`], { shell: false, windowsVerbatimArguments: true })
+      : spawn(cliPath, commandArgs, { shell: false });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout?.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    proc.stderr?.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    proc.on('error', (err) => {
+      reject(err);
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const tokenData = JSON.parse(stdout);
+          const expiresOnTimestamp = tokenData.expires_on
+            ? Number(tokenData.expires_on) * 1000
+            : new Date(tokenData.expiresOn).getTime();
+          resolve({ token: tokenData.accessToken, expiresOnTimestamp });
+        } catch (err) {
+          reject(new Error(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`));
+        }
+      } else {
+        reject(new Error(`Azure CLI exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`));
+      }
+    });
+  });
+}
+
+export class AzureCliTokenCredential implements AzureTokenCredential {
+  private cached?: { scopes: string, token: AzureAccessToken };
+
+  constructor(private cliPath: string) {
+    if (!cliPath) {
+      throw new Error('AZ command not specified');
+    }
+  }
+
+  // Tedious re runs this when getting new connections for the pool, so it will refresh the token for us
+  async getToken(scopes: string | string[]): Promise<AzureAccessToken> {
+    const scopeList = Array.isArray(scopes) ? scopes : [scopes];
+    const key = scopeList.join(' ');
+    // Refresh a few minutes early so a token can't expire mid-login.
+    if (this.cached?.scopes === key && this.cached.token.expiresOnTimestamp - 5 * 60 * 1000 > Date.now()) {
+      return this.cached.token;
+    }
+
+    const token = await runAzGetAccessToken(this.cliPath, ['--scope', ...scopeList]);
+    this.cached = Number.isFinite(token.expiresOnTimestamp) ? { scopes: key, token } : undefined;
+    return token;
+  }
 }
 
 let localCache: TokenCache;
@@ -178,61 +267,11 @@ export class AzureAuthService {
       throw new Error('AZ command not specified');
     }
 
-    return new Promise<AuthConfig>((resolve, reject) => {
-      const commandArgs = [
-        'account',
-        'get-access-token',
-        '--resource',
-        BksConfig.azure.azSQLLoginScope,
-        '--output',
-        'json'
-      ];
-
-      if (platformInfo.isWindows && /["\r\n]/.test(options.cliPath)) {
-        throw new Error('Invalid azure CLI Path');
-      }
-
-      // spawn doesn't launch .cmd files, they need a shell, so we manually spawn
-      // cmd to all .cmd files to be run on windows, but not allow for escaping into
-      // the shell :)
-      const proc = platformInfo.isWindows
-        ? spawn('cmd.exe', ['/d', '/s', '/c', `""${options.cliPath}" ${commandArgs.join(' ')}"`], { shell: false, windowsVerbatimArguments: true })
-        : spawn(options.cliPath, commandArgs, { shell: false });
-
-      let stdout = '';
-      let stderr = '';
-
-      proc.stdout?.on('data', (chunk) => {
-        stdout += chunk.toString();
-      });
-
-      proc.stderr?.on('data', (chunk) => {
-        stderr += chunk.toString();
-      });
-
-      proc.on('error', (err) => {
-        reject(err);
-      });
-
-      proc.on('close', (code) => {
-        if (code === 0) {
-          try {
-            const tokenData = JSON.parse(stdout);
-            resolve({
-              type: 'azure-active-directory-default',
-              options: {
-                token: tokenData.accessToken,
-                clientId: globals.clientId
-              }
-            });
-          } catch (err) {
-            reject(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`);
-          }
-        } else {
-          reject(`Process exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
-        }
-      });
-    });
+    const { token } = await runAzGetAccessToken(options.cliPath, ['--resource', BksConfig.azure.azSQLLoginScope]);
+    return {
+      type: 'azure-active-directory-access-token',
+      options: { token }
+    };
   }
 
   private async accessToken(): Promise<AuthConfig> {

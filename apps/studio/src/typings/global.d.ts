@@ -11,6 +11,8 @@ declare interface DOMEvent<T extends EventTarget> extends Event {
 declare type DeepKeyOf<T> = (
   [T] extends [never]
     ? ""
+    : T extends readonly unknown[]
+    ? ""
     : T extends Record<string, any>
     ? {
         [K in Exclude<keyof T, symbol>]: `${K}${DotPrefix<DeepKeyOf<T[K]>>}`;

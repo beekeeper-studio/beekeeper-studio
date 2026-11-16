@@ -142,6 +142,7 @@ import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
 import { Step } from './stepper/models';
 import { mapGetters, mapState } from 'vuex';
 import StatusBar from '@/components/common/StatusBar.vue';
+import { recordPaidFeatureUse } from '@/lib/paidFeatures';
 
 export default Vue.extend({
   components: {
@@ -233,6 +234,7 @@ export default Vue.extend({
   },
   methods: {
     runBackup() {
+      recordPaidFeatureUse('backup-restore', this.isRestore ? 'Restore' : 'Backup');
       this.backupRunning = true;
       this.tab.isRunning = true;
       this.$store.dispatch('backups/execute');
@@ -257,6 +259,11 @@ export default Vue.extend({
     }
   },
   mounted() {
+    // The tab content is gated behind UpgradePanel, so opening it at all is
+    // use of the feature; running it below counts again.
+    if (!this.isCommunity && this.isSupported) {
+      recordPaidFeatureUse('backup-restore', this.isRestore ? 'Restore' : 'Backup');
+    }
     // we don't need to run any of this logic if backup isn't supported anyways
     if (this.isSupported) {
       this.$store.commit('backups/setMode', this.isRestore);

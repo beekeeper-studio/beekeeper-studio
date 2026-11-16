@@ -2,6 +2,8 @@ import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
 import platformInfo from '../../platform_info';
 import { Entity, Column } from 'typeorm'
+import { loadEncryptionKey } from "@/common/encryption_key";
+import Encryptor from 'simple-encryptor';
 
 export interface IGroupedUserSettings {
   [x: string]: UserSetting
@@ -14,9 +16,12 @@ export enum UserSettingValueType {
   object = 3,
   array = 4,
   boolean = 5,
+  encrypted = 6
 }
 
 type UserSettingValue = string | number | boolean | Array<any> | Record<string, any> | null
+
+const encryptor = Encryptor(loadEncryptionKey());
 
 const TypeDefaults = {
   0: "",
@@ -24,7 +29,8 @@ const TypeDefaults = {
   2: 0.0,
   3: {},
   4: [],
-  5: false
+  5: false,
+  6: ""
 }
 
 const TypeConversion = {
@@ -33,7 +39,8 @@ const TypeConversion = {
   2: (v: string) => parseFloat(v), // float
   3: (v: string) => JSON.parse(v), // object
   4: (v: string) => JSON.parse(v), // array
-  5: (v: string) => v && v.toLowerCase() === 'true' // boolean
+  5: (v: string) => v && v.toLowerCase() === 'true', // boolean
+  6: (v: string) => encryptor.decrypt(v), // encrypted
 }
 
 function getValue(valueType: UserSettingValueType, valueString: Nullable<string>): UserSettingValue {
@@ -46,7 +53,11 @@ function getValue(valueType: UserSettingValueType, valueString: Nullable<string>
   }
 }
 
-function setValue(updated: UserSettingValue): Nullable<string> {
+function setValue(valueType: UserSettingValueType, updated: UserSettingValue): Nullable<string> {
+  if (valueType == UserSettingValueType.encrypted) {
+    return encryptor.encrypt(updated);
+  }
+
   if (_.isNull(updated)) return null
   if (_.isBoolean(updated)) return updated ? 'true' : 'false'
   if (_.isString(updated)) {
@@ -92,7 +103,7 @@ export class UserSetting extends ApplicationEntity {
   _userValue: Nullable<string> = null
 
   set userValue(updated: UserSettingValue) {
-    this._userValue = setValue(updated)
+    this._userValue = setValue(this.valueType, updated)
   }
 
   get userValue(): UserSettingValue {
