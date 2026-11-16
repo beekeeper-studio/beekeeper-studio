@@ -679,7 +679,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return commands;
   }
 
-  async driverExecuteSingle(q: string, options: PluginExecuteOptions & Record<string, any> = {}): Promise<RawResultType> {
+  protected readOnlyCheck(q: string, options: any): IdentifyResult[] {
     const { queries: statements, error } = safelyIdentify(q, { dialect: this.dialect });
 
     if (error) {
@@ -689,7 +689,11 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
+    return statements
+  }
 
+  async driverExecuteSingle(q: string, options: PluginExecuteOptions & Record<string, any> = {}): Promise<RawResultType> {
+    const statements = this.readOnlyCheck(q, options);
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
@@ -719,16 +723,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
-    const { queries: statements, error } = safelyIdentify(q, { dialect: this.dialect });
-
-    if (error) {
-      log.warn('Was not able to correctly identify query: ', error.message);
-    }
-
-    if (this.violatesReadOnly(statements, options)) {
-      throw new Error(errorMessages.readOnly);
-    }
-
+    const statements = this.readOnlyCheck(q, options)
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;
