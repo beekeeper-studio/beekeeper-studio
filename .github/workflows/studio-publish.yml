@@ -202,11 +202,15 @@ jobs:
           fi
           echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
 
+      # The snap store is occasionally unreachable ("connection refused"), so retry.
       - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v3
         if: matrix.os.type == 'linux'
+        uses: nick-fields/retry@v4
         with:
-          channel: '8.x/stable'
+          timeout_minutes: 5
+          max_attempts: 4
+          retry_wait_seconds: 20
+          command: sudo snap install snapcraft --classic --channel 8.x/stable
 
       # No node_modules cache here, deliberately. Release builds always install
       # and compile native modules from scratch so their glibc/libstdc++
