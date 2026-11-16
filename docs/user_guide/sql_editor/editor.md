@@ -26,6 +26,15 @@ The default key combo to manually trigger autocomplete is `Ctrl+Space`.
 
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-11.gif)
 
+### Keyword case
+
+Autocomplete inserts SQL keywords in lowercase by default. To insert them in uppercase, set `keywordCase` in your [config file](../configuration.md):
+
+```ini
+[ui.queryEditor]
+keywordCase = uppercase
+```
+
 ## Run Contexts
 
 If you like writing big long SQL scripts with multiple queries in the same editor pane (I know I do), you might want to only run a portion of your script at a time.
