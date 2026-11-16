@@ -7,6 +7,7 @@ interface CursorOptions {
   query?: string,
   queryLeaf?: QueryLeaf,
   cursor?: AggregationCursor,
+  columns?: string[],
   chunkSize: number
 }
 
@@ -19,6 +20,7 @@ export class MongoDBCursor extends BeeCursor {
   constructor(options: CursorOptions) {
     super(options.chunkSize);
     this.options = options;
+    this.fields = options.columns;
   }
 
   get columns(): TableColumn[] | null {
@@ -55,11 +57,15 @@ export class MongoDBCursor extends BeeCursor {
       const firstDoc = await this.cursor.next();
       const rest = this.cursor.readBufferedDocuments();
 
+      const docs = [firstDoc, ...rest];
+
       if (!this.fields) {
-        this.fields = _.uniq(_.flatten(_.takeRight(rest, 10).map((obj) => Object.keys(obj))));
+        this.fields = _.uniq(_.flatten(docs.map((obj) => Object.keys(obj))));
       }
 
-      return [firstDoc, ...rest].map((v) => Object.values(v));
+      // documents can have their fields in any order (or be missing some), so
+      // build each row by field name to keep values lined up with the columns
+      return docs.map((doc) => this.fields.map((field) => doc[field]));
     }
     return [];
   }
