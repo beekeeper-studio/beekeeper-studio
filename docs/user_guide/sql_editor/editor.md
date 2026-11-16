@@ -53,6 +53,13 @@ You can adjust autocomplete behaviors with the [config file](../configuration.md
 
 {% ini-include section="ui.queryEditor.autocomplete" %}
 
+To always complete keywords in uppercase, set `keywordCasing` to `upper` (or `lower` for always lowercase):
+
+```ini
+[ui.queryEditor.autocomplete]
+keywordCasing = upper
+```
+
 The quote character itself can be changed per database with `autocompleteQuoteCharacter` — useful if, say, your team prefers ANSI double quotes over brackets in SQL Server:
 
 ```ini
