@@ -20,7 +20,8 @@ export class MongoDBCursor extends BeeCursor {
   constructor(options: CursorOptions) {
     super(options.chunkSize);
     this.options = options;
-    this.fields = options.columns;
+    // an empty list means the columns aren't known yet, so read them from the documents
+    this.fields = options.columns?.length ? options.columns : undefined;
   }
 
   get columns(): TableColumn[] | null {
@@ -63,8 +64,7 @@ export class MongoDBCursor extends BeeCursor {
         this.fields = _.uniq(_.flatten(docs.map((obj) => Object.keys(obj))));
       }
 
-      // documents can have their fields in any order (or be missing some), so
-      // build each row by field name to keep values lined up with the columns
+      // fields can come in any order or be missing, so build rows by field name
       return docs.map((doc) => this.fields.map((field) => doc[field]));
     }
     return [];

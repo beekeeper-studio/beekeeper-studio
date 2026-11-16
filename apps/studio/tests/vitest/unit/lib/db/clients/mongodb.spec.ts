@@ -127,6 +127,26 @@ describe("MongoDBClient streaming", () => {
     ])
   })
 
+  it("falls back to the document fields when the table columns come back empty", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docs = [
+      { _id: "1", name: "a" },
+      { _id: "2", name: "b" },
+    ]
+    vi.spyOn(client as any, "buildSelectTopCursor").mockReturnValue(fakeCursor(docs))
+    vi.spyOn(client, "listTableColumns").mockResolvedValue([])
+
+    const { cursor } = await client.selectTopStream("qa_empty_sample", [], [], 100)
+    await cursor.start()
+    const rows = await cursor.read()
+
+    expect(cursor.columns.map((c) => c.columnName)).toEqual(["_id", "name"])
+    expect(rows).toEqual([
+      ["1", "a"],
+      ["2", "b"],
+    ])
+  })
+
   it("lines up query results with the columns when documents differ in field order", async () => {
     const client = new MongoDBClient(null, { database: "test" } as any)
     const docs = [
