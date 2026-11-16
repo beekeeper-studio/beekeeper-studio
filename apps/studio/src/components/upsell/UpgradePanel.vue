@@ -68,7 +68,6 @@ const PAID_FEATURES: Feature[] = [
   { label: 'SQL AI shell' },
   { label: 'Import from file' },
   { label: 'Export multiple tables' },
-  { label: 'Unlimited table filters' },
   { label: 'JSON sidebar' },
   { label: 'Cloud sync' },
   { label: '10 more databases' },
