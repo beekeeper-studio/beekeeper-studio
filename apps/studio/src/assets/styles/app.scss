@@ -1,8 +1,11 @@
+@use "sass:meta";
 @import "@beekeeperstudio/ui-kit/style.css";
 @import "noty/lib/noty";
 @import "tabulator-tables/dist/css/tabulator_midnight.css";
 @import "vue-select/dist/vue-select";
-@import "driver.js/dist/driver.css";
+@layer vendor {
+  @include meta.load-css("driver.js/dist/driver.css");
+}
 
 @import './app/normalize';
 @import './app/variables';

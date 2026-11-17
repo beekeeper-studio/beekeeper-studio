@@ -193,8 +193,6 @@ import Vue from "vue";
 import { TableFilter } from "@/lib/db/models";
 import { joinFilters, normalizeFilters, createTableFilter, checkEmptyFilters } from "@/common/utils";
 import { mapGetters, mapState } from "vuex";
-import { AppEvent } from "@/common/AppEvent";
-import { recordPaidFeatureUse } from "@/lib/paidFeatures";
 import _ from 'lodash';
 import BuilderFilter from "./filter/BuilderFilter.vue";
 
@@ -218,9 +216,6 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(["dialectData", "minimalMode"]),
-    ...mapGetters({
-      isCommunity: "licenses/isCommunity",
-    }),
     ...mapState(['connection']),
     additionalFilters() {
       const [_, ...additional] = this.filters;
@@ -270,14 +265,6 @@ export default Vue.extend({
       this.$nextTick(this.focusOnInput);
     },
     addFilter() {
-      // Two filters are free; the third onwards is the paid part.
-      if (this.filters.length >= 2) {
-        if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal, "Advanced Filters")
-          return;
-        }
-        recordPaidFeatureUse('advanced-filters')
-      }
       const lastFilter = this.filters[this.filters.length - 1];
       const cloned = _.clone(lastFilter)
       if (!cloned.op) cloned.op = "AND"
@@ -337,11 +324,7 @@ export default Vue.extend({
     },
     externalFilters() {
       this.hideInMinimalMode = checkEmptyFilters(this.externalFilters)
-      if (this.isCommunity) {
-        this.filters = this.externalFilters?.slice(0, 2) || [];
-      } else {
-        this.filters = this.externalFilters || [];
-      }
+      this.filters = this.externalFilters || [];
       this.submittedWithEmptyValue = false
     },
   },

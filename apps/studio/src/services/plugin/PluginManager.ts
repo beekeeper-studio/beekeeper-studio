@@ -1,22 +1,24 @@
 import _ from "lodash";
-import PluginRegistry from "./PluginRegistry";
-import PluginFileManager from "./PluginFileManager";
+import path from "path";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
 import {
   Manifest as AnyVersionManifest,
   ManifestV1 as Manifest,
-  PluginOrigin,
-  PluginRepository,
+  ExtensionOrigin,
+  ExtensionRepository,
   PluginSettings,
   PluginSettingsMap,
   PluginSnapshot,
-} from "./types";
+  Release,
+} from "@/services/plugin/types";
 import rawLog from "@bksLogger";
-import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { PluginError, PluginSystemError } from "@/lib/errors";
+import { ExtensionRegistryError, PluginError, PluginSystemError } from "@/lib/errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
+import type { PluginModuleHookMap } from "./modules/PluginModule";
 import BksConfig from '@/common/bksConfig';
 import globals from "@/common/globals";
 import { PluginEntryCache } from "@/common/appdb/models/PluginEntryCache";
@@ -24,15 +26,15 @@ import { PluginEntryCache } from "@/common/appdb/models/PluginEntryCache";
 const log = rawLog.scope("PluginManager");
 
 export type PluginManagerOptions = {
-  fileManager?: PluginFileManager;
-  registry?: PluginRegistry;
+  fileManager: ExtensionFileManager<AnyVersionManifest>;
+  registry?: ExtensionRegistry;
   appVersion: string;
 }
 
-export default class PluginManager extends Hookable {
+export default class PluginManager extends Hookable<PluginManager, PluginModuleHookMap> {
   private initialized = false;
-  public readonly registry: PluginRegistry;
-  public readonly fileManager: PluginFileManager;
+  public readonly registry: ExtensionRegistry;
+  public readonly fileManager: ExtensionFileManager<AnyVersionManifest>;
   private manifests: Manifest[] = [];
   pluginSettings: PluginSettingsMap = {};
   private pluginLocks: string[] = [];
@@ -49,11 +51,9 @@ export default class PluginManager extends Hookable {
     this.fileManager = options.fileManager;
     this.registry =
       options.registry ||
-      new PluginRegistry(new PluginRepositoryService());
-  }
-
-  async triggerConfigReload() {
-    await this.callHook("config-reload", BksConfig);
+      new ExtensionRegistry({
+        registries: globals.plugins.registries,
+      });
   }
 
   async initialize() {
@@ -69,7 +69,7 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-initialize");
 
-    const installedPlugins = this.fileManager.scanPlugins().map((manifest) => {
+    const installedPlugins = this.fileManager.scan().map((manifest) => {
       try {
         return convertToManifestV1(manifest);
       } catch (e) {
@@ -129,10 +129,12 @@ export default class PluginManager extends Hookable {
         `View "${viewId}" not found in plugin "${pluginId}".`
       );
     }
-    return this.fileManager.viewEntrypointExists(manifest, view);
+    // Must match how `WebPluginLoader.getEntry` builds the view's iframe URL.
+    const entry = path.join(manifest.pluginEntryDir ?? ".", view.entry);
+    return this.fileManager.exists(manifest, entry);
   }
 
-  async getRepository(pluginId: string): Promise<PluginRepository> {
+  async getRepository(pluginId: string): Promise<ExtensionRepository> {
     this.initializeGuard();
     return await this.registry.getRepository(pluginId);
   }
@@ -146,13 +148,13 @@ export default class PluginManager extends Hookable {
     for (const manifest of this.manifests) {
       const loadable = this.isPluginLoadable(manifest);
 
-      let origin: PluginOrigin = "unlisted";
+      let origin: ExtensionOrigin = "unlisted";
 
       try {
         const found = await this.registry.findEntry(manifest.id);
         origin = found.origin;
       } catch (e) {
-        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
+        if (e instanceof ExtensionRegistryError && e.code === "ENTRY_NOT_FOUND") {
           // There's nothing wrong if the plugin is not found in the registry.
           // It may be a local plugin. See if we've maybe cached the entry in the past
           const cached = await PluginEntryCache.findOneBy({ id: manifest.id });
@@ -225,32 +227,33 @@ export default class PluginManager extends Hookable {
           `Plugin "${id}" not found in registry.`
         );
       }
+      const latestRelease = info.latestRelease as Release<AnyVersionManifest>;
 
       // The plugin is downloaded into a directory named after the registry id.
       // Refuse to install if the release manifest declares a different id, so
       // the on-disk directory name and the manifest id can never diverge (which
       // is what allows a manifest id to later target another path).
-      if (info.latestRelease.manifest.id !== id) {
+      if (latestRelease.manifest.id !== id) {
         throw new PluginError(
           "MANIFEST_PARSE",
-          `Plugin "${id}" manifest declares mismatched id "${info.latestRelease.manifest.id}".`
+          `Plugin "${id}" manifest declares mismatched id "${latestRelease.manifest.id}".`
         );
       }
 
-      if (!this.isPluginLoadable(info.latestRelease.manifest)) {
+      if (!this.isPluginLoadable(latestRelease.manifest)) {
         throw new PluginSystemError(
           "PLUGIN_NOT_SUPPORTED",
-          `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
+          `${latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
         );
       }
 
 
-      log.debug(`Installing plugin "${id}" ${info.latestRelease.manifest.version}...`);
+      log.debug(`Installing plugin "${id}" ${latestRelease.manifest.version}...`);
 
       if (update) {
-        await this.fileManager.update(id, info.latestRelease);
+        await this.fileManager.update(id, latestRelease);
       } else {
-        await this.fileManager.download(id, info.latestRelease);
+        await this.fileManager.download(id, latestRelease);
       }
 
       const entry = await this.registry.findEntry(id);
@@ -279,7 +282,7 @@ export default class PluginManager extends Hookable {
       }
       await this.savePluginSettings();
 
-      log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
+      log.info(`Installed plugin "${id}" v${latestRelease.manifest.version}`);
 
       return convertToManifestV1(manifest);
     });
@@ -316,13 +319,14 @@ export default class PluginManager extends Hookable {
     }
 
     const head = await this.registry.reloadRepository(manifest.id);
+    const latestRelease = head.latestRelease as Release<AnyVersionManifest>;
 
     // latest release is not newer
-    if (semver.lte(semver.coerce(head.latestRelease.manifest.version), semver.coerce(manifest.version))) {
+    if (semver.lte(semver.coerce(latestRelease.manifest.version), semver.coerce(manifest.version))) {
       return false;
     }
 
-    return this.isPluginLoadable(head.latestRelease.manifest);
+    return this.isPluginLoadable(latestRelease.manifest);
   }
 
   async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {

@@ -29,7 +29,7 @@ Here are the tooks I recommend for taking quick and easy screen captures as GIF 
 Just copy/paste the screen recording into your Github issue and GitHub will figure out the rest.
 
 
-## How to Debug Beekeeper Studio
+## How to Debug Beekeeper Studio { #debugging-ref }
 
 ### Check Developer Tools for errors
 

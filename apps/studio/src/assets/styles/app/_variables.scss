@@ -28,12 +28,12 @@ $form-control-font-size: 0.831rem; // ~13.3px
 // ------------------------------
 
 // Buttons
-$btn-border-radius:         8px;
-$btn-border-radius-small:   6px;
+$btn-border-radius:         var(--btn-border-radius);
+$btn-border-radius-small:   var(--btn-small-border-radius);
 
 // Inputs
 $input-height:              26px;
-$input-radius:              4px;
+$input-radius:              var(--input-border-radius);
 
 // Padding
 $gutter-w:                  0.8rem;

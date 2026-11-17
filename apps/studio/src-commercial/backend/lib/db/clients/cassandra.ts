@@ -694,7 +694,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
     const { filterString, filterParams } = this.buildFilterString(filters, { inlineParams })
 
-    const selectSQL = `SELECT ${selects.join(', ')}`
+    const selectSQL = `SELECT ${selects.map((s) => this.wrapIdentifier(s)).join(', ')}`
     const baseSQL = `
       FROM ${this.fqTableName(options.table, options.schema)}
       ${filterString}

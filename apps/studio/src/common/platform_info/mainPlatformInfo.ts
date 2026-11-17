@@ -75,7 +75,8 @@ export function mainPlatformInfo(): IPlatformInfo {
   }
   const pluginsDirectory = join(userDirectory, 'plugins')
   const driverDepsDirectory = join(userDirectory, 'driver-deps')
-  const themesDirectory = isDevEnv
+  const themesDirectory = join(userDirectory, 'themes')
+  const builtinThemesDirectory = isDevEnv
     ? resolve("./public/themes")
     : join(__dirname, "renderer", "themes");
 
@@ -126,6 +127,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     downloadsDirectory,
     homeDirectory,
     pluginsDirectory,
+    builtinThemesDirectory,
     themesDirectory,
     driverDepsDirectory,
     testMode,

@@ -164,6 +164,9 @@ nav:
     - installation/windows-enterprise.md
     - installation/macos-m1-intel.md
     - installation/linux.md
+    - Migration:
+      - installation/popsql-migration.md
+
   - Connecting To A Database:
     - user_guide/connecting/supported-databases.md
     - Connection Options: user_guide/connecting/connecting.md
@@ -206,16 +209,24 @@ nav:
     - Plugins: user_guide/plugins.md
     - Command Line Interface: user_guide/cli.md
     - Configuration: user_guide/configuration.md
-  - Plugin Development:
-    - Introduction: plugin_development/index.md
-    - Creating your first plugin: plugin_development/creating-your-first-plugin.md
-    - Plugin Views: plugin_development/plugin-views.md
-    - Capabilities: plugin_development/capabilities.md
-    - Manifest Reference: plugin_development/manifest.md
-    - SDK:
-      - Overview: plugin_development/sdk.md
-      - SDK Reference: plugin_development/api-reference.md
-    - Publishing: plugin_development/publishing-plugins.md
+  - Plugins & Themes:
+    - Plugins:
+      - Introduction: plugin_development/index.md
+      - Creating your first plugin: plugin_development/creating-your-first-plugin.md
+      - Plugin Views: plugin_development/plugin-views.md
+      - Capabilities: plugin_development/capabilities.md
+      - Manifest Reference: plugin_development/manifest.md
+      - SDK:
+        - Overview: plugin_development/sdk.md
+        - SDK Reference: plugin_development/api-reference.md
+      - Publishing: plugin_development/publishing-plugins.md
+    - Themes:
+      - Introduction: theme_development/index.md
+      - Creating your first theme: theme_development/creating-your-first-theme.md
+      - Color System: theme_development/color-system.md
+      - Manifest Reference: theme_development/manifest.md
+      - Publishing: theme_development/publishing-themes.md
+    - plugin_development/troubleshooting.md
   - Support:
     - purchasing/purchasing-a-license.md
     - purchasing/license-types.md

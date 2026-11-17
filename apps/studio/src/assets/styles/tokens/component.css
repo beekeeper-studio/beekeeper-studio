@@ -6,7 +6,17 @@
   --app-fg: var(--text);
   --focus-ring: 2px solid var(--border-a);
 
+  /* ===== Preloader ===== */
+
+  --preloader-bg: var(--app-bg);
+  --preloader-fg: var(--app-fg);
+  --preloader-accent: var(--primary-9);
+
   /* ===== Button ===== */
+
+  --btn-gap: 0.15rem;
+  --btn-border-radius: 8px;
+  --btn-small-border-radius: 4px;
 
   /* Ghost Button */
   --btn-fg: var(--gray-a11);
@@ -37,12 +47,14 @@
 
   --input-bg: transparent;
   --input-fg: var(--text);
-  --input-border: 1px solid var(--border-subtle);
-  --input-border-focus: 1px solid var(--border-hover);
+  --input-border: 1px solid var(--border-subtle-a);
+  --input-border-focus: 1px solid var(--border-hover-a);
+  --input-border-radius: 4px;
 
   /* ===== Checkbox ===== */
 
   --checkbox-border: var(--gray-7);
+  --checkbox-border-radius: 5px;
   --checkbox-bg: transparent;
   --checkbox-checked-bg: var(--btn-primary-bg);
   --checkbox-checked-fg: var(--btn-primary-fg);
@@ -80,6 +92,7 @@
   --sidebar-rail-fg-hover: var(--solid-bg-hover);
   --sidebar-rail-active-fg: var(--text);
   --sidebar-rail-active-bg: transparent;
+  --sidebar-rail-border: transparent;
 
   /* ===== Panel ===== */
   /* A surface that floats above the app: cards, modals, menus, tooltips, etc. */
@@ -89,11 +102,36 @@
   --panel-bg-hover: var(--gray-a3);
   --panel-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08),
     0 6px 15px rgba(0, 0, 0, 0.12);
+  --panel-border: none;
+  --panel-border-radius: 8px;
 
-  --menu-bg: var(--gray-3);
+  --menu-bg: var(--panel-bg);
   --menu-fg: var(--panel-fg);
   --menu-bg-hover: var(--panel-bg-hover);
   --menu-shadow: var(--panel-shadow);
+  --menu-border: var(--panel-border);
+  --menu-border-radius: 6px;
+
+  --gutter-border: transparent;
+  --query-editor-gutter-border: var(--border-subtle);
+  --primary-sidebar-gutter-border: var(--gutter-border);
+  --secondary-sidebar-gutter-border: var(--gutter-border);
+
+  /* ===== Connection Form ===== */
+
+  --connection-form-card-bg: var(--panel-bg);
+
+  /* ===== Notification ===== */
+
+  --notif-bg: var(--panel-bg);
+  --notif-shadow: var(--panel-shadow);
+  --notif-fg: var(--text-contrast);
+  --notif-info-fg: var(--info-text);
+  --notif-success-fg: var(--success-text);
+  --notif-warning-fg: var(--warning-text);
+  --notif-error-fg: var(--danger-text);
+  --notif-close-fg: var(--text);
+  --notif-close-fg-hover: var(--text-contrast);
 
   /* ===== Overlay ===== */
 
@@ -150,17 +188,20 @@
   --table-cell-bg-hover: var(--bg-a);
   --table-cell-selected-bg: var(--bg-a);
   --table-cell-editing-bg: var(--bg-active-a);
-  --table-cell-edited-bg: var(--primary-bg-hover-a);
+  --table-cell-edited-bg: var(--warning-bg-hover-a);
   --table-cell-binary-fg: var(--pink-text);
 
   --table-range-border: var(--primary-solid-bg);
   --table-range-handle-bg: var(--primary-solid-bg);
   --table-resize-guide-bg: var(--solid-bg);
 
+  --table-filter-bg: var(--table-bg);
+
   /* ===== Alert ===== */
 
   --alert-bg: var(--bg-a);
   --alert-fg: var(--text);
+  --alert-border-radius: 6px;
 
   /* ===== Kbd ===== */
 
@@ -190,11 +231,16 @@
   --tab-active-fg: var(--gray-12);
   --tab-active-bg: var(--editor-bg);
 
+  /* ===== Bottom Panel ===== */
+  /* The results area under a query editor or plugin tab. */
+
+  --bottom-panel-bg: var(--editor-bg);
+
   /* ===== Editor ===== */
 
   /* Editor chrome */
   --editor-font-weight: normal;
-  --editor-bg: var(--app-bg);
+  --editor-bg: var(--background);
   --editor-fg: var(--text-contrast);
   --editor-cursor-bg: var(--text-contrast);
   --editor-selected-bg: var(--selection-bg);
@@ -204,7 +250,7 @@
   --editor-highlight-bg: var(--warning-bg-active-a);
   --editor-error-bg: var(--danger-bg-a);
   --editor-error-fg: var(--danger-text);
-  --editor-gutter-bg: var(--bg-base);
+  --editor-gutter-bg: var(--editor-bg);
   --editor-gutter-border: transparent;
   --editor-linenumber-fg: var(--bg-active-a);
   --editor-linenumber-active-fg: var(--text-contrast);
@@ -218,6 +264,16 @@
   --editor-matchingselection-bg: var(--bg-hover-a);
   --editor-searchmatch-bg: var(--info-bg-active-a);
   --editor-searchmatch-selected-bg: var(--info-border-subtle-a);
+
+  /* Diff */
+  --editor-diff-inserted-bg: var(--success-bg-a);
+  --editor-diff-inserted-text-bg: var(--success-bg-active-a);
+  --editor-diff-inserted-gutter-bg: var(--success-solid-bg);
+  --editor-diff-deleted-bg: var(--danger-bg-a);
+  --editor-diff-deleted-text-bg: var(--danger-bg-active-a);
+  --editor-diff-deleted-gutter-bg: var(--danger-solid-bg);
+  --editor-diff-collapsed-bg: var(--bg-a);
+  --editor-diff-collapsed-fg: var(--text-muted);
 
   /* Vim panel */
   /* The vim bar inherits so it follows the editor. */

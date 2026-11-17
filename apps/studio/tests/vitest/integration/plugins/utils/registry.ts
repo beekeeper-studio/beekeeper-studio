@@ -1,5 +1,5 @@
-import { Manifest, PluginOrigin, RawPluginRegistryEntry } from "@/services/plugin";
-import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
+import { Manifest, ExtensionOrigin, RawPluginRegistryEntry } from "@/services/plugin";
+import ExtensionRepositoryService from "@/services/extension/ExtensionRepositoryService";
 import { MockPluginServer } from "./server";
 import BksConfig from "@/common/bksConfig";
 
@@ -8,7 +8,7 @@ export type Plugin = {
   name: string;
   latestRelease: Pick<Manifest, "version" | "minAppVersion">;
   readme: string;
-  origin: PluginOrigin;
+  origin: ExtensionOrigin;
 };
 
 /**
@@ -17,11 +17,14 @@ export type Plugin = {
  * Usage:
  *
  * ```js
- * import { PluginRegistry } from "@/services/plugin/PluginRegistry";
+ * import { ExtensionRegistry } from "@/services/extension/ExtensionRegistry";
  * import { MockPluginRepositoryService } from "./registry";
  *
  * const server = createPluginServer();
- * const registry = new PluginRegistry(new MockPluginRepositoryService(server));
+ * const registry = new ExtensionRegistry({
+ *   repositoryService: new MockPluginRepositoryService(server),
+ *   registries: globals.plugins.registries,
+ * });
  * registry.plugins = [
  *   {
  *     id: "test-plugin",
@@ -33,7 +36,7 @@ export type Plugin = {
  * const manager = new PluginManager({ registry });
  * ```
  */
-export class MockPluginRepositoryService extends PluginRepositoryService {
+export class MockPluginRepositoryService extends ExtensionRepositoryService {
   plugins: Plugin[] = [];
   private server: MockPluginServer;
 

@@ -24,7 +24,6 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--app-bg);
     &.active {
       display: flex;
       z-index: 1;
@@ -306,6 +305,7 @@
 .table-filter {
   width: 100%;
   position: relative;
+  background: var(--table-filter-bg);
   .filter-group {
     padding: $gutter-h;
     margin-left: -($gutter-h * 0.5);
