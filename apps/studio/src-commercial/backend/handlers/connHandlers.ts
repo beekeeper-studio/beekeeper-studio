@@ -266,7 +266,7 @@ export const ConnHandlers: IConnectionHandlers = {
       connection = state(sId).server.createConnection(newDatabase);
       try {
         await connection.connect();
-        connection.connection.on("connection-lost", () => {
+        connection.connector.on("connection-lost", () => {
           state(sId).port.postMessage({ type: 'conn/connection-lost' });
         })
       } catch (e) {
@@ -282,7 +282,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/clearConnection': async function({ sId }: { sId: string}) {
     const s = state(sId);
     if (!s) return;
-    s.connection?.connection.removeAllListeners();
+    s.connection?.connector?.removeAllListeners();
     s.connection = null;
     s.server = null;
     s.usedConfig = null;
