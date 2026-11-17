@@ -63,9 +63,6 @@ if (platformInfo.env.development || platformInfo.env.test) {
 }
 
 let ormConnection: ORMConnection;
-// Answers `beekeeper-studio cli` requests. It lives here because this process
-// owns the live database connections (one per window, see handlerState).
-let cliServer: CliServer | null = null;
 
 const driverDepManager = new DriverDepManager({
   fileManager: new DriverDepFileManager({
@@ -247,8 +244,17 @@ async function init() {
     ThemeFileChangedModule,
   ]);
 
+  const auditSink = createElectronLogSink(rawLog);
+  const auditLog = new CliAuditLog(auditSink, (e) => log.warn('Could not write the CLI audit log', e));
+  const cliServer = new CliServer({
+    socketPath: platformInfo.cliSocketPath,
+    handler: (request) => executeCliRequest(utilityCliBackend, request),
+    onRequestHandled: (event) => auditLog.record(event),
+  });
+
   context.pluginManager = pluginManager;
   context.themeManager = themeManager;
+  context.cliServer = cliServer;
 
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
@@ -262,31 +268,25 @@ async function init() {
     log.error("Error initializing driver dep manager", e);
   });
 
-  startCliServer();
+  cliServer
+    .start()
+    .then(() => {
+      // FIXME: is cli.log real? dont do it like this
+      log.info(`CLI calls are recorded in ${auditSink.filePath() ?? 'cli.log'}`);
+    })
+    .catch((e) => {
+      if (e instanceof CliServerError) {
+        if (e.code === CliServerError.SocketPathNotProvided) {
+          // we can ignore this error
+          return;
+        }
+      }
+      log.error('Failed to start the CLI socket server', e);
+    });
 
   process.parentPort.postMessage({ type: 'ready' });
 }
 
-function startCliServer() {
-  if (!platformInfo.cliSocketPath) return;
-  const cliLog = rawLog.scope('CliServer');
-  // Every CLI call and a summary of its reply goes to cli.log, next to the
-  // other log files.
-  const auditSink = createElectronLogSink(rawLog);
-  const auditLog = new CliAuditLog(auditSink, (e) => cliLog.warn('Could not write the CLI audit log', e));
-  cliServer = new CliServer({
-    socketPath: platformInfo.cliSocketPath,
-    handler: (request) => executeCliRequest(utilityCliBackend, request),
-    onRequestHandled: (event) => auditLog.record(event),
-    log: cliLog,
-  });
-  cliServer.start().then((started) => {
-    if (started) cliLog.info(`CLI calls are recorded in ${auditSink.filePath() ?? 'cli.log'}`);
-  }).catch((e) => {
-    log.error('Failed to start the CLI socket server', e);
-  });
-}
-
 process.on('exit', () => {
-  cliServer?.stopSync();
+  context.cliServer?.stopSync();
 });

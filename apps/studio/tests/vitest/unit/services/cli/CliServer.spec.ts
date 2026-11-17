@@ -50,7 +50,7 @@ afterEach(async () => {
 describe('CliServer', () => {
   it('answers a request and removes its socket on stop', async () => {
     const server = createServer()
-    expect(await server.start()).toBe(true)
+    await server.start()
     expect(server.listening).toBe(true)
     if (!isWindows) expect(fs.existsSync(server.socketPath)).toBe(true)
 
@@ -77,11 +77,11 @@ describe('CliServer', () => {
     expect(await probeSocket(socketPath)).toBe(false)
 
     const first = createServer({ socketPath })
-    expect(await first.start()).toBe(true)
+    await first.start()
     expect(await probeSocket(socketPath)).toBe(true)
 
     const second = createServer({ socketPath })
-    expect(await second.start()).toBe(false)
+    await expect(second.start()).rejects.toMatchObject({ code: 'EADDRINUSE' })
     expect(second.listening).toBe(false)
 
     // the first server still answers
@@ -92,9 +92,9 @@ describe('CliServer', () => {
   it('refuses to start twice on the same address and leaves the first server running', async () => {
     // the pipe/socket variant of the stale-file test, valid on every platform
     const first = createServer()
-    expect(await first.start()).toBe(true)
+    await first.start()
     const second = createServer({ socketPath: first.socketPath })
-    expect(await second.start()).toBe(false)
+    await expect(second.start()).rejects.toMatchObject({ code: 'EADDRINUSE' })
     const response = await sendCliRequest(first.socketPath, { version: 1, command: 'connections', args: {} }, 5000)
     expect(response.ok).toBe(true)
   })

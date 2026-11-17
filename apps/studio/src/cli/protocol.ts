@@ -42,7 +42,7 @@ export interface CliCommandArgs {
 }
 
 export interface CliRequest {
-  version: number
+  version?: number
   command: CliCommandName
   args: CliCommandArgs
 }
