@@ -1,20 +1,22 @@
 <template>
   <div class="filter-container">
-    <div class="select-wrap">
-      <select
-        name="Filter Field"
-        class="form-control"
-        v-model="filter.field"
-      >
-        <option
-          v-for="column in columns"
-          :key="column.columnName"
-          :value="column.columnName"
+    <v-select
+      v-model="filter.field"
+      :options="columnNames"
+      :clearable="false"
+      :title="filter.field"
+      class="select-wrap dropdown-search filter-column-select"
+    >
+      <template #search="{ attributes, events }">
+        <input
+          v-bind="attributes"
+          v-on="events"
+          class="vs__search"
+          :aria-labelledby="null"
+          aria-label="Filter column"
         >
-          {{ column.columnName }}
-        </option>
-      </select>
-    </div>
+      </template>
+    </v-select>
     <div class="select-wrap">
       <select
         name="Filter Type"
@@ -66,8 +68,10 @@
 import { TableFilterSymbols } from '@/lib/db/types';
 import { isListFilter } from '@/common/utils';
 import {mapState} from 'vuex'
+import vSelect from 'vue-select'
 
 export default {
+  components: { vSelect },
   props: ['filter', 'columns', 'index'],
   data: () => ({}),
   watch: {
@@ -80,6 +84,9 @@ export default {
   },
   computed: {
     ...mapState(['supportedFeatures']),
+    columnNames() {
+      return this.columns.map(column => column.columnName)
+    },
     filterTypes() {
       const filterTypes = this.supportedFeatures.filterTypes ?? ['standard']
       
