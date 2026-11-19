@@ -2,7 +2,7 @@ import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
-import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions, TableColumnMap } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from 'knex';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs');
@@ -16,7 +16,10 @@ import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { convertValueByType } from "./cassandra/valueConverter";
+import { CassandraDecimalTranscoder, CassandraDurationTranscoder, columnTypeToBksType } from "./cassandra/transcoders";
+import { Transcoder } from "@/lib/db/serialization/transcoders";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
+import { applyChangesSql } from "@/lib/db/clients/utils";
 import _ from "lodash";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
@@ -63,6 +66,10 @@ type CassandraVersion = {
 export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   client: cassandra.Client;
   versionInfo: CassandraVersion;
+  transcoders: Transcoder<any, any>[] = [
+    CassandraDecimalTranscoder,
+    CassandraDurationTranscoder,
+  ];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, cassandraContext, server, database);
@@ -677,7 +684,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     const selectPromises: any = await Promise.all(updatePromises);
 
     return selectPromises.reduce((acc: Array<any>, sp: any) => {
-      const [data] = sp.rows;
+      const [data] = this.parseRows(sp.rows, sp.columns);
       if (data) acc.push(data);
 
       return acc;
@@ -787,8 +794,31 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   parseTableColumn(column: { column_name: string; type: string }): BksField {
     return {
       name: column.column_name,
-      bksType: column.type.includes('blob') ? 'BINARY' : 'UNKNOWN',
+      bksType: columnTypeToBksType(column.type),
     };
+  }
+
+  async applyChangesSql(changes: TableChanges): Promise<string> {
+    // The SQL is built from the edited text, driver values would be printed as JSON
+    return applyChangesSql(changes, this.knex);
+  }
+
+  protected async deserializeTableChanges(changes: TableChanges) {
+    const changed = [
+      ...(changes.inserts ?? []),
+      ...(changes.updates ?? []),
+      ...(changes.deletes ?? []),
+    ].map(({ table, schema }) => ({ table, schema }));
+    const targets = _.uniqBy(changed, ({ table, schema }) => this.getTableMapKey(table, schema));
+
+    // the transcoders are picked by column type, which the changes don't carry
+    const columns: TableColumnMap = {};
+    await Promise.all(targets.map(async ({ table, schema }) => {
+      const tableColumns = await this.listTableColumns(table, schema);
+      columns[this.getTableMapKey(table, schema)] = _.keyBy(tableColumns, 'columnName');
+    }));
+
+    return await super.deserializeTableChanges(changes, columns);
   }
 
   private parseRows(rows, columns) {
