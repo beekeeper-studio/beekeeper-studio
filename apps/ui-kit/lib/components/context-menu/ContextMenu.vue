@@ -149,7 +149,7 @@ export default Vue.extend({
           top = parentClientRect.top
         }
 
-        return { left, top }
+        return this.keepInsideWindow(left, top)
       }
 
       if ((this.menuWidth + event.pageX) >= window.innerWidth) {
@@ -164,7 +164,15 @@ export default Vue.extend({
         top = event.pageY - 2
       }
 
-      return { left, top }
+      return this.keepInsideWindow(left, top)
+    },
+    // Flipping above or to the left of the cursor is not enough when the menu is
+    // larger than the room on that side too, so clamp it to the window (#5010).
+    keepInsideWindow(left: number, top: number): { left: number, top: number } {
+      return {
+        left: Math.max(0, Math.min(left, window.innerWidth - this.menuWidth)),
+        top: Math.max(0, Math.min(top, window.innerHeight - this.menuHeight)),
+      }
     },
     hideContextMenu() {
       this.$emit('close')

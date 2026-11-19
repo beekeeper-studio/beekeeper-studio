@@ -70,4 +70,53 @@ describe("ContextMenu", () => {
     expect(handler).not.toHaveBeenCalled();
     expect(closed).not.toHaveBeenCalled();
   });
+
+  describe("calculatePosition", () => {
+    const menuWidth = 200;
+    const menuHeight = 400;
+
+    beforeEach(() => {
+      vi.spyOn(window, "innerWidth", "get").mockReturnValue(800);
+      vi.spyOn(window, "innerHeight", "get").mockReturnValue(600);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    function positionAt(pageX: number, pageY: number) {
+      const { vm } = mount([{ id: "map", label: "Map", handler: vi.fn() }]);
+      const menu = vm.$children[0] as any;
+      menu.menuWidth = menuWidth;
+      menu.menuHeight = menuHeight;
+      return menu.calculatePosition({ pageX, pageY } as MouseEvent);
+    }
+
+    it("opens below and to the right of the cursor when there is room", () => {
+      expect(positionAt(100, 100)).toEqual({ left: 98, top: 98 });
+    });
+
+    it("opens above the cursor when there is room above but not below", () => {
+      expect(positionAt(100, 500)).toEqual({ left: 98, top: 102 });
+    });
+
+    // #5010: a menu taller than the room above the cursor was pushed past the top of the window
+    it("keeps a menu that fits neither below nor above inside the window", () => {
+      const { top } = positionAt(100, 300);
+      expect(top).toBeGreaterThanOrEqual(0);
+      expect(top + menuHeight).toBeLessThanOrEqual(600);
+    });
+
+    it("keeps a menu wider than the room on either side inside the window", () => {
+      vi.spyOn(window, "innerWidth", "get").mockReturnValue(300);
+      const { left } = positionAt(150, 100);
+      expect(left).toBeGreaterThanOrEqual(0);
+      expect(left + menuWidth).toBeLessThanOrEqual(300);
+    });
+
+    it("pins a menu taller than the window to the top", () => {
+      vi.spyOn(window, "innerHeight", "get").mockReturnValue(300);
+      expect(positionAt(100, 200).top).toBe(0);
+    });
+  });
 });
