@@ -42,7 +42,6 @@ export function summarizeResult(command: string | null, result: any): Record<str
     }
     case 'list-schemas':
       return { schemas: (result.schemas || []).length }
-    case 'list-tables':
     case 'list-entities':
       return {
         schema: result.schema ?? null,

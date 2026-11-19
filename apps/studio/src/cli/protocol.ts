@@ -8,15 +8,12 @@
  * file, so nothing in here may depend on electron.
  */
 
-export const CLI_PROTOCOL_VERSION = 1
-
 /** Hard cap on the number of rows a single `query` result returns. */
 export const CLI_MAX_QUERY_ROWS = 20000
 
 export const CLI_COMMANDS = [
   'connections',
   'list-schemas',
-  'list-tables',
   'list-entities',
   'structure',
   'query',
@@ -31,7 +28,7 @@ export type CliEntityType = typeof CLI_ENTITY_TYPES[number]
 export interface CliCommandArgs {
   /** Name or id of the open connection to use. Optional when exactly one is enabled. */
   connection?: string
-  /** Schema filter for list-tables, list-entities and structure. */
+  /** Schema filter for list-entities and structure. */
   schema?: string
   /** Entity types for list-entities. Defaults to every type. */
   entityTypes?: CliEntityType[]
@@ -42,7 +39,6 @@ export interface CliCommandArgs {
 }
 
 export interface CliRequest {
-  version?: number
   command: CliCommandName
   args: CliCommandArgs
 }

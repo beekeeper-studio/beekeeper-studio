@@ -93,6 +93,7 @@
     "class-validator": "0.14.1",
     "codemirror": "^5.63.1",
     "colorjs.io": "0.5.2",
+    "commander": "^15.1.0",
     "concurrently": "^8.2.2",
     "connection-string": "^3.4.2",
     "core-js": "^3",

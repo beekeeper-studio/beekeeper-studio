@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { SqliteClient } from '@/lib/db/clients/sqlite'
 import { CliBackend, CliOpenConnection, connectionDisplayName, executeCliRequest, formatQueryResult, uniqueColumnNames } from '@/lib/cli/commands'
-import { CLI_MAX_QUERY_ROWS, CLI_PROTOCOL_VERSION, CliCommandArgs, CliCommandName, CliResponse } from '@/cli/protocol'
+import { CLI_MAX_QUERY_ROWS, CliCommandArgs, CliCommandName, CliResponse } from '@/cli/protocol'
 
 async function createSqliteClient(): Promise<SqliteClient> {
   const server = { config: { client: 'sqlite', readOnlyMode: false }, db: {} } as any
@@ -23,7 +23,7 @@ function backendFor(connections: CliOpenConnection[], enabledIds: string[] = con
 }
 
 function request(command: CliCommandName, args: CliCommandArgs = {}) {
-  return { version: CLI_PROTOCOL_VERSION, command, args }
+  return { command, args }
 }
 
 function expectError(response: CliResponse, code: string) {
@@ -90,7 +90,7 @@ describe('executeCliRequest', () => {
     })
 
     it('explains how to enable the cli when nothing is enabled', async () => {
-      const error = expectError(await executeCliRequest(backendFor([primary], []), request('list-tables')), 'CLI_DISABLED')
+      const error = expectError(await executeCliRequest(backendFor([primary], []), request('list-entities', { entityTypes: ['table'] })), 'CLI_DISABLED')
       expect(error.message).toContain('"Local Dev"')
       expect(error.hint).toContain('Enable CLI Access')
       expect(error.hint).toContain('enableForAllConnections = true')
@@ -98,36 +98,36 @@ describe('executeCliRequest', () => {
     })
 
     it('reports when no connection is open at all', async () => {
-      const error = expectError(await executeCliRequest(backendFor([]), request('list-tables')), 'NO_OPEN_CONNECTIONS')
+      const error = expectError(await executeCliRequest(backendFor([]), request('list-entities', { entityTypes: ['table'] })), 'NO_OPEN_CONNECTIONS')
       expect(error.hint).toContain('Connect to a database')
     })
 
     it('needs --connection when more than one connection is enabled', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite' })
       const both = backendFor([primary, second])
-      const error = expectError(await executeCliRequest(both, request('list-tables')), 'AMBIGUOUS_CONNECTION')
+      const error = expectError(await executeCliRequest(both, request('list-entities', { entityTypes: ['table'] })), 'AMBIGUOUS_CONNECTION')
       expect(error.message).toContain('"Local Dev"')
       expect(error.message).toContain('"Other"')
 
-      const byName = expectOk(await executeCliRequest(both, request('list-tables', { connection: 'other' })))
+      const byName = expectOk(await executeCliRequest(both, request('list-entities', { entityTypes: ['table'], connection: 'other' })))
       expect(byName.connection).toEqual({ id: 'sid-other', name: 'Other' })
       expect(byName.entities.map((e) => e.name)).toEqual(['widgets'])
 
-      const byId = expectOk(await executeCliRequest(both, request('list-tables', { connection: 'sid-primary' })))
+      const byId = expectOk(await executeCliRequest(both, request('list-entities', { entityTypes: ['table'], connection: 'sid-primary' })))
       expect(byId.entities.map((e) => e.name)).toEqual(['orders', 'users'])
     })
 
     it('rejects unknown and disabled --connection values', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite' })
       const both = backendFor([primary, second], ['sid-primary'])
-      const unknown = expectError(await executeCliRequest(both, request('list-tables', { connection: 'nope' })), 'UNKNOWN_CONNECTION')
+      const unknown = expectError(await executeCliRequest(both, request('list-entities', { entityTypes: ['table'], connection: 'nope' })), 'UNKNOWN_CONNECTION')
       expect(unknown.hint).toContain('"Local Dev"')
-      expectError(await executeCliRequest(both, request('list-tables', { connection: 'Other' })), 'CLI_DISABLED')
+      expectError(await executeCliRequest(both, request('list-entities', { entityTypes: ['table'], connection: 'Other' })), 'CLI_DISABLED')
     })
   })
 
   it('rejects malformed requests', async () => {
-    expectError(await executeCliRequest(backend, { version: 1, command: 'drop-everything' as any, args: {} }), 'USAGE')
+    expectError(await executeCliRequest(backend, { command: 'drop-everything' as any, args: {} }), 'USAGE')
     expectError(await executeCliRequest(backend, request('list-entities', { entityTypes: ['sequence' as any] })), 'USAGE')
   })
 
@@ -138,7 +138,7 @@ describe('executeCliRequest', () => {
   })
 
   it('lists tables and entities', async () => {
-    const tables = expectOk(await executeCliRequest(backend, request('list-tables')))
+    const tables = expectOk(await executeCliRequest(backend, request('list-entities', { entityTypes: ['table'] })))
     expect(tables.entityTypes).toEqual(['table'])
     expect(tables.entities).toEqual([
       { schema: null, name: 'orders', entityType: 'table' },
@@ -267,7 +267,7 @@ describe('executeCliRequest', () => {
       const check = expectOk(await executeCliRequest(backend, request('query', { sql: 'select count(*) as n from users; select count(*) as orders from orders' })))
       expect(check.results[0].rows[0].n).toBe(2)
       expect(check.results[1].rows[0].orders).toBe(2)
-      expect(expectOk(await executeCliRequest(backend, request('list-tables'))).entities.map((e) => e.name)).toEqual(['orders', 'users'])
+      expect(expectOk(await executeCliRequest(backend, request('list-entities', { entityTypes: ['table'] }))).entities.map((e) => e.name)).toEqual(['orders', 'users'])
     })
 
     it('still answers reads on a read only connection', async () => {

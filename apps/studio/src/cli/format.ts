@@ -1,5 +1,5 @@
 import { markdownTable } from 'markdown-table'
-import { CliOutputFormat } from './args'
+import { CliOutputFormat } from './program'
 import { CliCommandName, CliConnectionSummary, CliEntity, CliQueryResult } from './protocol'
 
 function cell(value: unknown): string {
@@ -187,7 +187,6 @@ export function formatResult(command: CliCommandName, result: unknown, format: C
       return formatConnections(data.connections)
     case 'list-schemas':
       return formatSchemas(data)
-    case 'list-tables':
     case 'list-entities':
       return formatEntities(data)
     case 'structure':

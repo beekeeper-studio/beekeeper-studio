@@ -28,7 +28,7 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
-import { cliArgsFromProcessArgv } from '@/cli/args'
+import { cliArgsFromProcessArgv } from '@/lib/cli/args'
 import { cliFallbackHelp } from '@/lib/cli/fallbackHelp'
 
 if (platformInfo.env.development || platformInfo.env.test) {

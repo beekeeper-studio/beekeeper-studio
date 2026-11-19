@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import { CLI_AUDIT_SQL_MAX_CHARS, CliAuditLog, buildAuditEntry, createElectronLogSink, summarizeResult } from '@/lib/cli/auditLog'
-import { CLI_PROTOCOL_VERSION, CliRequest, CliResponse } from '@/cli/protocol'
+import { CliRequest, CliResponse } from '@/cli/protocol'
 
 function request(command: CliRequest['command'], args: CliRequest['args'] = {}): CliRequest {
-  return { version: CLI_PROTOCOL_VERSION, command, args }
+  return { command, args }
 }
 
 const now = new Date('2026-10-30T12:00:00.000Z')
@@ -42,7 +42,7 @@ describe('buildAuditEntry', () => {
       ok: false,
       error: { code: 'CLI_DISABLED', message: 'CLI access is not enabled for the open connection "Prod".', hint: 'Check the box.' },
     }
-    const entry = buildAuditEntry({ request: request('list-tables', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
+    const entry = buildAuditEntry({ request: request('list-entities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
     expect(entry.ok).toBe(false)
     expect(entry.connection).toBeNull()
     expect(entry.error).toEqual({ code: 'CLI_DISABLED', message: 'CLI access is not enabled for the open connection "Prod".' })

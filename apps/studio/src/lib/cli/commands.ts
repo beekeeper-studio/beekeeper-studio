@@ -431,11 +431,9 @@ async function runOnConnection(
       const schemas = await client.listSchemas()
       return { connection, schemas: schemas || [] }
     }
-    case 'list-tables':
     case 'list-entities': {
       const warnings: string[] = []
-      const types =
-        request.command === 'list-tables' ? ['table' as CliEntityType] : args.entityTypes || [...CLI_ENTITY_TYPES]
+      const types = args.entityTypes || [...CLI_ENTITY_TYPES]
       const entities = await listEntities(client, args.schema, types, warnings)
       return { connection, schema: args.schema ?? null, entityTypes: types, entities, warnings }
     }
