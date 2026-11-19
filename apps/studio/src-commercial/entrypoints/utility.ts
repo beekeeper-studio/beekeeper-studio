@@ -249,7 +249,9 @@ async function init() {
   const cliServer = new CliServer({
     socketPath: platformInfo.cliSocketPath,
   });
-  cliServer.register(createCliMethods(utilityCliBackend));
+  for (const [name, method] of Object.entries(createCliMethods(utilityCliBackend))) {
+    cliServer.register(name, method);
+  }
   cliServer.on("requestHandled", (event) => auditLog.record(event));
 
   context.pluginManager = pluginManager;

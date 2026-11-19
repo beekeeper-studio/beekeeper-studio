@@ -1,7 +1,7 @@
 import fs from 'fs'
 import net from 'net'
 import { CliRequestEvent } from './auditLog'
-import { CliError, CliMethods, CliRequest, CliResponse, isCliError } from '@/cli/protocol'
+import { CliError, CliParams, CliRequest, CliResponse, isCliError } from '@/cli/protocol'
 import { isWindowsPipePath } from '@/cli/socketPath'
 import { EventEmitter } from '@/common/EventEmitter'
 import { sanitizeForJson } from './json'
@@ -19,6 +19,8 @@ export interface CliServerEventMap {
   /** Fires after every reply, malformed requests included. Feeds the audit log. */
   requestHandled: (event: CliRequestEvent) => void
 }
+
+export type CliServerMethod = (params: CliParams) => Promise<unknown>
 
 const DEFAULT_MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
@@ -57,7 +59,7 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
   private started = false
   private readonly sockets = new Set<net.Socket>()
   private readonly maxRequestBytes: number
-  private readonly methods: Partial<CliMethods> = {}
+  private readonly methods = new Map<string, CliServerMethod>()
 
   constructor(private readonly options: CliServerOptions) {
     super()
@@ -66,8 +68,8 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
     this.handleError = this.handleError.bind(this)
   }
 
-  register(methods: Partial<CliMethods>): void {
-    Object.assign(this.methods, methods)
+  register(name: string, method: CliServerMethod): void {
+    this.methods.set(name, method)
   }
 
   get socketPath(): string {
@@ -212,12 +214,10 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
 
   private async call(request: CliRequest): Promise<CliResponse> {
     try {
-      const method = typeof request?.method === 'string' && Object.prototype.hasOwnProperty.call(this.methods, request.method)
-        ? this.methods[request.method]
-        : null
+      const method = typeof request?.method === 'string' ? this.methods.get(request.method) : null
       if (!method) {
         throw new CliError('USAGE', `Unknown method "${request?.method}".`, {
-          hint: `Methods: ${Object.keys(this.methods).join(', ')}.`,
+          hint: `Methods: ${[...this.methods.keys()].join(', ')}.`,
         })
       }
       const result = await method(request.params || {})
@@ -262,9 +262,10 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
     this.started = false
     for (const socket of this.sockets) socket.destroy()
     this.sockets.clear()
-    if (server) {
-      await new Promise<void>((resolve) => server.close(() => resolve()))
+    if (!server) {
+      return
     }
+    await new Promise<void>((resolve) => server.close(() => resolve()))
     this.removeSocketFile()
   }
 
@@ -275,8 +276,12 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
     this.started = false
     for (const socket of this.sockets) socket.destroy()
     this.sockets.clear()
+    // An instance that never listened must not delete the socket another instance is serving.
+    if (!server) {
+      return
+    }
     try {
-      server?.close()
+      server.close()
     } catch {
       // nothing to do, the process is going away
     }

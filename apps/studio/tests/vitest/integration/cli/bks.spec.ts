@@ -57,7 +57,9 @@ beforeAll(async () => {
     isCliEnabled: async () => true,
   };
   server = new CliServer({ socketPath });
-  server.register(createCliMethods(backend));
+  for (const [name, method] of Object.entries(createCliMethods(backend))) {
+    server.register(name, method);
+  }
   server.on("requestHandled", () => {
     requests += 1;
   });
