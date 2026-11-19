@@ -29,3 +29,4 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - "@beekeeperstudio/knex-snowflake-dialect@0.5.1"
+  - "@beekeeperstudio/bks-ai-shell@3.4.1"

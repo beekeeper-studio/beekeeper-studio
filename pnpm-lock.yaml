@@ -213,8 +213,8 @@ importers:
         specifier: ^7.26.0
         version: 7.28.6(@babel/core@7.29.6(supports-color@8.1.1))(supports-color@8.1.1)
       '@beekeeperstudio/bks-ai-shell':
-        specifier: ^3.4.0
-        version: 3.4.0
+        specifier: ^3.4.1
+        version: 3.4.1
       '@beekeeperstudio/bks-er-diagram':
         specifier: ^1.1.2
         version: 1.1.2
@@ -1976,8 +1976,8 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
-  '@beekeeperstudio/bks-ai-shell@3.4.0':
-    resolution: {integrity: sha512-8yGANmYb1KK2nRQSDIfynkMLY5RiNCPlQEqlK9WVHgiEluwm2GP5wMCfnq7gQ+NO3mlp1Kxc4DGh4RG39uScng==}
+  '@beekeeperstudio/bks-ai-shell@3.4.1':
+    resolution: {integrity: sha512-EaCrBLqWKnBnaed0BpQ8W/G8JlYhYGNnJyqu/NFCGYQWHF48mxB8u5wnRDfM+cS8+v4u0KOusvzVo4LKDmJHog==}
 
   '@beekeeperstudio/bks-er-diagram@1.1.2':
     resolution: {integrity: sha512-633LYkE/mGaRS25VECpYl8cqgulfCr9o7vK4G74+NBXT/rSM0iZc3xGh2f0axbieGBKQ5gh91OjrukZ+gtf0wA==}
@@ -11156,7 +11156,7 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@beekeeperstudio/bks-ai-shell@3.4.0': {}
+  '@beekeeperstudio/bks-ai-shell@3.4.1': {}
 
   '@beekeeperstudio/bks-er-diagram@1.1.2': {}
 
