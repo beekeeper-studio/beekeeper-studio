@@ -3,17 +3,21 @@ import net from 'net'
 import { CliRequestEvent } from './auditLog'
 import { CliRequest, CliResponse } from '@/cli/protocol'
 import { isWindowsPipePath } from '@/cli/socketPath'
+import { EventEmitter } from '@/common/EventEmitter'
 import rawLog from '@bksLogger';
 
 const log = rawLog.scope('CliServer');
 
 export interface CliServerOptions {
   socketPath: string
-  handler: (request: CliRequest) => Promise<CliResponse>
   /** A request line longer than this is rejected. SQL text is the only sizeable input. */
   maxRequestBytes?: number
-  /** Called after every reply, malformed requests included. Feeds the audit log. */
-  onRequestHandled?: (event: CliRequestEvent) => void
+}
+
+export interface CliServerEventMap {
+  request: (request: CliRequest, respond: (response: CliResponse) => void) => void
+  /** Fires after every reply, malformed requests included. Feeds the audit log. */
+  requestHandled: (event: CliRequestEvent) => void
 }
 
 const DEFAULT_MAX_REQUEST_BYTES = 16 * 1024 * 1024
@@ -39,13 +43,17 @@ export function probeSocket(socketPath: string, timeoutMs = 1000): Promise<boole
  * line, the server answers with one response line and closes. Lives in the
  * utility process, next to the database connections it exposes.
  */
-export class CliServer {
+export class CliServer extends EventEmitter<CliServerEventMap> {
   private server: net.Server | null = null
+  private started = false
   private readonly sockets = new Set<net.Socket>()
   private readonly maxRequestBytes: number
 
   constructor(private readonly options: CliServerOptions) {
+    super()
     this.maxRequestBytes = options.maxRequestBytes ?? DEFAULT_MAX_REQUEST_BYTES
+    this.handleConnection = this.handleConnection.bind(this)
+    this.handleError = this.handleError.bind(this)
   }
 
   get socketPath(): string {
@@ -63,7 +71,7 @@ export class CliServer {
    * @throws {Error} if it fails to start
    */
   async start(): Promise<void> {
-    if (this.server) {
+    if (this.started) {
       log.warn("Calling start when already started");
       return;
     }
@@ -75,9 +83,27 @@ export class CliServer {
 
     // allowHalfOpen: a client may send its request and close its writing side
     // before the reply is ready; the reply still has to go out.
-    const server = net.createServer({ allowHalfOpen: true }, (socket) => this.handleConnection(socket))
-    server.on('error', (error) => log.error('CLI socket server error', error))
+    const server = net.createServer({ allowHalfOpen: true }, this.handleConnection)
+    server.on('error', this.handleError)
 
+    await this.listen(server)
+
+    if (!isWindowsPipePath(socketPath)) {
+      // Only the user who runs the app gets to talk to its database connections.
+      try {
+        fs.chmodSync(socketPath, 0o600)
+      } catch (error) {
+        log.warn(`Could not restrict permissions on ${socketPath}`, error)
+      }
+    }
+
+    this.server = server
+    this.started = true
+    log.info(`CLI listening at ${socketPath}`)
+  }
+
+  private async listen(server: net.Server): Promise<void> {
+    const socketPath = this.options.socketPath
     try {
       await new Promise<void>((resolve, reject) => {
         server.once('error', reject)
@@ -92,18 +118,10 @@ export class CliServer {
       }
       throw error
     }
+  }
 
-    if (!isWindowsPipePath(socketPath)) {
-      // Only the user who runs the app gets to talk to its database connections.
-      try {
-        fs.chmodSync(socketPath, 0o600)
-      } catch (error) {
-        log.warn(`Could not restrict permissions on ${socketPath}`, error)
-      }
-    }
-
-    this.server = server
-    log.info(`CLI listening at ${socketPath}`)
+  private handleError(error: Error): void {
+    log.error('CLI socket server error', error)
   }
 
   private async removeStaleSocketFile(): Promise<void> {
@@ -158,7 +176,7 @@ export class CliServer {
     })
   }
 
-  private async process(socket: net.Socket, line: string): Promise<void> {
+  private process(socket: net.Socket, line: string): void {
     const started = Date.now()
     let request: CliRequest | null = null
     try {
@@ -171,14 +189,20 @@ export class CliServer {
       return
     }
 
-    let response: CliResponse
+    let responded = false
+    const respond = (response: CliResponse) => {
+      if (responded) {
+        return
+      }
+      responded = true
+      this.respond(socket, response, request, started)
+    }
     try {
-      response = await this.options.handler(request)
+      this.emit('request', request, respond)
     } catch (error) {
       log.error('CLI request failed', error)
-      response = { ok: false, error: { code: 'INTERNAL', message: error?.message ?? String(error) } }
+      respond({ ok: false, error: { code: 'INTERNAL', message: error?.message ?? String(error) } })
     }
-    this.respond(socket, response, request, started)
   }
 
   private respond(socket: net.Socket, response: CliResponse, request: CliRequest | null, started: number): void {
@@ -199,9 +223,8 @@ export class CliServer {
   }
 
   private notify(event: CliRequestEvent): void {
-    if (!this.options.onRequestHandled) return
     try {
-      this.options.onRequestHandled(event)
+      this.emit('requestHandled', event)
     } catch (error) {
       log.warn('CLI request observer failed', error)
     }
@@ -210,6 +233,7 @@ export class CliServer {
   async stop(): Promise<void> {
     const server = this.server
     this.server = null
+    this.started = false
     for (const socket of this.sockets) socket.destroy()
     this.sockets.clear()
     if (server) {
@@ -222,6 +246,7 @@ export class CliServer {
   stopSync(): void {
     const server = this.server
     this.server = null
+    this.started = false
     for (const socket of this.sockets) socket.destroy()
     this.sockets.clear()
     try {
