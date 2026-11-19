@@ -32,7 +32,7 @@ export class PostgresBackupClient extends BaseCommandClient {
   get settingsSections(): CommandSettingSection[] {
     // set defaults for postgres backup
     if (!this._config.format) {
-      this._config.format = 'd';
+      this._config.format = 'c';
     }
 
     return [
