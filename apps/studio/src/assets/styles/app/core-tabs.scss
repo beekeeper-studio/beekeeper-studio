@@ -353,15 +353,22 @@
       min-width: 0;
       anchor-name: --filter-column;
       anchor-scope: --filter-column;
+      height: $input-height;
 
+      .vs__dropdown-toggle,
+      .vs__selected-options {
+        height: 100%;
+      }
       .vs__search {
+        height: 100%;
         margin-top: 0;
         background: transparent;
       }
       .vs__selected {
-        top: 0;
+        top: 50%;
+        transform: translateY(-50%);
         margin-top: 0;
-        line-height: $input-height;
+        line-height: normal;
       }
       // Keep the list aligned with its row, outside the scrollable filter form.
       .vs__dropdown-menu {
