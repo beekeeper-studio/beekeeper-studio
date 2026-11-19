@@ -57,6 +57,7 @@ import { errorMessages, resolveAWSCredentials } from '@/lib/db/clients/utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { DynamoDBCursor } from './dynamodb/DynamoDBCursor';
+import { coerceDynamoValue } from './dynamodb/coerce';
 import BksConfig from '@/common/bksConfig';
 import { identify } from 'sql-query-identifier';
 
@@ -747,7 +748,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   async insertRows(inserts: TableInsert[]): Promise<void> {
     for (const ins of inserts) {
       if (!ins.table) throw new Error('Missing table name for insert');
-      const rows = ins.data || [];
+      const rows = await this.coerceInsertRows(ins.table, ins.data || []);
       // BatchWriteItem has a 25-item limit per request.
       for (const chunk of _.chunk(rows, 25)) {
         await this.doc.send(new BatchWriteCommand({
@@ -757,6 +758,22 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         }));
       }
     }
+  }
+
+  // The table editor sends cell values as text, which would be stored as a String
+  // attribute. Convert each value to the type its column was discovered with.
+  private async coerceInsertRows(table: string, rows: Record<string, any>[]): Promise<Record<string, any>[]> {
+    let types: Record<string, string>;
+    try {
+      const columns = await this.listTableColumns(table);
+      types = Object.fromEntries(columns.map((c) => [c.columnName, c.dataType]));
+    } catch (err) {
+      log.warn(`Could not read column types for ${table}; inserting values as given`, err);
+      return rows;
+    }
+    return rows.map((row) =>
+      Object.fromEntries(Object.entries(row).map(([k, v]) => [k, coerceDynamoValue(v, types[k])]))
+    );
   }
 
   async updateValues(updates: TableUpdate[]): Promise<TableUpdateResult[]> {
@@ -772,7 +789,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         Key: key,
         UpdateExpression: 'SET #c = :v',
         ExpressionAttributeNames: { '#c': upd.column },
-        ExpressionAttributeValues: { ':v': upd.value },
+        ExpressionAttributeValues: { ':v': coerceDynamoValue(upd.value, upd.columnType) },
         ReturnValues: 'ALL_NEW',
       }));
       out.push(result.Attributes);
