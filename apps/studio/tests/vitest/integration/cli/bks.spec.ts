@@ -12,8 +12,8 @@ import os from "os";
 import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
-import { CliServer } from "@/lib/cli/server";
-import { CliBackend, executeCliRequest } from "@/lib/cli/commands";
+import { CliServer } from "@/services/cliServer/server";
+import { CliBackend, executeCliRequest } from "@/services/cliServer/commands";
 import { createProgram } from "@/cli/program";
 
 const socketPath =

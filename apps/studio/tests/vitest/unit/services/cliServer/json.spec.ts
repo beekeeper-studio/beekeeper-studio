@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sanitizeForJson } from '@/lib/cli/json'
+import { sanitizeForJson } from '@/services/cliServer/json'
 
 describe('sanitizeForJson', () => {
   it('passes plain json through', () => {

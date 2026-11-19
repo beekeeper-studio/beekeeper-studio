@@ -149,10 +149,11 @@ const cliArgs = {
 }
 
 if(isWatching) {
-  const main = await esbuild.context(mainArgs)
-  const utility = await esbuild.context(utilityArgs)
+  // const main = await esbuild.context(mainArgs)
+  // const utility = await esbuild.context(utilityArgs)
   const cli = await esbuild.context(cliArgs)
-  await Promise.all([main.watch(), utility.watch(), cli.watch()])
+  await cli.watch()
+  // await Promise.all([main.watch(), utility.watch(), cli.watch()])
 } else {
   await Promise.all([
     esbuild.build(mainArgs),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cliArgsFromProcessArgv, extractCliArgs } from '@/lib/cli/args'
+import { cliArgsFromProcessArgv, extractCliArgs } from '@/services/cliServer/args'
 
 describe('extractCliArgs', () => {
   it('returns the arguments after a leading cli command', () => {

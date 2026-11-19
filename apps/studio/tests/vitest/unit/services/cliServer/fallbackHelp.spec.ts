@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import path from 'path'
-import { bksShimPath, cliFallbackHelp, CLI_DOCS_URL } from '@/lib/cli/fallbackHelp'
+import { bksShimPath, cliFallbackHelp, CLI_DOCS_URL } from '@/services/cliServer/fallbackHelp'
 
 const base = { isWindows: false, isMac: false, isDevelopment: false, socketPath: '/home/me/.config/beekeeper-studio/cli.sock' }
 

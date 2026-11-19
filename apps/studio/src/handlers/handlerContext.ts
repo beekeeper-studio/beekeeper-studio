@@ -1,6 +1,6 @@
 import { PluginManager } from "@/services/plugin";
 import { ThemeManager } from "@/services/theme/ThemeManager";
-import { CliServer } from "@/lib/cli/server";
+import { CliServer } from "@/services/cliServer/server";
 
 class Context {
   pluginManager: PluginManager;

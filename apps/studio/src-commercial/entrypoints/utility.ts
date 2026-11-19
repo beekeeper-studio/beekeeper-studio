@@ -46,10 +46,10 @@ import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCo
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
-import { CliServer } from '@/lib/cli/server';
-import { executeCliRequest } from '@/lib/cli/commands';
-import { utilityCliBackend } from '@/lib/cli/utilityBackend';
-import { CliAuditLog, createElectronLogSink } from '@/lib/cli/auditLog';
+import { CliServer } from '@/services/cliServer/server';
+import { executeCliRequest } from '@/services/cliServer/commands';
+import { utilityCliBackend } from '@/services/cliServer/utilityBackend';
+import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';
 import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
 import globals from '@/common/globals';
 import { ThemeManager } from '@/services/theme/ThemeManager';

@@ -28,8 +28,8 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
-import { cliArgsFromProcessArgv } from '@/lib/cli/args'
-import { cliFallbackHelp } from '@/lib/cli/fallbackHelp'
+import { cliArgsFromProcessArgv } from '@/services/cliServer/args'
+import { cliFallbackHelp } from '@/services/cliServer/fallbackHelp'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()

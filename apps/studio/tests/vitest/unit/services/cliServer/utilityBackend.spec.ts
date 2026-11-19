@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { resolveCliEnabled } from '@/lib/cli/utilityBackend'
-import { CliOpenConnection } from '@/lib/cli/commands'
+import { resolveCliEnabled } from '@/services/cliServer/utilityBackend'
+import { CliOpenConnection } from '@/services/cliServer/commands'
 
 function connection(config: Record<string, any> | null): CliOpenConnection {
   return { id: 'sid', client: {} as any, database: null, config: config as any }

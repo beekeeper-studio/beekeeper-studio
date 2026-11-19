@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { SqliteClient } from '@/lib/db/clients/sqlite'
-import { CliBackend, CliOpenConnection, connectionDisplayName, executeCliRequest, formatQueryResult, uniqueColumnNames } from '@/lib/cli/commands'
+import { CliBackend, CliOpenConnection, connectionDisplayName, executeCliRequest, formatQueryResult, uniqueColumnNames } from '@/services/cliServer/commands'
 import { CLI_MAX_QUERY_ROWS, CliCommandArgs, CliCommandName, CliResponse } from '@/cli/protocol'
 
 async function createSqliteClient(): Promise<SqliteClient> {

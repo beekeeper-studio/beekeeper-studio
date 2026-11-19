@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { CLI_AUDIT_SQL_MAX_CHARS, CliAuditLog, buildAuditEntry, createElectronLogSink, summarizeResult } from '@/lib/cli/auditLog'
+import { CLI_AUDIT_SQL_MAX_CHARS, CliAuditLog, buildAuditEntry, createElectronLogSink, summarizeResult } from '@/services/cliServer/auditLog'
 import { CliRequest, CliResponse } from '@/cli/protocol'
 
 function request(command: CliRequest['command'], args: CliRequest['args'] = {}): CliRequest {
