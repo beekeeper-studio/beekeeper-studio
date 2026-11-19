@@ -12,8 +12,8 @@ import os from "os";
 import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
-import { CliServer } from "@/services/cliServer/server";
-import { CliBackend, executeCliRequest } from "@/services/cliServer/commands";
+import { CliServer } from "@/services/cliServer/CliServer";
+import { CliBackend, createCliMethods } from "@/services/cliServer/commands";
 import { createProgram } from "@/cli/program";
 
 const socketPath =
@@ -56,12 +56,10 @@ beforeAll(async () => {
     ],
     isCliEnabled: async () => true,
   };
-  server = new CliServer({
-    socketPath,
-    handler: (request) => {
-      requests += 1;
-      return executeCliRequest(backend, request);
-    },
+  server = new CliServer({ socketPath });
+  server.register(createCliMethods(backend));
+  server.on("requestHandled", () => {
+    requests += 1;
   });
   await server.start();
 });

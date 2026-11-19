@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { CLI_AUDIT_SQL_MAX_CHARS, CliAuditLog, buildAuditEntry, createElectronLogSink, summarizeResult } from '@/services/cliServer/auditLog'
 import { CliRequest, CliResponse } from '@/cli/protocol'
 
-function request(command: CliRequest['command'], args: CliRequest['args'] = {}): CliRequest {
-  return { command, args }
+function request(method: CliRequest['method'], params: CliRequest['params'] = {}): CliRequest {
+  return { method, params }
 }
 
 const now = new Date('2026-10-30T12:00:00.000Z')
@@ -26,8 +26,8 @@ describe('buildAuditEntry', () => {
     )
     expect(entry).toEqual({
       time: '2026-10-30T12:00:00.000Z',
-      command: 'query',
-      args: { sql: 'select id from users; select 1 as n', connection: 'Local Dev' },
+      method: 'query',
+      params: { sql: 'select id from users; select 1 as n', connection: 'Local Dev' },
       connection: { id: 'sid-1', name: 'Local Dev' },
       ok: true,
       durationMs: 13,
@@ -42,12 +42,12 @@ describe('buildAuditEntry', () => {
       ok: false,
       error: { code: 'CLI_DISABLED', message: 'CLI access is not enabled for the open connection "Prod".', hint: 'Check the box.' },
     }
-    const entry = buildAuditEntry({ request: request('list-entities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
+    const entry = buildAuditEntry({ request: request('listEntities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
     expect(entry.ok).toBe(false)
     expect(entry.connection).toBeNull()
     expect(entry.error).toEqual({ code: 'CLI_DISABLED', message: 'CLI access is not enabled for the open connection "Prod".' })
     expect(entry.result).toBeUndefined()
-    expect(entry.args).toEqual({ schema: 'public' })
+    expect(entry.params).toEqual({ schema: 'public' })
   })
 
   it('keeps the connection of a failed query', () => {
@@ -63,8 +63,8 @@ describe('buildAuditEntry', () => {
   it('handles requests that could not be parsed', () => {
     const response: CliResponse = { ok: false, error: { code: 'USAGE', message: 'Malformed CLI request: expected one JSON object per line.' } }
     const entry = buildAuditEntry({ request: null, response, durationMs: 0, responseBytes: 90 }, now)
-    expect(entry.command).toBeNull()
-    expect(entry.args).toBeNull()
+    expect(entry.method).toBeNull()
+    expect(entry.params).toBeNull()
     expect(entry.error.code).toBe('USAGE')
   })
 
@@ -74,17 +74,17 @@ describe('buildAuditEntry', () => {
       { request: request('query', { sql }), response: { ok: true, result: { connection: { id: 's', name: 'n' }, results: [] } }, durationMs: 1, responseBytes: 10 },
       now
     )
-    expect((entry.args.sql as string).length).toBe(CLI_AUDIT_SQL_MAX_CHARS)
-    expect(entry.args.sqlLength).toBe(sql.length)
-    expect(entry.args.sqlTruncated).toBe(true)
+    expect((entry.params.sql as string).length).toBe(CLI_AUDIT_SQL_MAX_CHARS)
+    expect(entry.params.sqlLength).toBe(sql.length)
+    expect(entry.params.sqlTruncated).toBe(true)
   })
 })
 
 describe('summarizeResult', () => {
-  it('summarizes each command', () => {
+  it('summarizes each method', () => {
     expect(summarizeResult('connections', { connections: [{ cliEnabled: true }, { cliEnabled: false }] })).toEqual({ connections: 2, cliEnabled: 1 })
-    expect(summarizeResult('list-schemas', { schemas: ['a', 'b'] })).toEqual({ schemas: 2 })
-    expect(summarizeResult('list-entities', { schema: 'public', entityTypes: ['table'], entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
+    expect(summarizeResult('listSchemas', { schemas: ['a', 'b'] })).toEqual({ schemas: 2 })
+    expect(summarizeResult('listEntities', { schema: 'public', entityTypes: ['table'], entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
       schema: 'public',
       entityTypes: ['table'],
       entities: 3,
@@ -113,12 +113,12 @@ describe('CliAuditLog', () => {
       durationMs: 2,
       responseBytes: 50,
     })
-    expect(entry.command).toBe('query')
+    expect(entry.method).toBe('query')
     expect(lines).toHaveLength(1)
     const parsed = JSON.parse(lines[0])
-    expect(parsed.command).toBe('query')
-    expect(parsed.args.sql).toBe('select 1')
-    expect(parsed.args.password).toBe('[REDACTED]')
+    expect(parsed.method).toBe('query')
+    expect(parsed.params.sql).toBe('select 1')
+    expect(parsed.params.password).toBe('[REDACTED]')
     expect(lines[0]).not.toContain('\n')
   })
 

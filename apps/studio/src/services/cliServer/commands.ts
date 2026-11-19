@@ -9,9 +9,7 @@ import {
   TableColumn,
   TableProperties,
 } from '@/lib/db/models'
-import { sanitizeForJson } from './json'
 import {
-  CLI_COMMANDS,
   CLI_ENTITY_TYPES,
   CLI_MAX_QUERY_ROWS,
   CliColumn,
@@ -21,8 +19,8 @@ import {
   CliEntityType,
   CliError,
   CliQueryResult,
-  CliRequest,
-  CliResponse,
+  CliMethods,
+  CliParams,
   isCliError,
 } from '@/cli/protocol'
 
@@ -376,40 +374,25 @@ async function runQuery(client: BasicDatabaseClient<any, any>, sql: string | und
   return (results || []).map(formatQueryResult)
 }
 
-function validateRequest(request: CliRequest) {
-  if (!request || typeof request !== 'object') {
-    throw new CliError('USAGE', 'Malformed request.')
-  }
-  if (!(CLI_COMMANDS as readonly string[]).includes(request.command)) {
-    throw new CliError('USAGE', `Unknown command "${request.command}".`, {
-      hint: `Commands: ${CLI_COMMANDS.join(', ')}.`,
-    })
-  }
-  if (request.args?.entityTypes) {
-    for (const type of request.args.entityTypes) {
-      if (!(CLI_ENTITY_TYPES as readonly string[]).includes(type)) {
-        throw new CliError('USAGE', `Unknown entity type "${type}".`, {
-          hint: `Entity types: ${CLI_ENTITY_TYPES.join(', ')}.`,
-        })
-      }
+function validateEntityTypes(types: string[] | undefined) {
+  for (const type of types || []) {
+    if (!(CLI_ENTITY_TYPES as readonly string[]).includes(type)) {
+      throw new CliError('USAGE', `Unknown entity type "${type}".`, {
+        hint: `Entity types: ${CLI_ENTITY_TYPES.join(', ')}.`,
+      })
     }
   }
 }
 
-async function runCommand(backend: CliBackend, request: CliRequest): Promise<unknown> {
-  const args = request.args || {}
-
-  if (request.command === 'connections') {
-    const all = await candidates(backend)
-    return { connections: all.map((item) => item.summary) }
-  }
-
-  const selected = await selectConnection(backend, args.connection)
+async function onConnection<T>(
+  backend: CliBackend,
+  params: CliParams,
+  run: (client: BasicDatabaseClient<any, any>, connection: CliConnectionRef) => Promise<T>
+): Promise<T> {
+  const selected = await selectConnection(backend, params.connection)
   const connection = ref(selected.summary)
-  const client = selected.connection.client
-
   try {
-    return await runOnConnection(request, client, connection)
+    return await run(selected.connection.client, connection)
   } catch (error) {
     // The audit log wants to know which connection a failed call ran against.
     if (isCliError(error)) {
@@ -419,49 +402,41 @@ async function runCommand(backend: CliBackend, request: CliRequest): Promise<unk
   }
 }
 
-async function runOnConnection(
-  request: CliRequest,
-  client: BasicDatabaseClient<any, any>,
-  connection: CliConnectionRef
-): Promise<unknown> {
-  const args = request.args || {}
-
-  switch (request.command) {
-    case 'list-schemas': {
-      const schemas = await client.listSchemas()
-      return { connection, schemas: schemas || [] }
-    }
-    case 'list-entities': {
-      const warnings: string[] = []
-      const types = args.entityTypes || [...CLI_ENTITY_TYPES]
-      const entities = await listEntities(client, args.schema, types, warnings)
-      return { connection, schema: args.schema ?? null, entityTypes: types, entities, warnings }
-    }
-    case 'structure': {
-      if (!args.name) throw new CliError('USAGE', 'structure needs the name of a table or view.')
-      const entity = await describeEntity(client, args.name, args.schema)
-      return { connection, ...entity }
-    }
-    case 'query': {
-      const results = await runQuery(client, args.sql)
-      return { connection, results }
-    }
-  }
-}
-
-/** Entry point for the socket server. Never throws: every failure becomes an error response. */
-export async function executeCliRequest(backend: CliBackend, request: CliRequest): Promise<CliResponse> {
-  try {
-    validateRequest(request)
-    const result = await runCommand(backend, request)
-    return { ok: true, result: sanitizeForJson(result) }
-  } catch (error) {
-    if (isCliError(error)) {
-      return { ok: false, error: sanitizeForJson(error.toPayload()) }
-    }
-    return {
-      ok: false,
-      error: { code: 'INTERNAL', message: error?.message ?? String(error) },
-    }
+export function createCliMethods(backend: CliBackend): CliMethods {
+  return {
+    async connections() {
+      const all = await candidates(backend)
+      return { connections: all.map((item) => item.summary) }
+    },
+    async listSchemas(params) {
+      return onConnection(backend, params, async (client, connection) => {
+        const schemas = await client.listSchemas()
+        return { connection, schemas: schemas || [] }
+      })
+    },
+    async listEntities(params) {
+      validateEntityTypes(params.entityTypes)
+      return onConnection(backend, params, async (client, connection) => {
+        const warnings: string[] = []
+        const types = params.entityTypes || [...CLI_ENTITY_TYPES]
+        const entities = await listEntities(client, params.schema, types, warnings)
+        return { connection, schema: params.schema ?? null, entityTypes: types, entities, warnings }
+      })
+    },
+    async structure(params) {
+      return onConnection(backend, params, async (client, connection) => {
+        if (!params.name) {
+          throw new CliError('USAGE', 'structure needs the name of a table or view.')
+        }
+        const entity = await describeEntity(client, params.name, params.schema)
+        return { connection, ...entity }
+      })
+    },
+    async query(params) {
+      return onConnection(backend, params, async (client, connection) => {
+        const results = await runQuery(client, params.sql)
+        return { connection, results }
+      })
+    },
   }
 }

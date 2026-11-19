@@ -11,21 +11,21 @@
 /** Hard cap on the number of rows a single `query` result returns. */
 export const CLI_MAX_QUERY_ROWS = 20000
 
-export const CLI_COMMANDS = [
+export const CLI_METHODS = [
   'connections',
-  'list-schemas',
-  'list-entities',
+  'listSchemas',
+  'listEntities',
   'structure',
   'query',
 ] as const
 
-export type CliCommandName = typeof CLI_COMMANDS[number]
+export type CliMethodName = typeof CLI_METHODS[number]
 
 export const CLI_ENTITY_TYPES = ['table', 'view', 'materialized-view', 'routine'] as const
 
 export type CliEntityType = typeof CLI_ENTITY_TYPES[number]
 
-export interface CliCommandArgs {
+export interface CliParams {
   /** Name or id of the open connection to use. Optional when exactly one is enabled. */
   connection?: string
   /** Schema filter for list-entities and structure. */
@@ -39,9 +39,12 @@ export interface CliCommandArgs {
 }
 
 export interface CliRequest {
-  command: CliCommandName
-  args: CliCommandArgs
+  method: CliMethodName
+  params: CliParams
 }
+
+/** What the app answers each method with. A thrown CliError becomes an error reply. */
+export type CliMethods = Record<CliMethodName, (params: CliParams) => Promise<unknown>>
 
 export type CliErrorCode =
   | 'USAGE'

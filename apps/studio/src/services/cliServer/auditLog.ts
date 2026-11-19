@@ -12,9 +12,9 @@ export interface CliRequestEvent {
 
 export interface CliAuditEntry {
   time: string
-  command: string | null
-  /** The arguments as received, SQL included (cut at CLI_AUDIT_SQL_MAX_CHARS). */
-  args: Record<string, unknown> | null
+  method: string | null
+  /** The params as received, SQL included (cut at CLI_AUDIT_SQL_MAX_CHARS). */
+  params: Record<string, unknown> | null
   /** The connection that answered, when one was selected. */
   connection: { id: string; name: string } | null
   ok: boolean
@@ -33,16 +33,16 @@ function sum(values: unknown[]): number | null {
   return numbers.length ? numbers.reduce((a, b) => a + b, 0) : null
 }
 
-export function summarizeResult(command: string | null, result: any): Record<string, unknown> {
+export function summarizeResult(method: string | null, result: any): Record<string, unknown> {
   if (!result || typeof result !== 'object') return {}
-  switch (command) {
+  switch (method) {
     case 'connections': {
       const connections: any[] = result.connections || []
       return { connections: connections.length, cliEnabled: connections.filter((c) => c?.cliEnabled).length }
     }
-    case 'list-schemas':
+    case 'listSchemas':
       return { schemas: (result.schemas || []).length }
-    case 'list-entities':
+    case 'listEntities':
       return {
         schema: result.schema ?? null,
         entityTypes: result.entityTypes ?? null,
@@ -73,23 +73,23 @@ export function summarizeResult(command: string | null, result: any): Record<str
   }
 }
 
-function auditArgs(request: CliRequest | null): Record<string, unknown> | null {
-  if (!request?.args || typeof request.args !== 'object') return null
-  const args: Record<string, unknown> = { ...request.args }
-  if (typeof args.sql === 'string' && args.sql.length > CLI_AUDIT_SQL_MAX_CHARS) {
-    args.sqlLength = args.sql.length
-    args.sql = args.sql.slice(0, CLI_AUDIT_SQL_MAX_CHARS)
-    args.sqlTruncated = true
+function auditParams(request: CliRequest | null): Record<string, unknown> | null {
+  if (!request?.params || typeof request.params !== 'object') return null
+  const params: Record<string, unknown> = { ...request.params }
+  if (typeof params.sql === 'string' && params.sql.length > CLI_AUDIT_SQL_MAX_CHARS) {
+    params.sqlLength = params.sql.length
+    params.sql = params.sql.slice(0, CLI_AUDIT_SQL_MAX_CHARS)
+    params.sqlTruncated = true
   }
-  return args
+  return params
 }
 
 export function buildAuditEntry(event: CliRequestEvent, now: Date = new Date()): CliAuditEntry {
-  const command = typeof event.request?.command === 'string' ? event.request.command : null
+  const method = typeof event.request?.method === 'string' ? event.request.method : null
   const entry: CliAuditEntry = {
     time: now.toISOString(),
-    command,
-    args: auditArgs(event.request),
+    method,
+    params: auditParams(event.request),
     connection: null,
     ok: !!event.response?.ok,
     durationMs: Math.max(0, Math.round(event.durationMs)),
@@ -100,7 +100,7 @@ export function buildAuditEntry(event: CliRequestEvent, now: Date = new Date()):
     if (result?.connection?.id) {
       entry.connection = { id: String(result.connection.id), name: String(result.connection.name ?? '') }
     }
-    entry.result = summarizeResult(command, result)
+    entry.result = summarizeResult(method, result)
   } else if (event.response) {
     const error = event.response.error
     entry.error = { code: error?.code ?? 'INTERNAL', message: String(error?.message ?? '') }

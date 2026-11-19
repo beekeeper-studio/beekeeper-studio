@@ -1,5 +1,5 @@
 import net from 'net'
-import { CliCommandArgs, CliCommandName, CliError, CliErrorPayload, CliRequest, CliResponse } from './protocol'
+import { CliError, CliErrorPayload, CliMethodName, CliParams, CliRequest, CliResponse } from './protocol'
 
 export const CLI_EXIT_OK = 0
 export const CLI_EXIT_ERROR = 1
@@ -51,8 +51,8 @@ export class CliClient {
   }
 
   /** Resolves with the result, or rejects with the CliError the app replied with. */
-  async call(command: CliCommandName, args: CliCommandArgs): Promise<unknown> {
-    const response = await this.send({ command, args });
+  async call(method: CliMethodName, params: CliParams = {}): Promise<unknown> {
+    const response = await this.send(method, params);
     if (!response || typeof response !== "object" || !("ok" in response)) {
       throw new CliError("INTERNAL", "Beekeeper Studio sent an unexpected reply.");
     }
@@ -64,7 +64,7 @@ export class CliClient {
   }
 
   /** Sends one request and resolves with the one response line the app writes back. */
-  send(request: CliRequest): Promise<CliResponse> {
+  send(method: CliMethodName, params: CliParams = {}): Promise<CliResponse> {
     return new Promise((resolve, reject) => {
       const socket = net.createConnection(this.options.socketPath)
       socket.setEncoding('utf8')
@@ -94,7 +94,7 @@ export class CliClient {
       }
 
       socket.on('connect', () => {
-        socket.write(JSON.stringify(request) + '\n')
+        socket.write(JSON.stringify({ method, params } satisfies CliRequest) + '\n')
       })
       socket.on('data', (chunk: string) => {
         buffer += chunk

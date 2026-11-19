@@ -46,8 +46,8 @@ import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCo
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
-import { CliServer } from '@/services/cliServer/server';
-import { executeCliRequest } from '@/services/cliServer/commands';
+import { CliServer } from '@/services/cliServer/CliServer';
+import { createCliMethods } from '@/services/cliServer/commands';
 import { utilityCliBackend } from '@/services/cliServer/utilityBackend';
 import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';
 import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
@@ -248,9 +248,9 @@ async function init() {
   const auditLog = new CliAuditLog(auditSink, (e) => log.warn('Could not write the CLI audit log', e));
   const cliServer = new CliServer({
     socketPath: platformInfo.cliSocketPath,
-    handler: (request) => executeCliRequest(utilityCliBackend, request),
-    onRequestHandled: (event) => auditLog.record(event),
   });
+  cliServer.register(createCliMethods(utilityCliBackend));
+  cliServer.on("requestHandled", (event) => auditLog.record(event));
 
   context.pluginManager = pluginManager;
   context.themeManager = themeManager;

@@ -1,9 +1,10 @@
 import fs from 'fs'
 import net from 'net'
 import { CliRequestEvent } from './auditLog'
-import { CliRequest, CliResponse } from '@/cli/protocol'
+import { CliError, CliMethods, CliRequest, CliResponse, isCliError } from '@/cli/protocol'
 import { isWindowsPipePath } from '@/cli/socketPath'
 import { EventEmitter } from '@/common/EventEmitter'
+import { sanitizeForJson } from './json'
 import rawLog from '@bksLogger';
 
 const log = rawLog.scope('CliServer');
@@ -15,7 +16,6 @@ export interface CliServerOptions {
 }
 
 export interface CliServerEventMap {
-  request: (request: CliRequest, respond: (response: CliResponse) => void) => void
   /** Fires after every reply, malformed requests included. Feeds the audit log. */
   requestHandled: (event: CliRequestEvent) => void
 }
@@ -48,12 +48,17 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
   private started = false
   private readonly sockets = new Set<net.Socket>()
   private readonly maxRequestBytes: number
+  private readonly methods: Partial<CliMethods> = {}
 
   constructor(private readonly options: CliServerOptions) {
     super()
     this.maxRequestBytes = options.maxRequestBytes ?? DEFAULT_MAX_REQUEST_BYTES
     this.handleConnection = this.handleConnection.bind(this)
     this.handleError = this.handleError.bind(this)
+  }
+
+  register(methods: Partial<CliMethods>): void {
+    Object.assign(this.methods, methods)
   }
 
   get socketPath(): string {
@@ -176,7 +181,7 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
     })
   }
 
-  private process(socket: net.Socket, line: string): void {
+  private async process(socket: net.Socket, line: string): Promise<void> {
     const started = Date.now()
     let request: CliRequest | null = null
     try {
@@ -189,19 +194,28 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
       return
     }
 
-    let responded = false
-    const respond = (response: CliResponse) => {
-      if (responded) {
-        return
-      }
-      responded = true
-      this.respond(socket, response, request, started)
-    }
+    const response = await this.call(request)
+    this.respond(socket, response, request, started)
+  }
+
+  private async call(request: CliRequest): Promise<CliResponse> {
     try {
-      this.emit('request', request, respond)
+      const method = typeof request?.method === 'string' && Object.prototype.hasOwnProperty.call(this.methods, request.method)
+        ? this.methods[request.method]
+        : null
+      if (!method) {
+        throw new CliError('USAGE', `Unknown method "${request?.method}".`, {
+          hint: `Methods: ${Object.keys(this.methods).join(', ')}.`,
+        })
+      }
+      const result = await method(request.params || {})
+      return { ok: true, result: sanitizeForJson(result) }
     } catch (error) {
+      if (isCliError(error)) {
+        return { ok: false, error: sanitizeForJson(error.toPayload()) }
+      }
       log.error('CLI request failed', error)
-      respond({ ok: false, error: { code: 'INTERNAL', message: error?.message ?? String(error) } })
+      return { ok: false, error: { code: 'INTERNAL', message: error?.message ?? String(error) } }
     }
   }
 
