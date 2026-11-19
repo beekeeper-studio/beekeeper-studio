@@ -14,6 +14,26 @@ export function splitQueries(queryText: string, dialect: IdentifierDialect): Ide
   return result;
 }
 
+// sql-query-identifier starts a statement's text at its first keyword, so comments
+// written before it are dropped. SQL Server stores the exact text of a
+// CREATE/ALTER object in sys.sql_modules, so we send those comments along.
+// Only comments and whitespace between the previous statement and this one are added.
+export function textWithLeadingComments(
+  queryText: string,
+  statements: IdentifyResult[],
+  index: number
+): string {
+  const statement = statements[index]
+  const from = index === 0 ? 0 : statements[index - 1].end + 1
+  const gap = queryText.substring(from, statement.start)
+  const onlyComments = gap
+    .replace(/--[^\r\n]*|\/\*[\s\S]*?\*\//g, '')
+    .replace(/[\s;]/g, '') === ''
+  if (!onlyComments) return statement.text
+  const leading = gap.replace(/^[\s;]+/, '')
+  return leading + statement.text
+}
+
 // Wraps identify so a parser failure is returned instead of thrown,
 // falling back to treating the whole text as a single query.
 export function safelyIdentify(
