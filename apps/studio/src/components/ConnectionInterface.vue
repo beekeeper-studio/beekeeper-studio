@@ -655,8 +655,8 @@ export default Vue.extend({
         if (!this.config.name) {
           throw new Error("Name is required")
         }
-        // create token cache for azure auth
-        if (this.config.azureAuthOptions?.azureAuthEnabled && !this.config.authId) {
+        // Cloud connections do this at connect
+        if (!this.isCloud && this.config.azureAuthOptions?.azureAuthEnabled && !this.config.authId) {
           const cacheId = await this.$util.send('appdb/cache/new');
           this.config.authId = cacheId;
         }
