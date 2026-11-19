@@ -17,6 +17,9 @@ export type CassandraType = {
 
 const { dataTypes, BigDecimal, Integer, Long } = cassandra.types;
 
+// Protocol v4 has no duration type code, so the column is described as this custom type
+const durationClassName = 'org.apache.cassandra.db.marshal.DurationType';
+
 function decimalToString(value: any): string {
   // BigDecimal#toString() assumes a non-negative scale and renders 1.5E+4
   // (15 with scale -3) as "15.", so use scientific notation for it like cqlsh.
@@ -82,7 +85,7 @@ function floatToNumber(value: number): number {
   return value;
 }
 
-function convertScalar(value: any, code: number) {
+function convertScalar(value: any, code: number, info?: any) {
   switch (code) {
     case dataTypes.bigint:
     case dataTypes.varint:
@@ -92,6 +95,8 @@ function convertScalar(value: any, code: number) {
       return typeof value === 'string' ? value : decimalToString(value);
     case dataTypes.duration:
       return durationToString(value);
+    case dataTypes.custom:
+      return info === durationClassName ? durationToString(value) : value;
     case dataTypes.float:
       return floatToNumber(Number(value));
     case dataTypes.timestamp:
@@ -161,5 +166,5 @@ export function convertValueByType(value: any, type: CassandraType) {
     return Array.from(elements).map((v, i) => convertValueByType(v, info?.[i]));
   }
 
-  return convertScalar(value, code);
+  return convertScalar(value, code, info);
 }

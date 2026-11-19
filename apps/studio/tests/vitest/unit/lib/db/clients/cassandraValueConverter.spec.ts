@@ -82,6 +82,15 @@ describe("cassandra valueConverter", () => {
       expect(convert("0s")).toBe("0s")
     })
 
+    it("converts a duration described as a custom type", () => {
+      // what protocol v4 sends for a duration column
+      const duration = { code: dataTypes.custom, info: "org.apache.cassandra.db.marshal.DurationType" }
+      const value = cassandra.types.Duration.fromString("1y6mo2d")
+
+      expect(convertValueByType(value, duration)).toBe("1y6mo2d")
+      expect(convertValueByType([value], { code: dataTypes.list, info: duration })).toEqual(["1y6mo2d"])
+    })
+
     it("does not round the years of a duration up", () => {
       // Duration#toString() gives "2y6mo" here
       const value = cassandra.types.Duration.fromString("1y6mo")
