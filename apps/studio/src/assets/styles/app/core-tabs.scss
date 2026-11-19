@@ -348,6 +348,37 @@
         min-width: 120px;
       }
     }
+    .filter-column-select {
+      flex: 0 1 14rem;
+      min-width: 0;
+      anchor-name: --filter-column;
+      anchor-scope: --filter-column;
+
+      .vs__search {
+        margin-top: 0;
+        background: transparent;
+      }
+      .vs__selected {
+        top: 0;
+        margin-top: 0;
+        line-height: $input-height;
+      }
+      // Keep the list aligned with its row, outside the scrollable filter form.
+      .vs__dropdown-menu {
+        position: fixed;
+        position-anchor: --filter-column;
+        top: anchor(bottom);
+        left: anchor(left);
+        width: max-content;
+        min-width: anchor-size(width);
+        max-width: stretch;
+        position-try-fallbacks: flip-block;
+      }
+      .vs__dropdown-option {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+    }
     .btn-primary {
       .material-icons, .material-icons-outlined {
         font-weight: bold;
