@@ -22,6 +22,15 @@ export interface CliServerEventMap {
 
 const DEFAULT_MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
+export class CliServerError extends Error {
+  static readonly SocketPathNotProvided = 'SOCKET_PATH_NOT_PROVIDED'
+
+  constructor(readonly code: string, message: string) {
+    super(message)
+    this.name = 'CliServerError'
+  }
+}
+
 /** Resolves true when something is listening at the path, false when nothing answers. */
 export function probeSocket(socketPath: string, timeoutMs = 1000): Promise<boolean> {
   return new Promise((resolve) => {
@@ -81,6 +90,9 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
       return;
     }
     const socketPath = this.options.socketPath
+    if (!socketPath) {
+      throw new CliServerError(CliServerError.SocketPathNotProvided, 'No CLI socket path was provided.')
+    }
 
     if (!isWindowsPipePath(this.socketPath)) {
       await this.removeStaleSocketFile()

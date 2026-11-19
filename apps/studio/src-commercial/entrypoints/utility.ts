@@ -46,7 +46,7 @@ import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCo
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
-import { CliServer } from '@/services/cliServer/CliServer';
+import { CliServer, CliServerError } from '@/services/cliServer/CliServer';
 import { createCliMethods } from '@/services/cliServer/commands';
 import { utilityCliBackend } from '@/services/cliServer/utilityBackend';
 import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';

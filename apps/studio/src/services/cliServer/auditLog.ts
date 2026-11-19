@@ -101,7 +101,7 @@ export function buildAuditEntry(event: CliRequestEvent, now: Date = new Date()):
       entry.connection = { id: String(result.connection.id), name: String(result.connection.name ?? '') }
     }
     entry.result = summarizeResult(method, result)
-  } else if (event.response) {
+  } else if (event.response && event.response.ok === false) {
     const error = event.response.error
     entry.error = { code: error?.code ?? 'INTERNAL', message: String(error?.message ?? '') }
     const connection = (error?.details as any)?.connection
