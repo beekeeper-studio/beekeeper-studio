@@ -1,4 +1,4 @@
-mkdocs-material==9.7.1
+mkdocs-material==9.7.7
 mkdocs-material[imaging]
 mkdocs-include-markdown-plugin
 mkdocs-ini-includer >= 1.1.0
