@@ -17,7 +17,11 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
-import { assertJsonSerializable } from "../utils";
+import {
+  assertJsonSerializable,
+  findUnknownManifestProperties,
+  formatUnknownManifestProperty,
+} from "../utils";
 import { PrimaryKeyColumn } from "@/lib/db/models";
 
 function joinUrlPath(a: string, b: string): string {
@@ -67,6 +71,10 @@ export default class WebPluginLoader {
   async load(snapshot: PluginSnapshot) {
     const { views, menu } = this.manifest.capabilities;
 
+    // Before the disabled check: plugins under development are usually
+    // unlisted, which are disabled by default, and still worth warning about.
+    this.warnUnknownManifestProperties();
+
     this.pluginStore.addTabTypeConfigs(snapshot.manifest, views);
 
     // We don't want to process further if the plugin is disabled
@@ -84,6 +92,13 @@ export default class WebPluginLoader {
     if (!this.listening) {
       this.registerEvents();
       this.onReadyListeners.forEach((fn) => fn());
+    }
+  }
+
+  /** Unknown properties are ignored, so point out likely typos to plugin developers. */
+  private warnUnknownManifestProperties() {
+    for (const property of findUnknownManifestProperties(this.manifest)) {
+      this.log.warn(formatUnknownManifestProperty(property));
     }
   }
 

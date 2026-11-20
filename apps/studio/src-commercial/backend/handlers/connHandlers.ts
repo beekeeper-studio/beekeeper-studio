@@ -8,15 +8,54 @@ import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
-import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { DbConnectionBase, SavedConnection } from "@/common/appdb/models/saved_connection";
 import { UsedConnection } from "@/common/appdb/models/used_connection";
+import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
 import rawLog from "@bksLogger";
+import _ from "lodash";
 
 const log = rawLog.scope('ConnHandlers');
+
+function isWorkspaceConnection(config: IConnection): boolean {
+  return !_.isNil(config.workspaceId) && config.workspaceId !== LocalWorkspace.id;
+}
+
+async function ensureAzureTokenCache(config: IConnection): Promise<void> {
+  if (!config.azureAuthOptions?.azureAuthEnabled) return;
+
+  if (isWorkspaceConnection(config)) {
+    // Ignore any authId on the cloud copy, it came from someone's app db
+    config.authId = null;
+    if (!_.isNil(config.id)) {
+      const used = await UsedConnection.findOneBy({ connectionId: config.id, workspaceId: config.workspaceId });
+      if (!_.isNil(used?.authId) && await TokenCache.findOneBy({ id: used.authId })) {
+        config.authId = used.authId;
+        return;
+      }
+    }
+    const cache = await new TokenCache().save();
+    config.authId = cache.id;
+    return;
+  }
+
+  if (config.authId) return;
+
+  const cache = await new TokenCache().save();
+  config.authId = cache.id;
+  // need to single out saved connections here (this may change when used connections are fixed)
+  if (!_.isNil(config.id)) {
+    // we do this so any temp configs that the user did aren't saved, just the id
+    const conn = await SavedConnection.findOneBy({ id: config.id });
+    if (conn) {
+      conn.authId = cache.id;
+      await conn.save();
+    }
+  }
+}
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -155,18 +194,7 @@ export const ConnHandlers: IConnectionHandlers = {
       }
     }
 
-    if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
-      let cache = new TokenCache();
-      cache = await cache.save();
-      config.authId = cache.id;
-      // need to single out saved connections here (this may change when used connections are fixed)
-      if (config.id) {
-        // we do this so any temp configs that the user did aren't saved, just the id
-        const conn = await SavedConnection.findOneBy({ id: config.id });
-        conn.authId = cache.id;
-        conn.save();
-      }
-    }
+    await ensureAzureTokenCache(config);
 
     const abortController = new AbortController();
     state(sId).connectionAbortController = abortController;
@@ -225,18 +253,7 @@ export const ConnHandlers: IConnectionHandlers = {
       throw new Error(errorMessages.noUsername);
     }
 
-    if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
-      let cache = new TokenCache();
-      cache = await cache.save();
-      config.authId = cache.id;
-      // need to single out saved connections here (this may change when used connections are fixed)
-      if (config.id) {
-        // we do this so any temp configs that the user did aren't saved, just the id
-        const conn = await SavedConnection.findOneBy({ id: config.id });
-        conn.authId = cache.id;
-        conn.save();
-      }
-    }
+    await ensureAzureTokenCache(config);
 
     let database = config.defaultDatabase || undefined;
 
@@ -615,12 +632,29 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/azureSignOut': async function({ config, sId }: { config: IConnection, sId: string }) {
-    await AzureAuthService.ssoSignOut(config.authId)
+    let conn: DbConnectionBase = null;
+    let authId: number = null;
 
     // Clean up authId cause it's invalid after signing out
-    const savedConnection = await SavedConnection.findOneBy({id: config.id})
-    savedConnection.authId = null
-    await savedConnection.save()
+    if (isWorkspaceConnection(config)) {
+      conn = _.isNil(config.id)
+        ? null
+        : await UsedConnection.findOneBy({ connectionId: config.id, workspaceId: config.workspaceId })
+      authId = conn?.authId;
+    } else {
+      conn = _.isNil(config.id) ? null : await SavedConnection.findOneBy({id: config.id})
+      authId = config.authId;
+    }
+
+    if (authId) {
+      await AzureAuthService.ssoSignOut(authId);
+    }
+
+    if (conn) {
+      conn.authId = null
+      await conn.save()
+    }
+
     if (state(sId).usedConfig) {
       state(sId).usedConfig.authId = null
     }

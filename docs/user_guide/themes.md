@@ -10,6 +10,8 @@ Beekeeper Studio comes with a set of built-in themes, so you can make the app lo
 
 Go to **View → Appearance** in the app menu to open the Appearance window.
 
+![Themes settings showing the Default, Solarized, Dracula and GitHub themes with light and dark previews](/assets/images/themes/themes-overview.png)
+
 ## Mode
 
 The **Mode** buttons control whether the app is light or dark:
