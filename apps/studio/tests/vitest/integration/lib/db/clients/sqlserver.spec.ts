@@ -389,6 +389,111 @@ function testWith(dockerTag: string, readonly: boolean) {
       })
     })
 
+    // Regression test for #5057 -> SQL Server refuses to drop a column that
+    // still has a default constraint (Msg 4922), so the constraint has to be
+    // dropped first, in the same script.
+    describe("Columns with default constraints (#5057)", () => {
+      const table = 'drop_default_test'
+
+      const columnNames = async () => {
+        const columns = await util.connection.listTableColumns(table, 'dbo')
+        return columns.map((c) => c.columnName)
+      }
+
+      const defaultConstraints = async () => {
+        const result = await util.knex.raw(`
+          SELECT c.name AS columnName, dc.definition AS definition
+          FROM sys.default_constraints dc
+            INNER JOIN sys.columns c
+              ON c.object_id = dc.parent_object_id AND c.column_id = dc.parent_column_id
+          WHERE dc.parent_object_id = OBJECT_ID('dbo.${table}')
+          ORDER BY c.name
+        `)
+        return result.map((r) => ({ column: r.columnName, definition: r.definition }))
+      }
+
+      beforeEach(async () => {
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.${table}`)
+        // one named constraint, two system-named ones, and a column without a default
+        await util.knex.schema.raw(`
+          CREATE TABLE dbo.${table}(
+            id int NOT NULL PRIMARY KEY,
+            named_default varchar(20) NOT NULL CONSTRAINT DF_drop_default_named DEFAULT 'a',
+            auto_default int NOT NULL DEFAULT 1,
+            other_default int NULL DEFAULT 2,
+            no_default varchar(20) NULL
+          )
+        `)
+      })
+
+      afterAll(async () => {
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.${table}`)
+      })
+
+      it("drops a column that has a default constraint", async () => {
+        if (readonly) return;
+
+        await util.connection.alterTable({ table, schema: 'dbo', drops: ['named_default'] })
+
+        expect(await columnNames()).toEqual(['id', 'auto_default', 'other_default', 'no_default'])
+        expect((await defaultConstraints()).map((c) => c.column)).toEqual(['auto_default', 'other_default'])
+      })
+
+      it("drops several columns, with and without default constraints", async () => {
+        if (readonly) return;
+
+        await util.connection.alterTable({
+          table, schema: 'dbo',
+          drops: ['named_default', 'auto_default', 'no_default']
+        })
+
+        expect(await columnNames()).toEqual(['id', 'other_default'])
+        expect((await defaultConstraints()).map((c) => c.column)).toEqual(['other_default'])
+      })
+
+      it("drops a column with a default when no schema is given", async () => {
+        if (readonly) return;
+
+        await util.connection.alterTable({ table, drops: ['auto_default'] })
+
+        expect(await columnNames()).toEqual(['id', 'named_default', 'other_default', 'no_default'])
+      })
+
+      it("replaces the defaults of several columns in one change", async () => {
+        if (readonly) return;
+
+        await util.connection.alterTable({
+          table, schema: 'dbo',
+          alterations: [
+            { columnName: 'auto_default', changeType: 'defaultValue', newValue: '10' },
+            { columnName: 'other_default', changeType: 'defaultValue', newValue: '20' },
+          ]
+        })
+
+        const constraints = await defaultConstraints()
+        expect(constraints.map((c) => c.column)).toEqual(['auto_default', 'named_default', 'other_default'])
+        expect(constraints.find((c) => c.column === 'auto_default').definition).toBe('((10))')
+        expect(constraints.find((c) => c.column === 'other_default').definition).toBe('((20))')
+      })
+
+      it("drops one defaulted column while replacing the default of another", async () => {
+        if (readonly) return;
+
+        await util.connection.alterTable({
+          table, schema: 'dbo',
+          drops: ['named_default'],
+          alterations: [
+            { columnName: 'auto_default', changeType: 'defaultValue', newValue: '10' },
+          ]
+        })
+
+        expect(await columnNames()).toEqual(['id', 'auto_default', 'other_default', 'no_default'])
+        const constraints = await defaultConstraints()
+        expect(constraints.map((c) => c.column)).toEqual(['auto_default', 'other_default'])
+        expect(constraints.find((c) => c.column === 'auto_default').definition).toBe('((10))')
+      })
+    })
+
     // Regression test for #3722 -> dotted table names fail in sp_helptrigger /
     // sp_spaceused / sp_rename because the schema+table were concatenated as a
     // single quoted string, so SQL Server split on the first dot.
