@@ -1,8 +1,8 @@
+import { StructureResult } from "@/cli/protocol";
 import { CliReply } from "@/cli/replies/CliReply";
 import { connectionLine, table, warningsBlock, yesNo } from "@/cli/markdown";
 
-// FIXME: the result is untyped (Record<string, any>).
-export class StructureReply extends CliReply<Record<string, any>> {
+export class StructureReply extends CliReply<StructureResult> {
   markdown(): string {
     const result = this.json();
     const fullName = result.schema

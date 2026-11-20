@@ -20,8 +20,6 @@ export interface CliServerEventMap {
   requestHandled: (event: CliRequestEvent) => void
 }
 
-export type CliServerMethod = (params: unknown) => Promise<unknown>
-
 const DEFAULT_MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
 export class CliServerError extends Error {
@@ -59,7 +57,7 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
   private started = false
   private readonly sockets = new Set<net.Socket>()
   private readonly maxRequestBytes: number
-  private readonly methods = new Map<string, CliServerMethod>()
+  private readonly funcs = new Map<string, Function>()
 
   constructor(private readonly options: CliServerOptions) {
     super()
@@ -68,8 +66,8 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
     this.handleError = this.handleError.bind(this)
   }
 
-  register(name: string, method: CliServerMethod): void {
-    this.methods.set(name, method)
+  register(name: string, func: Function): void {
+    this.funcs.set(name, func)
   }
 
   get socketPath(): string {
@@ -214,10 +212,10 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
 
   private async call(request: CliRequest): Promise<CliResponse> {
     try {
-      const method = typeof request?.method === 'string' ? this.methods.get(request.method) : null
+      const method = typeof request?.method === 'string' ? this.funcs.get(request.method) : null
       if (!method) {
         throw new CliError('USAGE', `Unknown method "${request?.method}".`, {
-          hint: `Methods: ${[...this.methods.keys()].join(', ')}.`,
+          hint: `Methods: ${[...this.funcs.keys()].join(', ')}.`,
         })
       }
       const result = await method(request.params || {})

@@ -1303,12 +1303,12 @@ export default Vue.extend({
 
       this.addTab(tab);
     },
-    async answerCli(requestId: string, work: () => Promise<CliTabSummary>) {
+    async respondToCli(requestId: string, process: () => Promise<CliTabSummary>) {
       try {
-        const result = await work()
-        await this.$util.send('cliServer/answer', { requestId, result })
+        const result = await process()
+        await this.$util.send('cliServer/respond', { requestId, result })
       } catch (error) {
-        await this.$util.send('cliServer/answer', {
+        await this.$util.send('cliServer/respond', {
           requestId,
           error: { code: error?.code, message: error?.message ?? String(error) },
         })
@@ -1318,13 +1318,13 @@ export default Vue.extend({
       return { tabId: String(tab.id), title: tab.title, tabType: tab.tabType }
     },
     createTabFromCli({ requestId, ...request }: CliCreateTabRequest & { requestId: string }) {
-      return this.answerCli(requestId, async () => {
+      return this.respondToCli(requestId, async () => {
         await this.createQuery(request.sql || null)
         return this.cliTabSummary(this.activeTab)
       })
     },
     switchTabFromCli({ requestId, tabId }: { requestId: string, tabId: string }) {
-      return this.answerCli(requestId, async () => {
+      return this.respondToCli(requestId, async () => {
         const tab = this.tabItems.find((t) => String(t.id) === tabId)
         if (!tab) {
           throw Object.assign(new Error(`No open tab with id ${tabId}.`), { code: 'NOT_FOUND' })

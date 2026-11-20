@@ -1,8 +1,10 @@
 import { PluginManager } from "@/services/plugin";
 import { ThemeManager } from "@/services/theme/ThemeManager";
 import { CliServer } from "@/services/cliServer/CliServer";
+import { UtilityApi } from "@/services/UtilityApi";
 
 class Context {
+  utilityApi: UtilityApi;
   pluginManager: PluginManager;
   themeManager: ThemeManager;
   cliServer: CliServer;

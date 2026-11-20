@@ -1,12 +1,12 @@
-import { answerWindowRequest, WindowAnswer } from '@/services/cliServer/windowRequests'
+import { respondRendererRequest, RendererResponse } from '@/services/cliServer/rendererRequests'
 
 export interface ICliServerHandlers {
-  'cliServer/answer': (answer: WindowAnswer & { sId: string }) => Promise<void>
+  'cliServer/respond': (response: RendererResponse & { sId: string }) => Promise<void>
 }
 
-/** App windows answer the CLI server's requests through these. */
+/** Renderers respond to the CLI server's requests through these. */
 export const CliServerHandlers: ICliServerHandlers = {
-  'cliServer/answer': async function({ requestId, result, error }) {
-    answerWindowRequest({ requestId, result, error })
+  'cliServer/respond': async function({ requestId, result, error }) {
+    respondRendererRequest({ requestId, result, error })
   },
 }

@@ -1,11 +1,8 @@
-import { CliEntity } from "@/cli/protocol";
+import { EntitiesResult } from "@/cli/protocol";
 import { CliReply } from "@/cli/replies/CliReply";
 import { connectionLine, table, warningsBlock } from "@/cli/markdown";
 
-// FIXME: the result is partly untyped (Record<string, any>).
-export class EntitiesReply extends CliReply<
-  { entities: CliEntity[]; warnings?: string[] } & Record<string, any>
-> {
+export class EntitiesReply extends CliReply<EntitiesResult> {
   markdown(): string {
     const result = this.json();
     const lines = connectionLine(result);

@@ -13,14 +13,57 @@ import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
 import { CliServer } from "@/services/cliServer/CliServer";
-import { CliBackend, createCliMethods } from "@/services/cliServer/commands";
+import { CliOpenConnection } from "@/services/cliServer/commands";
+import { UtilityApi } from "@/services/UtilityApi";
 import { createProgram } from "@/cli/program";
-import { CliError, CliCreateTabRequest } from "@/cli/protocol";
+import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
+import { CliError, CliCreateTabRequest, CliTabSummary } from "@/cli/protocol";
 
 const socketPath =
   process.platform === "win32"
     ? `\\\\.\\pipe\\bks-cli-it-${process.pid}`
     : path.join(os.tmpdir(), `bks-cli-it-${process.pid}.sock`);
+
+/** The parts of UtilityApi that reach the app's renderers, faked by the test. */
+interface FakeParts
+  extends Pick<UtilityApi, "resolveCliEnabled"> {
+  openConnections(): CliOpenConnection[];
+  askRendererToCreateTab(
+    connection: CliOpenConnection,
+    request: CliCreateTabRequest,
+  ): Promise<CliTabSummary>;
+  askRendererToSwitchTab(
+    connection: CliOpenConnection,
+    tabId: string,
+  ): Promise<CliTabSummary>;
+}
+
+/** UtilityApi with its connections and renderers replaced by a fake. */
+class TestUtilityApi extends UtilityApi {
+  constructor(private readonly fake: FakeParts) {
+    // resolveCliEnabled is faked, so the config is never read.
+    super({ config: {} as BksConfig });
+  }
+
+  protected openConnections() {
+    return this.fake.openConnections();
+  }
+
+  resolveCliEnabled(connection: CliOpenConnection) {
+    return this.fake.resolveCliEnabled(connection);
+  }
+
+  protected askRendererToCreateTab(
+    connection: CliOpenConnection,
+    request: CliCreateTabRequest,
+  ) {
+    return this.fake.askRendererToCreateTab(connection, request);
+  }
+
+  protected askRendererToSwitchTab(connection: CliOpenConnection, tabId: string) {
+    return this.fake.askRendererToSwitchTab(connection, tabId);
+  }
+}
 
 let client: SqliteClient;
 let server: CliServer;
@@ -42,7 +85,7 @@ beforeAll(async () => {
     await client.executeQuery(sql);
   }
 
-  const backend: CliBackend = {
+  const backend: FakeParts = {
     openConnections: () => [
       {
         id: "sid-dev",
@@ -56,8 +99,8 @@ beforeAll(async () => {
         } as any,
       },
     ],
-    isCliEnabled: async () => true,
-    createTab: async (_connection, request) => {
+    resolveCliEnabled: async () => true,
+    askRendererToCreateTab: async (_connection, request) => {
       created.push(request);
       return {
         tabId: String(created.length),
@@ -65,7 +108,7 @@ beforeAll(async () => {
         tabType: request.tab,
       };
     },
-    switchTab: async (_connection, tabId) => {
+    askRendererToSwitchTab: async (_connection, tabId) => {
       if (Number(tabId) > created.length) {
         throw new CliError("NOT_FOUND", `No open tab with id ${tabId}.`);
       }
@@ -73,8 +116,9 @@ beforeAll(async () => {
     },
   };
   server = new CliServer({ socketPath });
-  for (const [name, method] of Object.entries(createCliMethods(backend))) {
-    server.register(name, method);
+  const utilityApi = new TestUtilityApi(backend);
+  for (const command of utilityApi.getCliApis()) {
+    server.register(command.name, command.func);
   }
   server.on("requestHandled", () => {
     requests += 1;

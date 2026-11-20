@@ -31,9 +31,20 @@ export const CLI_TAB_TYPES = ['query'] as const
 
 export type CliTabType = typeof CLI_TAB_TYPES[number]
 
+export interface ConnectionsParams {}
+
+export interface ConnectionsResult {
+  connections: CliConnectionSummary[]
+}
+
 export interface SchemasParams {
   /** Name or id of the open connection to use. Optional when exactly one is enabled. */
   connection?: string
+}
+
+export interface SchemasResult {
+  connection: CliConnectionRef
+  schemas: string[]
 }
 
 export interface EntitiesParams {
@@ -43,11 +54,38 @@ export interface EntitiesParams {
   entityTypes?: CliEntityType[]
 }
 
+export interface EntitiesResult {
+  connection: CliConnectionRef
+  schema: string | null
+  entities: CliEntity[]
+  warnings: string[]
+}
+
 export interface StructureParams {
   connection?: string
   /** Table or view name. */
   name: string
   schema?: string
+}
+
+export interface StructureResult {
+  connection: CliConnectionRef
+  schema: string | null
+  name: string
+  entityType: CliEntityType
+  description: string | null
+  columns: CliColumn[]
+  primaryKeys: string[]
+  indexes: CliIndex[]
+  relations: CliForeignKey[]
+  triggers: CliTrigger[]
+  partitions: CliPartition[]
+  size: number | null
+  indexSize: number | null
+  owner: string | null
+  createdAt: string | null
+  createScript: string | null
+  warnings: string[]
 }
 
 export interface CreateTabParams {
@@ -57,9 +95,18 @@ export interface CreateTabParams {
   sql?: string
 }
 
+export interface CreateTabResult extends CliCreateTabRequest, CliTabSummary {
+  connection: CliConnectionRef
+}
+
 export interface QueryParams {
   connection?: string
   sql: string
+}
+
+export interface QueryResult {
+  connection: CliConnectionRef
+  results: CliQueryResult[]
 }
 
 export interface SwitchTabParams {
@@ -67,13 +114,17 @@ export interface SwitchTabParams {
   tabId: string
 }
 
-/** What the app window is asked to open. Table tabs name an entity that is known to exist. */
+export interface SwitchTabResult extends CliTabSummary {
+  connection: CliConnectionRef
+}
+
+/** What the renderer is asked to open. */
 export interface CliCreateTabRequest {
   tab: CliTabType
   sql?: string
 }
 
-/** The tab the app window created or switched to. */
+/** The tab the renderer created or switched to. */
 export interface CliTabSummary {
   tabId: string
   title: string
@@ -83,17 +134,6 @@ export interface CliTabSummary {
 export interface CliRequest {
   method: CliMethodName
   params: unknown
-}
-
-/** What the app answers each method with. A thrown CliError becomes an error reply. */
-export interface CliMethods {
-  connections(): Promise<unknown>
-  schemas(params: SchemasParams): Promise<unknown>
-  entities(params: EntitiesParams): Promise<unknown>
-  structure(params: StructureParams): Promise<unknown>
-  query(params: QueryParams): Promise<unknown>
-  createTab(params: CreateTabParams): Promise<unknown>
-  switchTab(params: SwitchTabParams): Promise<unknown>
 }
 
 export type CliErrorCode =
@@ -156,7 +196,7 @@ export function isCliError(value: unknown): value is CliError {
 
 /** One open connection as reported by the `connections` command. */
 export interface CliConnectionSummary {
-  /** Stable for the lifetime of the window that owns the connection. */
+  /** Stable for the lifetime of the renderer that owns the connection. */
   id: string
   name: string
   connectionType: string
@@ -208,4 +248,51 @@ export interface CliQueryResult {
   /** The row cap that applied, so a truncated result is self-explanatory. */
   maxRows: number
   affectedRows: number | null
+}
+
+export interface CliIndexColumn {
+  name: string
+  order?: string | number
+  prefix?: number | null
+}
+
+export interface CliIndex {
+  id: string
+  table: string
+  schema: string
+  name: string
+  columns: CliIndexColumn[]
+  unique: boolean
+  primary: boolean
+  nullsNotDistinct?: boolean
+}
+
+export interface CliForeignKey {
+  constraintName?: string
+  fromSchema: string
+  fromTable: string
+  fromColumn: string | string[]
+  toSchema: string
+  toTable: string
+  toColumn: string | string[]
+  onUpdate?: string
+  onDelete?: string
+  isComposite: boolean
+}
+
+export interface CliTrigger {
+  name: string
+  timing: string
+  manipulation: string
+  action: string
+  condition: string | null
+  table: string
+  schema?: string
+}
+
+export interface CliPartition {
+  name: string
+  schema: string
+  expression: string
+  num: number
 }

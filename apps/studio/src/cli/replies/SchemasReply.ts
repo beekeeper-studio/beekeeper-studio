@@ -1,10 +1,8 @@
+import { SchemasResult } from "@/cli/protocol";
 import { CliReply } from "@/cli/replies/CliReply";
 import { connectionLine } from "@/cli/markdown";
 
-// FIXME: the result is partly untyped (Record<string, any>).
-export class SchemasReply extends CliReply<
-  { schemas: string[] } & Record<string, any>
-> {
+export class SchemasReply extends CliReply<SchemasResult> {
   markdown(): string {
     const result = this.json();
     const lines = connectionLine(result);

@@ -1,11 +1,8 @@
-import { CliQueryResult } from "@/cli/protocol";
+import { QueryResult } from "@/cli/protocol";
 import { CliReply } from "@/cli/replies/CliReply";
 import { connectionLine, table } from "@/cli/markdown";
 
-// FIXME: the result is partly untyped (Record<string, any>).
-export class QueryReply extends CliReply<
-  { results: CliQueryResult[] } & Record<string, any>
-> {
+export class QueryReply extends CliReply<QueryResult> {
   markdown(): string {
     const result = this.json();
     const lines = connectionLine(result);

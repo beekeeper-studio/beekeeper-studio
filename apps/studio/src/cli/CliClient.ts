@@ -2,6 +2,7 @@ import { EventEmitter } from 'events'
 import net from 'net'
 import {
   CliError,
+  ConnectionsParams,
   CliErrorPayload,
   CliEntityType,
   CliResponse,
@@ -11,7 +12,9 @@ import {
   QueryParams,
   StructureParams,
   CreateTabParams,
+  CreateTabResult,
   SwitchTabParams,
+  SwitchTabResult,
 } from './protocol'
 import { ConnectionsReply } from './replies/ConnectionsReply'
 import { EntitiesReply } from './replies/EntitiesReply'
@@ -88,8 +91,8 @@ export class CliClient extends EventEmitter<{ error: [unknown] }> {
     super()
   }
 
-  async connections(): Promise<ConnectionsReply> {
-    const response = await this.request('connections', {})
+  async connections(params: ConnectionsParams = {}): Promise<ConnectionsReply> {
+    const response = await this.request('connections', params)
     return new ConnectionsReply(response)
   }
 
@@ -119,14 +122,12 @@ export class CliClient extends EventEmitter<{ error: [unknown] }> {
     return new QueryReply(response)
   }
 
-  // FIXME: the reply is untyped (unknown).
-  async createTab(params: CreateTabParams): Promise<CliReply<unknown>> {
+  async createTab(params: CreateTabParams): Promise<CliReply<CreateTabResult>> {
     const response = await this.request('createTab', params)
     return new CliReply(response)
   }
 
-  // FIXME: the reply is untyped (unknown).
-  async switchTab(params: SwitchTabParams): Promise<CliReply<unknown>> {
+  async switchTab(params: SwitchTabParams): Promise<CliReply<SwitchTabResult>> {
     const response = await this.request('switchTab', params)
     return new CliReply(response)
   }

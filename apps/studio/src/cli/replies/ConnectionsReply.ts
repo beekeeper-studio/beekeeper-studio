@@ -1,10 +1,8 @@
-import { CliConnectionSummary } from "@/cli/protocol";
+import { ConnectionsResult } from "@/cli/protocol";
 import { CliReply } from "@/cli/replies/CliReply";
 import { table, yesNo } from "@/cli/markdown";
 
-export class ConnectionsReply extends CliReply<{
-  connections: CliConnectionSummary[];
-}> {
+export class ConnectionsReply extends CliReply<ConnectionsResult> {
   markdown(): string {
     const result = this.json();
     const connections = result.connections;

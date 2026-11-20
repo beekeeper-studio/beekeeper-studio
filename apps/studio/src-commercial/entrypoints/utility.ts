@@ -48,8 +48,7 @@ import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
 import { CliServer, CliServerError } from '@/services/cliServer/CliServer';
-import { createCliMethods } from '@/services/cliServer/commands';
-import { utilityCliBackend } from '@/services/cliServer/utilityBackend';
+import { UtilityApi } from '@/services/UtilityApi';
 import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';
 import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
 import globals from '@/common/globals';
@@ -251,11 +250,13 @@ async function init() {
   const cliServer = new CliServer({
     socketPath: platformInfo.cliSocketPath,
   });
-  for (const [name, method] of Object.entries(createCliMethods(utilityCliBackend))) {
-    cliServer.register(name, method);
+  const utilityApi = new UtilityApi({ config: BksConfig });
+  for (const command of utilityApi.getCliApis()) {
+    cliServer.register(command.name, command.func);
   }
   cliServer.on("requestHandled", (event) => auditLog.record(event));
 
+  context.utilityApi = utilityApi;
   context.pluginManager = pluginManager;
   context.themeManager = themeManager;
   context.cliServer = cliServer;
