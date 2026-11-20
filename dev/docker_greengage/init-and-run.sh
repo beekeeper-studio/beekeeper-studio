@@ -15,7 +15,10 @@ fi
 cd "$REPO_ROOT"
 
 source gpdb_src/concourse/scripts/common.bash
-install_and_configure_gpdb
+# Only unpack the prebuilt binaries. install_and_configure_gpdb would also run
+# ./configure on the source tree (15-30s), which creating the demo cluster
+# does not need.
+install_gpdb
 gpdb_src/concourse/scripts/setup_gpadmin_user.bash
 make_cluster
 
@@ -26,4 +29,8 @@ su - gpadmin -c "cd $REPO_ROOT && \
   echo \"host all all 0.0.0.0/0 trust\" >> \"\$DATA_DIR/pg_hba.conf\" && \
   gpstop -u"
 
-exec sleep infinity
+# PID 1 ignores SIGTERM unless it has a handler, which makes `docker stop`
+# wait out its full grace period. Exit straight away instead.
+trap 'exit 0' TERM INT
+sleep infinity &
+wait $!
