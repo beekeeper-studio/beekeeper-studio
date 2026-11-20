@@ -150,13 +150,15 @@ jobs:
           key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
-      - name: Install libaio (for oracle)
-        if: startsWith(matrix.chunk[0], 'oracle')
-        run: sudo apt install libaio-dev
-
+      # The Instant Client loads libaio.so.1; Ubuntu 24.04 ships it as
+      # libaio.so.1t64. The runner image already has the library, so only
+      # install it if that ever changes (apt adds ~25s to the job).
       - name: Symlink libaio v1 (for oracle)
         if: startsWith(matrix.chunk[0], 'oracle')
-        run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
+        run: |
+          LIBDIR=/usr/lib/x86_64-linux-gnu
+          [ -e "$LIBDIR/libaio.so.1t64" ] || sudo apt-get install -y libaio1t64
+          sudo ln -sf "$LIBDIR/libaio.so.1t64" "$LIBDIR/libaio.so.1"
 
       - name: Install PostgreSQL 15 (for postgres-backup)
         if: matrix.chunk[0] == 'postgres-backup.spec.ts'
