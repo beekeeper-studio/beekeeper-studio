@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs the MongoDB Kerberos integration test end-to-end with nothing but Docker on the host.
-# Builds the stack, runs the dockerized Jest client (which brings up the Samba AD DC +
+# Builds the stack, runs the dockerized Vitest client (which brings up the Samba AD DC +
 # MongoDB Enterprise via depends_on), prints diagnostics on failure, and tears everything
 # down.
 #
