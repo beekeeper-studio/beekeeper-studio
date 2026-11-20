@@ -136,7 +136,6 @@ describe('createCliMethods', () => {
 
   it('lists tables and entities', async () => {
     const tables = await call(createCliMethods(backend).entities({ entityTypes: ['table'] }))
-    expect(tables.entityTypes).toEqual(['table'])
     expect(tables.entities).toEqual([
       { schema: null, name: 'orders', entityType: 'table' },
       { schema: null, name: 'users', entityType: 'table' },

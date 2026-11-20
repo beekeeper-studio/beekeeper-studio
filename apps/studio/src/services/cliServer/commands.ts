@@ -447,7 +447,7 @@ export function createCliMethods(backend: CliBackend): CliMethods {
         const warnings: string[] = []
         const types = params.entityTypes || [...CLI_ENTITY_TYPES]
         const entities = await loadEntities(client, params.schema, types, warnings)
-        return { connection, schema: params.schema ?? null, entityTypes: types, entities, warnings }
+        return { connection, schema: params.schema ?? null, entities, warnings }
       })
     },
     async structure(params) {

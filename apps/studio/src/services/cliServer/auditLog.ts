@@ -45,7 +45,6 @@ export function summarizeResult(method: string | null, result: any): Record<stri
     case 'entities':
       return {
         schema: result.schema ?? null,
-        entityTypes: result.entityTypes ?? null,
         entities: (result.entities || []).length,
         warnings: (result.warnings || []).length,
       }

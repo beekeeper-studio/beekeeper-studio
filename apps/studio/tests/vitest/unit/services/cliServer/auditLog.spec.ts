@@ -43,7 +43,6 @@ describe('buildAuditEntry', () => {
       result: {
         connection: { id: 'sid-1', name: 'Local Dev' },
         schema: 'public',
-        entityTypes: ['table'],
         entities: [
           { schema: 'public', name: 'customers', entityType: 'table' },
           { schema: 'public', name: 'invoices', entityType: 'table' },
@@ -57,7 +56,7 @@ describe('buildAuditEntry', () => {
       now
     )
     expect(entry.connection).toEqual({ id: 'sid-1', name: 'Local Dev' })
-    expect(entry.result).toEqual({ schema: 'public', entityTypes: ['table'], entities: 3, warnings: 0 })
+    expect(entry.result).toEqual({ schema: 'public', entities: 3, warnings: 0 })
     const line = JSON.stringify(entry)
     for (const name of ['customers', 'invoices', 'payroll']) {
       expect(line).not.toContain(name)
@@ -111,9 +110,8 @@ describe('summarizeResult', () => {
   it('summarizes each method', () => {
     expect(summarizeResult('connections', { connections: [{ cliEnabled: true }, { cliEnabled: false }] })).toEqual({ connections: 2, cliEnabled: 1 })
     expect(summarizeResult('schemas', { schemas: ['a', 'b'] })).toEqual({ schemas: 2 })
-    expect(summarizeResult('entities', { schema: 'public', entityTypes: ['table'], entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
+    expect(summarizeResult('entities', { schema: 'public', entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
       schema: 'public',
-      entityTypes: ['table'],
       entities: 3,
       warnings: 1,
     })
