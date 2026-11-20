@@ -1047,13 +1047,28 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       }
     }
 
-    // Handle inserts (limited support - mainly for creating empty keys)
+    // Handle inserts. A row without a value creates an empty string key.
     // Process inserts before updates so keys exist when we try to update them
     for (const insertOp of changes.inserts || []) {
-      if (insertOp.table === "keys") {
-        const keyName = insertOp.data[0]?.key;
-        if (keyName) {
+      if (insertOp.table !== "keys") continue;
+      for (const row of insertOp.data || []) {
+        const keyName = row?.key;
+        if (!keyName) continue;
+
+        const value = row.value;
+        if (value === undefined || value === null || value === "") {
           await this.redis.set(keyName, "");
+        } else {
+          await this.setRedisValue(
+            keyName,
+            this.inferTypeFromValue(value),
+            value
+          );
+        }
+
+        const ttl = parseInt(row.ttl, 10);
+        if (ttl > 0) {
+          await this.redis.expire(keyName, ttl);
         }
       }
     }
