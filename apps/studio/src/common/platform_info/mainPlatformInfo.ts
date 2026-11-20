@@ -67,8 +67,17 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
   let userDirectory = testMode ? './tmp' : e.app.getPath("userData")
-  const downloadsDirectory = testMode ? './tmp' : e.app.getPath('downloads')
   const homeDirectory = testMode ? './tmp' : e.app.getPath('home')
+  // getPath('downloads') throws when Electron cannot resolve the folder
+  // (seen on Windows); fall back to home rather than crash at startup.
+  let downloadsDirectory = './tmp'
+  if (!testMode) {
+    try {
+      downloadsDirectory = e.app.getPath('downloads')
+    } catch (err) {
+      downloadsDirectory = homeDirectory
+    }
+  }
   if (p.env.PORTABLE_EXECUTABLE_DIR) {
     userDirectory = join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
   }
