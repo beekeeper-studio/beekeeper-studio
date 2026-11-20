@@ -492,6 +492,67 @@ function testWith(dockerTag: string, readonly: boolean) {
         expect(constraints.map((c) => c.column)).toEqual(['auto_default', 'other_default'])
         expect(constraints.find((c) => c.column === 'auto_default').definition).toBe('((10))')
       })
+
+      // The default constraints are dropped before the columns. If a column
+      // then can't be dropped, the whole change has to roll back, otherwise the
+      // table is left with its columns but without their defaults.
+      describe("when a column can't be dropped", () => {
+        const allColumns = ['id', 'named_default', 'auto_default', 'other_default', 'no_default']
+        const allDefaults = [
+          { column: 'auto_default', definition: '((1))' },
+          { column: 'named_default', definition: "('a')" },
+          { column: 'other_default', definition: '((2))' },
+        ]
+
+        it("keeps every default when an index blocks the drop", async () => {
+          if (readonly) return;
+
+          await util.knex.schema.raw(`CREATE INDEX drop_default_idx ON dbo.${table}(auto_default)`)
+
+          // named_default could be dropped on its own, auto_default can't
+          await expect(util.connection.alterTable({
+            table, schema: 'dbo',
+            drops: ['named_default', 'auto_default']
+          })).rejects.toThrow()
+
+          expect(await columnNames()).toEqual(allColumns)
+          expect(await defaultConstraints()).toEqual(allDefaults)
+        })
+
+        it("keeps every default when a foreign key blocks the drop", async () => {
+          if (readonly) return;
+
+          await util.knex.schema.raw(`
+            ALTER TABLE dbo.${table}
+            ADD CONSTRAINT FK_drop_default_self FOREIGN KEY (other_default) REFERENCES dbo.${table}(id)
+          `)
+
+          await expect(util.connection.alterTable({
+            table, schema: 'dbo',
+            drops: ['named_default', 'other_default']
+          })).rejects.toThrow()
+
+          expect(await columnNames()).toEqual(allColumns)
+          expect(await defaultConstraints()).toEqual(allDefaults)
+        })
+
+        it("keeps the old default when replacing it fails alongside a blocked drop", async () => {
+          if (readonly) return;
+
+          await util.knex.schema.raw(`CREATE INDEX drop_default_idx ON dbo.${table}(auto_default)`)
+
+          await expect(util.connection.alterTable({
+            table, schema: 'dbo',
+            drops: ['auto_default'],
+            alterations: [
+              { columnName: 'other_default', changeType: 'defaultValue', newValue: '20' },
+            ]
+          })).rejects.toThrow()
+
+          expect(await columnNames()).toEqual(allColumns)
+          expect(await defaultConstraints()).toEqual(allDefaults)
+        })
+      })
     })
 
     // Regression test for #3722 -> dotted table names fail in sp_helptrigger /
