@@ -60,11 +60,11 @@ under `tests/vitest/integration/lib/db` (`bin/get-db-files-as-json.sh`) and
 `sqlserver-winauth` and kerberos flows call `vitest:integration` directly
 (`windows-login-tests.yaml`, `dev/docker_*_kerberos/tests/entrypoint.sh`).
 
-- The vitest branch of that dispatch only runs the oracle instant-client setup
+- In CI, `bin/integration-tests.sh` only runs the oracle instant-client setup
   (and sets `ORACLE_CLI_PATH`) for specs whose file name starts with
-  `oracle`, as `oracle-role-thick.spec.ts` does. Keep that prefix when
-  `oracle.spec.js` migrates; the libaio steps in `studio-test.yml` match on it
-  too.
+  `oracle`, as `oracle-role-thick.spec.ts` does. Keep that prefix on any new
+  oracle spec; the libaio steps in `studio-test.yml` match on it too. Local
+  runs (no `CI` env var) and runs with no spec filter always set it up.
 - The `sqlserver-winauth` and kerberos flows call `internal:integration`
   directly and bypass the dispatch. Migrating those specs means updating
   `windows-login-tests.yaml` / `dev/docker_*_kerberos/tests/entrypoint.sh` in
