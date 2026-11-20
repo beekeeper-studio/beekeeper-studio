@@ -201,9 +201,15 @@ export default {
       return this.selectedSidebarItem === this.id
     },
     active() {
-      const tableSelected = this.activeTab && this.activeTab.table &&
-        this.activeTab.table.name === this.table.name &&
-        this.activeTab.table.schema === this.table.schema
+      const activeName = this.activeTab?.tableName || this.activeTab?.table?.name
+      const activeSchema = this.activeTab?.schemaName ?? this.activeTab?.table?.schema ?? null
+      const thisSchema = this.table.schema ?? null
+
+      const tableSelected =
+        this.activeTab &&
+        ['table', 'table-properties'].includes(this.activeTab.tabType) &&
+        activeName === this.table.name &&
+        activeSchema === thisSchema
 
       return tableSelected
     },
