@@ -63,6 +63,8 @@
   </div>
 </template>
 <script>
+import { applyImportedUrl } from '@/lib/connection/importFromUrl'
+
 export default {
     props: {
       config: Object,
@@ -85,7 +87,7 @@ export default {
       async importFromUrl() {
         try {
           const conf = await this.$util.send('appdb/saved/parseUrl', { url: this.url });
-          Object.assign(this.config, conf);
+          applyImportedUrl(this.config, conf);
           if (!this.config.connectionType) {
             this.importError = "Unable to determine database type from the URL";
           } else {
