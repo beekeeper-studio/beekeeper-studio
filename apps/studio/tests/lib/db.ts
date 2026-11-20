@@ -1501,13 +1501,60 @@ export class DBTestUtil {
       })
       return
     }
+    if (this.dbType === 'sqlserver') {
+      // SQL Server caps a statement at 2100 parameters, so bound inserts mean
+      // ~430 batches of 233 rows, each a fresh 2097-parameter plan compile —
+      // 40-60s per run. Sending each chunk as one JSON parameter and shredding
+      // it server-side with OPENJSON loads the whole fixture in a second or two.
+      const rows = Papa.parse(fs.readFileSync(fileLocation, 'utf-8'), {
+        header: true,
+        skipEmptyLines: true,
+      }).data as Record<string, any>[]
+      for (const rowChunk of _.chunk(rows, 10000)) {
+        await this.knex.raw(`
+          SET IDENTITY_INSERT organizations ON;
+          INSERT INTO organizations
+            (id, organization_id, name, website, country, description, founded, industry, number_of_employees)
+          SELECT id, organization_id, name, website, country, description, founded, industry, number_of_employees
+          FROM OPENJSON(?) WITH (
+            id int, organization_id nvarchar(255), name nvarchar(255), website nvarchar(255),
+            country nvarchar(255), description nvarchar(255), founded int, industry nvarchar(255),
+            number_of_employees int
+          );
+          SET IDENTITY_INSERT organizations OFF;
+        `, [JSON.stringify(rowChunk)])
+      }
+      return
+    }
+    if (this.dbType === 'oracle') {
+      // Oracle has no multi-row VALUES, so knex sends a multi-row insert as one
+      // statement per row (~25s for the fixture). executeMany binds the whole
+      // batch as an array in a single round trip.
+      const rows = Papa.parse(fs.readFileSync(fileLocation, 'utf-8'), {
+        header: true,
+        skipEmptyLines: true,
+      }).data as Record<string, any>[]
+      const columns = Object.keys(rows[0])
+      const numeric = ['id', 'founded', 'number_of_employees']
+      const sql = `INSERT INTO "organizations" (${columns.map((c) => `"${c}"`).join(', ')}) VALUES (${columns.map((c) => `:${c}`).join(', ')})`
+      const connection = await this.knex.client.acquireConnection()
+      try {
+        for (const rowChunk of _.chunk(rows, 10000)) {
+          const binds = rowChunk.map((row) => _.mapValues(row, (v, k) => numeric.includes(k) ? Number(v) : v))
+          await connection.executeMany(sql, binds, { autoCommit: true })
+        }
+      } finally {
+        await this.knex.client.releaseConnection(connection)
+      }
+      return
+    }
     return new Promise<void>( (resolve, reject) => {
       const fileStream = fs.createReadStream(fileLocation)
       const promises = []
-      const useStep = !!this.dbType.match(/firebird|sqlserver/i)
+      const useStep = this.dbType === 'firebird'
 
       let batch = []
-      const maxBatch = this.dbType === 'firebird' ? 255 : 233
+      const maxBatch = 255
 
       // The first failed batch is remembered and stops the pump. Batch
       // promises never reject — each records its error instead — because jest
@@ -1525,13 +1572,6 @@ export class DBTestUtil {
                 ${inserts}
               END
             `)
-          } else if (this.dbType === 'sqlserver') {
-            const { bindings, sql } = this.knex('organizations').insert(batch).toSQL()
-            await this.knex.raw(`
-              SET IDENTITY_INSERT organizations ON;
-                ${sql}
-              SET IDENTITY_INSERT organizations OFF;
-            `, bindings)
           } else {
             await this.knex('organizations').insert(batch)
           }
