@@ -22,6 +22,7 @@ const UNWRAPPER = /^"(.*)"$/
 
 export const SnowflakeData: DialectData = {
   sqlLabel: 'SQL',
+  supportsDropDatabase: true,
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [],
   wrapIdentifier: (value: string): string => {
