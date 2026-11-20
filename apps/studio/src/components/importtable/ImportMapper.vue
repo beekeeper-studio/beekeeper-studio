@@ -73,6 +73,7 @@ import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { getDialectData } from '@shared/lib/dialects'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+import { betterColumnName } from '@/lib/import'
 
 export default {
   components: {
@@ -269,7 +270,7 @@ export default {
       return `new-import-${this.stepperProps.tabId}`
     },
     betterColumnName(cName) {
-      return cName.replace(/\s+/g, '_').toLowerCase()
+      return betterColumnName(cName)
     },
     getColumnType(dataTypes) {
       const dt = new Set(dataTypes)
@@ -390,6 +391,35 @@ export default {
       if (this.tabulator === null) return false
 
       if (this.createTable) {
+        const columns = this.tabulator.getData()
+          .filter(col => col.tableColumn && col.tableColumn !== this.ignoreText)
+          .map(col => col.tableColumn)
+
+        const invalidColumns = columns.filter(col => col.includes('.'))
+        if (invalidColumns.length > 0) {
+          this.$noty.error(`Column names cannot contain a period (.): ${invalidColumns.join(', ')}`)
+          return false
+        }
+
+        const emptyColumns = columns.filter(col => !col.trim())
+        if (emptyColumns.length > 0) {
+          this.$noty.error('Column names cannot be empty')
+          return false
+        }
+
+        const columnSet = new Set(columns)
+        if (columns.length !== columnSet.size) {
+          const duplicates = columns.filter(t => {
+            if (columnSet.has(t)) {
+              columnSet.delete(t)
+              return false
+            }
+            return true
+          })
+          this.$noty.error(`The following table columns can only be mapped to one header: ${duplicates.join(', ')}`)
+          return false
+        }
+
         return true
       }
 
@@ -398,6 +428,12 @@ export default {
         .filter(t => t.tableColumn.toLowerCase().trim() !== this.ignoreText.toLowerCase() && t.tableColumn !== '')
         .map(t => t.tableColumn)
       const tableDataSet = new Set(tableData)
+
+      const invalidColumns = tableData.filter(col => col.includes('.'))
+      if (invalidColumns.length > 0) {
+        this.$noty.error(`Table column names containing a period (.) cannot be imported: ${invalidColumns.join(', ')}`)
+        return false
+      }
 
       this.tabulator.getData().forEach(data => {
         if (data.tableColumn.toLowerCase().trim() === this.ignoreText.toLowerCase()) {
