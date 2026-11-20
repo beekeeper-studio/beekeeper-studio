@@ -528,6 +528,7 @@
           fkOnClick: undefined,
           isPK: editData?.isPK,
           binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+          bksType: this.$bksConfig.ui.resultTable.dataTypeColors ? editData?.bksField?.bksType : undefined,
         }
 
         let headerTooltip = escapeHtml(column.name);
@@ -1253,7 +1254,7 @@
     right: 1.5rem;
     z-index: 10;
     align-items: center;
-    background: var(--editor-bg);
+    background: var(--table-filter-bg);
     border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
     @include card-shadow;

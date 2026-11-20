@@ -6,7 +6,6 @@ import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "@bksLogger";
-import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
@@ -17,6 +16,7 @@ import { safelyIdentify } from '../sql_tools';
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
 
+export type TableColumnMap = Record<string, Record<string, ExtendedTableColumn>>;
 
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
@@ -619,37 +619,50 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return qr.rows;
   }
 
-  protected async deserializeTableChanges(changes: TableChanges) {
+  protected getTableMapKey(table: string, schema?: string) {
+    return `${schema ?? ''}.${table}`
+  }
+
+  protected async deserializeTableChanges(changes: TableChanges, columns?: TableColumnMap) {
     // No transcoders, just return the raw result
     if (this.transcoders.length === 0) {
       return changes
     }
 
     changes.inserts?.forEach((ins) => {
+      const table = columns ? columns[this.getTableMapKey(ins.table, ins.schema)] : null;
       ins.data.forEach((row) => {
         Object.keys(row).forEach((key) => {
-          row[key] = this.deserializeValue(row[key])
+          row[key] = this.deserializeValue(row[key], table ? table[key] : null)
         })
       })
     })
 
     changes.updates?.forEach((upd) => {
+      const table = columns ? columns[this.getTableMapKey(upd.table, upd.schema)] : null;
       upd.primaryKeys.forEach((pk) => {
-        pk.value = this.deserializeValue(pk.value)
+        pk.value = this.deserializeValue(pk.value, table ? table[pk.column] : null);
       })
-      upd.value = this.deserializeValue(upd.value)
+      upd.value = this.deserializeValue(upd.value, table ? table[upd.column] : null);
     })
 
     changes.deletes?.forEach((del) => {
+      const table = columns ? columns[this.getTableMapKey(del.table, del.schema)] : null;
       del.primaryKeys.forEach((pk) => {
-        pk.value = this.deserializeValue(pk.value)
+        pk.value = this.deserializeValue(pk.value, table ? table[pk.column] : null);
       })
     })
   }
 
-  private deserializeValue(value: any) {
-    const transcoder = this.transcoders.find((t) => t.deserializeCheckByValue(value))
-    return transcoder?.deserialize(value) || value
+  private deserializeValue(value: any, col?: ExtendedTableColumn) {
+    const transcoder = this.transcoders.find((t) => {
+      if (t.deserializeCheckByField && col && col.bksField?.bksType !== 'UNKNOWN') {
+        return t.deserializeCheckByField(col.bksField, value);
+      }
+
+      return t.deserializeCheckByValue(value)
+    })
+    return transcoder ? transcoder.deserialize(value, col?.bksField) : value
   }
 
   protected violatesReadOnly(statements: IdentifyResult[], options: PluginExecuteOptions & any = {}) {
@@ -666,7 +679,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return commands;
   }
 
-  async driverExecuteSingle(q: string, options: PluginExecuteOptions & Record<string, any> = {}): Promise<RawResultType> {
+  protected readOnlyCheck(q: string, options: any): IdentifyResult[] {
     const { queries: statements, error } = safelyIdentify(q, { dialect: this.dialect });
 
     if (error) {
@@ -676,7 +689,11 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
+    return statements
+  }
 
+  async driverExecuteSingle(q: string, options: PluginExecuteOptions & Record<string, any> = {}): Promise<RawResultType> {
+    const statements = this.readOnlyCheck(q, options);
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     // force rawExecuteQuery to return a single result
     options['multiple'] = false
@@ -706,16 +723,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
-    const { queries: statements, error } = safelyIdentify(q, { dialect: this.dialect });
-
-    if (error) {
-      log.warn('Was not able to correctly identify query: ', error.message);
-    }
-
-    if (this.violatesReadOnly(statements, options)) {
-      throw new Error(errorMessages.readOnly);
-    }
-
+    const statements = this.readOnlyCheck(q, options)
     const logOptions: QueryLogOptions = { options, status: 'completed' }
     // force rawExecuteQuery to return an array
     options['multiple'] = true;

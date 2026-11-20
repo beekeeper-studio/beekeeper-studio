@@ -14,7 +14,9 @@ const TEST_VERSIONS = [
   { version: 'v2', protocol: 'ws' },
   { version: 'v2', protocol: 'http' },
   { version: 'v3', protocol: 'ws' },
-  { version: 'v3', protocol: 'http' }
+  { version: 'v3', protocol: 'http' },
+  { version: 'v4', protocol: 'ws' },
+  { version: 'v4', protocol: 'http' }
 ];
 
 
@@ -796,6 +798,713 @@ function testWith(tag, protocol) {
         expect(collected.length).toBe(5)
         const ages = collected.map((row) => row.find((v) => typeof v === 'number'))
         expect(ages).toEqual([45, 40, 35, 30, 25])
+      })
+    })
+
+    // Open issues from the 2026-11-02 release QA:
+    // https://github.com/beekeeper-studio/beekeeper-studio/issues/4978
+    describe('Release QA issues (#4978)', () => {
+      const dropTable = async (table: string) => {
+        try {
+          await connection.executeQuery(`REMOVE TABLE ${table}`)
+        } catch (_e) {
+          // ignore
+        }
+      }
+
+      // https://github.com/beekeeper-studio/beekeeper-studio/issues/4979
+      // Query results are sent to the renderer over IPC (structured clone), so
+      // RecordId / Geometry class instances arrive as `{}` / `{ point: [...] }`.
+      describe('query editor results (#4979)', () => {
+        const table = `qa_ids_${Date.now()}`
+        const linkTable = `qa_links_${Date.now()}`
+
+        beforeAll(async () => {
+          await connection.executeQuery(`
+            DEFINE TABLE ${table} SCHEMALESS;
+            CREATE ${table}:1 SET name = 'alpha', n = 1;
+            DEFINE TABLE ${linkTable} SCHEMALESS;
+            CREATE ${linkTable}:1 SET ref = ${table}:1, coordinates = (53.38, -2.35);
+          `)
+        })
+
+        afterAll(async () => {
+          await dropTable(table)
+          await dropTable(linkTable)
+        })
+
+        const runQuery = async (text: string) => {
+          const query = await connection.query(text, 1, { dryRun: false })
+          const results = await query.execute()
+          // mimic the trip to the renderer
+          return structuredClone(results)
+        }
+
+        it('returns record ids as strings', async () => {
+          const [result] = await runQuery(`SELECT * FROM ${table}`)
+
+          expect(result.rows).toHaveLength(1)
+          expect(result.rows[0].id).toBe(`${table}:1`)
+        })
+
+        it('returns record links as strings', async () => {
+          const [result] = await runQuery(`SELECT * FROM ${linkTable}`)
+
+          expect(result.rows[0].id).toBe(`${linkTable}:1`)
+          expect(result.rows[0].ref).toBe(`${table}:1`)
+        })
+
+        it('returns geometry values as GeoJSON', async () => {
+          const [result] = await runQuery(`SELECT coordinates FROM ${linkTable}`)
+
+          expect(result.rows[0].coordinates).toEqual({
+            type: 'Point',
+            coordinates: [53.38, -2.35]
+          })
+        })
+      })
+
+      // https://github.com/beekeeper-studio/beekeeper-studio/issues/4982
+      // The query editor calls query() with `{ dryRun }`, never `multiple`, so
+      // only the first statement's result comes back.
+      describe('multi-statement queries (#4982)', () => {
+        it('returns a result for every statement', async () => {
+          const query = await connection.query(`
+            SELECT name FROM person WHERE age = 25;
+            SELECT name FROM product WHERE price < 100;
+            SELECT count() FROM orders GROUP ALL;
+          `, 1, { dryRun: false })
+          const results = await query.execute()
+
+          expect(results).toHaveLength(3)
+          expect(results[0].rows).toEqual([{ name: 'Alice Smith' }])
+          expect(results[1].rows).toEqual([{ name: 'Book' }])
+          expect(results[2].rows).toEqual([{ count: 3 }])
+        })
+
+        it('runs DEFINE / CREATE statements and returns each of their results', async () => {
+          const table = `qa_multi_${Date.now()}`
+          try {
+            const query = await connection.query(`
+              DEFINE TABLE ${table} SCHEMALESS;
+              CREATE ${table}:1 SET n = 1;
+              CREATE ${table}:2 SET n = 2;
+              SELECT * FROM ${table} ORDER BY n;
+            `, 1, { dryRun: false })
+            const results = await query.execute()
+
+            expect(results).toHaveLength(4)
+            expect(results[3].rows.map((r) => r.n)).toEqual([1, 2])
+          } finally {
+            await dropTable(table)
+          }
+        })
+      })
+
+      // https://github.com/beekeeper-studio/beekeeper-studio/issues/4984
+      // SurrealDB adds `id` implicitly, so a SCHEMAFULL table usually has no
+      // `DEFINE FIELD id`. INFO FOR TABLE then doesn't list it and the data tab
+      // has no primary key column to edit with.
+      describe('SCHEMAFULL table without an explicit id field (#4984)', () => {
+        const table = `qa_full_${Date.now()}`
+
+        beforeAll(async () => {
+          await connection.executeQuery(`
+            DEFINE TABLE ${table} SCHEMAFULL;
+            DEFINE FIELD name ON ${table} TYPE string;
+            DEFINE FIELD n ON ${table} TYPE int;
+            CREATE ${table}:1 SET name = 'alpha', n = 1;
+          `)
+        })
+
+        afterAll(async () => {
+          await dropTable(table)
+        })
+
+        it('lists the implicit id column as a record id', async () => {
+          const columns = await connection.listTableColumns(table)
+          const id = columns.find((c) => c.columnName === 'id')
+
+          expect(id).toBeDefined()
+          expect(id.bksField.bksType).toBe('SURREALID')
+        })
+      })
+
+      // https://github.com/beekeeper-studio/beekeeper-studio/issues/4985
+      // The grid sends edited values as strings. In a schemaless table nothing
+      // coerces them, so `4` typed into a `number` column is stored as '4'.
+      describe('typed values in a schemaless table (#4985)', () => {
+        const table = `qa_plain_${Date.now()}`
+
+        beforeAll(async () => {
+          await connection.executeQuery(`
+            DEFINE TABLE ${table} SCHEMALESS;
+            CREATE ${table}:1 SET name = 'alpha', n = 1;
+          `)
+        })
+
+        afterAll(async () => {
+          await dropTable(table)
+        })
+
+        it('stores a number typed into a new row as a number', async () => {
+          const columns = await connection.listTableColumns(table)
+          expect(columns.find((c) => c.columnName === 'n').dataType).toBe('number')
+
+          await connection.applyChanges({
+            updates: [],
+            deletes: [],
+            inserts: [{ table, data: [{ name: 'delta', n: '4' }] }]
+          })
+
+          const [result] = await connection.executeQuery(
+            `SELECT name, n FROM ${table} WHERE name = 'delta'`
+          )
+          expect(result.rows).toHaveLength(1)
+          expect(result.rows[0].n).toBe(4)
+        })
+
+        it('stores a number typed into an existing row as a number', async () => {
+          await connection.applyChanges({
+            inserts: [],
+            deletes: [],
+            updates: [{
+              table,
+              column: 'n',
+              value: '5',
+              primaryKeys: [{ column: 'id', value: `${table}:1` }]
+            }]
+          })
+
+          const [result] = await connection.executeQuery(
+            `SELECT n FROM ${table}:1`
+          )
+          expect(result.rows[0].n).toBe(5)
+        })
+      })
+    })
+
+    // Table edits go through applyChanges, which deserializes the grid's values by
+    // column type (transcoders) and binds everything with surql
+    describe('Table edits', () => {
+      const withTable = async (
+        prefix: string,
+        setup: (table: string) => string,
+        run: (table: string) => Promise<void>
+      ) => {
+        const table = `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`
+        try {
+          await connection.executeQuery(setup(table))
+          await run(table)
+        } finally {
+          try {
+            await connection.executeQuery(`REMOVE TABLE ${table}`)
+          } catch (_e) {
+            // ignore
+          }
+        }
+      }
+
+      const selectAll = async (table: string) => {
+        const [result] = await connection.executeQuery(`SELECT * FROM ${table}`)
+        return result.rows
+      }
+
+      describe('inserts', () => {
+        it('stores an insert with a bare id under that table', async () => {
+          await withTable('edit_bare_id', (t) => `DEFINE TABLE ${t} SCHEMALESS;`, async (t) => {
+            await connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ id: 'abc', name: 'alpha' }] }]
+            })
+
+            const [result] = await connection.executeQuery(`SELECT * FROM ${t}:abc`)
+            expect(result.rows).toHaveLength(1)
+            expect(result.rows[0].id).toBe(`${t}:abc`)
+          })
+        })
+
+        it('stores an insert with a full record id without wrapping it again', async () => {
+          await withTable('edit_full_id', (t) => `DEFINE TABLE ${t} SCHEMALESS;`, async (t) => {
+            await connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ id: `${t}:full`, name: 'alpha' }] }]
+            })
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            expect(rows[0].id).toBe(`${t}:full`)
+          })
+        })
+
+        it('generates an id when none is given', async () => {
+          await withTable('edit_gen_id', (t) => `DEFINE TABLE ${t} SCHEMALESS;`, async (t) => {
+            await connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ name: 'alpha' }] }]
+            })
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            expect(rows[0].id.startsWith(`${t}:`)).toBe(true)
+          })
+        })
+
+        it('stores field names that need escaping', async () => {
+          await withTable('edit_idents', (t) => `DEFINE TABLE ${t} SCHEMALESS;`, async (t) => {
+            await connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ 'first name': 'a', select: 'b', 'with-dash': 'c' }] }]
+            })
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            expect(rows[0]['first name']).toBe('a')
+            expect(rows[0].select).toBe('b')
+            expect(rows[0]['with-dash']).toBe('c')
+          })
+        })
+
+        it('stores values literally instead of running them as SurrealQL', async () => {
+          await withTable('edit_literal', (t) => `DEFINE TABLE ${t} SCHEMALESS;`, async (t) => {
+            const name = `x'; REMOVE TABLE ${t}; --`
+            await connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ name }] }]
+            })
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            expect(rows[0].name).toBe(name)
+          })
+        })
+
+        it('keeps text that looks like a record id as a string in a string column', async () => {
+          await withTable('edit_text_id', (t) => `
+            DEFINE TABLE ${t} SCHEMAFULL;
+            DEFINE FIELD name ON ${t} TYPE string;
+          `, async (t) => {
+            await connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ name: 'note:hello' }] }]
+            })
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            expect(rows[0].name).toBe('note:hello')
+          })
+        })
+
+        it('stores a record link typed into a record column as a record id', async () => {
+          await withTable('edit_link', (t) => `
+            DEFINE TABLE ${t} SCHEMAFULL;
+            DEFINE FIELD owner ON ${t} TYPE record<person>;
+          `, async (t) => {
+            await connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ owner: 'person:alice' }] }]
+            })
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            expect(rows[0].owner).toBe('person:alice')
+          })
+        })
+      })
+
+      describe('type conversion', () => {
+        const typedTable = (t: string) => `
+          DEFINE TABLE ${t} SCHEMAFULL;
+          DEFINE FIELD i ON ${t} TYPE int;
+          DEFINE FIELD f ON ${t} TYPE float;
+          DEFINE FIELD n ON ${t} TYPE number;
+          DEFINE FIELD d ON ${t} TYPE decimal;
+          DEFINE FIELD b ON ${t} TYPE bool;
+          DEFINE FIELD dt ON ${t} TYPE datetime;
+          DEFINE FIELD du ON ${t} TYPE duration;
+          DEFINE FIELD u ON ${t} TYPE uuid;
+          DEFINE FIELD o ON ${t} TYPE object;
+          DEFINE FIELD o.a ON ${t} TYPE option<int>;
+          DEFINE FIELD a ON ${t} TYPE array<int>;
+          DEFINE FIELD g ON ${t} TYPE geometry<point>;
+          DEFINE FIELD oi ON ${t} TYPE option<int>;
+        `
+
+        const uuid = '0190f3a2-7b8c-7d4e-9f00-112233445566'
+
+        // The grid sends every edited value as a string. SCHEMAFULL tables reject
+        // strings for typed fields, so a successful insert means each one was converted.
+        it('converts typed strings for SCHEMAFULL fields on insert', async () => {
+          await withTable('edit_types_insert', typedTable, async (t) => {
+            await connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{
+                table: t,
+                data: [{
+                  id: `${t}:1`,
+                  i: '4',
+                  f: '4.5',
+                  n: '6',
+                  d: '1.25',
+                  b: 'false',
+                  dt: '2026-01-02T03:04:05Z',
+                  du: '1h30m',
+                  u: uuid,
+                  o: '{"a":1}',
+                  a: '[1,2]',
+                  g: '{"type":"Point","coordinates":[1,2]}',
+                  oi: '3',
+                }]
+              }]
+            })
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            const row = rows[0]
+            expect(row.i).toBe(4)
+            expect(row.f).toBe(4.5)
+            expect(row.n).toBe(6)
+            expect(String(row.d)).toBe('1.25')
+            expect(row.b).toBe(false)
+            expect(String(row.dt)).toContain('2026-01-02T03:04:05')
+            expect(String(row.du)).toBe('1h30m')
+            expect(String(row.u)).toBe(uuid)
+            expect(row.o).toEqual({ a: 1 })
+            expect(row.a).toEqual([1, 2])
+            expect(row.g).toEqual({ type: 'Point', coordinates: [1, 2] })
+            expect(row.oi).toBe(3)
+          })
+        })
+
+        it('converts typed strings for SCHEMAFULL fields on update', async () => {
+          await withTable('edit_types_update', (t) => `
+            ${typedTable(t)}
+            CREATE ${t}:1 SET i = 1, f = 1.5, n = 1, d = 1.0dec, b = true,
+              dt = d'2026-01-01T00:00:00Z', du = 1h, u = u'${uuid}', o = {}, a = [],
+              g = (0, 0);
+          `, async (t) => {
+            const update = (column: string, value: string) => ({
+              table: t,
+              column,
+              value,
+              primaryKeys: [{ column: 'id', value: `${t}:1` }]
+            })
+
+            await connection.applyChanges({
+              inserts: [],
+              deletes: [],
+              updates: [
+                update('i', '7'),
+                update('f', '2.25'),
+                update('d', '2.5'),
+                update('b', 'false'),
+                update('du', '2h'),
+                update('a', '[3]'),
+              ]
+            })
+
+            const [result] = await connection.executeQuery(`SELECT * FROM ${t}:1`)
+            const row = result.rows[0]
+            expect(row.i).toBe(7)
+            expect(row.f).toBe(2.25)
+            expect(String(row.d)).toBe('2.5')
+            expect(row.b).toBe(false)
+            expect(String(row.du)).toBe('2h')
+            expect(row.a).toEqual([3])
+          })
+        })
+
+        // '0' and 'false' convert to falsy values, which must not fall back to the original string
+        it('stores zero and false instead of the strings typed in', async () => {
+          await withTable('edit_falsy', (t) => `
+            DEFINE TABLE ${t} SCHEMALESS;
+            CREATE ${t}:1 SET n = 1, flag = true;
+          `, async (t) => {
+            await connection.applyChanges({
+              deletes: [],
+              inserts: [{ table: t, data: [{ id: `${t}:2`, n: '0', flag: 'false' }] }],
+              updates: [
+                { table: t, column: 'n', value: '0', primaryKeys: [{ column: 'id', value: `${t}:1` }] },
+                { table: t, column: 'flag', value: 'false', primaryKeys: [{ column: 'id', value: `${t}:1` }] },
+              ]
+            })
+
+            const [inserted] = await connection.executeQuery(`SELECT * FROM ${t}:2`)
+            expect(inserted.rows[0].n).toBe(0)
+            expect(inserted.rows[0].flag).toBe(false)
+
+            const [updated] = await connection.executeQuery(`SELECT * FROM ${t}:1`)
+            expect(updated.rows[0].n).toBe(0)
+            expect(updated.rows[0].flag).toBe(false)
+          })
+        })
+
+        it('leaves values that do not parse for the database to reject', async () => {
+          await withTable('edit_invalid', (t) => `
+            DEFINE TABLE ${t} SCHEMAFULL;
+            DEFINE FIELD i ON ${t} TYPE int;
+          `, async (t) => {
+            await expect(connection.applyChanges({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ i: 'abc' }] }]
+            })).rejects.toThrow()
+
+            expect(await selectAll(t)).toHaveLength(0)
+          })
+        })
+      })
+
+      describe('updates and deletes', () => {
+        it('updates a column whose name needs escaping', async () => {
+          await withTable('edit_update_ident', (t) => `
+            DEFINE TABLE ${t} SCHEMALESS;
+            CREATE ${t}:1 SET \`first name\` = 'a';
+          `, async (t) => {
+            await connection.applyChanges({
+              inserts: [],
+              deletes: [],
+              updates: [{
+                table: t,
+                column: 'first name',
+                value: 'b',
+                primaryKeys: [{ column: 'id', value: `${t}:1` }]
+              }]
+            })
+
+            const [result] = await connection.executeQuery(`SELECT * FROM ${t}:1`)
+            expect(result.rows[0]['first name']).toBe('b')
+          })
+        })
+
+        it('deletes a record', async () => {
+          await withTable('edit_delete', (t) => `
+            DEFINE TABLE ${t} SCHEMALESS;
+            CREATE ${t}:1 SET n = 1;
+            CREATE ${t}:2 SET n = 2;
+          `, async (t) => {
+            await connection.applyChanges({
+              inserts: [],
+              updates: [],
+              deletes: [{ table: t, primaryKeys: [{ column: 'id', value: `${t}:1` }] }]
+            })
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            expect(rows[0].id).toBe(`${t}:2`)
+          })
+        })
+
+        // Mimics the table view: rows from selectTop cross IPC, then an edited cell comes back
+        it('edits a row using the values selectTop returned', async () => {
+          await withTable('edit_round_trip', (t) => `
+            DEFINE TABLE ${t} SCHEMAFULL;
+            DEFINE FIELD name ON ${t} TYPE string;
+            DEFINE FIELD d ON ${t} TYPE decimal;
+            CREATE ${t}:1 SET name = 'alpha', d = 1.5dec;
+          `, async (t) => {
+            const { result } = await connection.selectTop(t, 0, 10, [], [])
+            const [row] = structuredClone(result)
+            expect(row.id).toBe(`${t}:1`)
+
+            await connection.applyChanges({
+              inserts: [],
+              deletes: [],
+              updates: [{
+                table: t,
+                column: 'd',
+                value: '2.75',
+                primaryKeys: [{ column: 'id', value: row.id }]
+              }]
+            })
+
+            const [after] = await connection.executeQuery(`SELECT * FROM ${t}:1`)
+            expect(String(after.rows[0].d)).toBe('2.75')
+            expect(after.rows[0].name).toBe('alpha')
+          })
+        })
+      })
+
+      describe('listTableColumns', () => {
+        it('lists the implicit id column for an empty schemaless table', async () => {
+          await withTable('cols_empty', (t) => `DEFINE TABLE ${t} SCHEMALESS;`, async (t) => {
+            const columns = await connection.listTableColumns(t)
+            const id = columns.find((c) => c.columnName === 'id')
+
+            expect(id).toBeDefined()
+            expect(id.bksField.bksType).toBe('SURREALID')
+          })
+        })
+
+        it('leaves out nested field definitions', async () => {
+          await withTable('cols_nested', (t) => `
+            DEFINE TABLE ${t} SCHEMAFULL;
+            DEFINE FIELD address ON ${t} TYPE option<object>;
+            DEFINE FIELD address.city ON ${t} TYPE string;
+            DEFINE FIELD tags ON ${t} TYPE array<string>;
+          `, async (t) => {
+            const names = (await connection.listTableColumns(t)).map((c) => c.columnName)
+
+            expect(names).toEqual(expect.arrayContaining(['id', 'address', 'tags']))
+            expect(names.some((n) => n.startsWith('address.'))).toBe(false)
+            // A typed array defines its element field itself: tags[*] on v2, tags.* on v3+
+            expect(names.some((n) => n.startsWith('tags[') || n.startsWith('tags.'))).toBe(false)
+          })
+        })
+
+        it('assigns a bksType for each field kind', async () => {
+          await withTable('cols_types', (t) => `
+            DEFINE TABLE ${t} SCHEMAFULL;
+            DEFINE FIELD s ON ${t} TYPE string;
+            DEFINE FIELD i ON ${t} TYPE int;
+            DEFINE FIELD f ON ${t} TYPE float;
+            DEFINE FIELD d ON ${t} TYPE decimal;
+            DEFINE FIELD n ON ${t} TYPE number;
+            DEFINE FIELD b ON ${t} TYPE bool;
+            DEFINE FIELD dt ON ${t} TYPE datetime;
+            DEFINE FIELD du ON ${t} TYPE duration;
+            DEFINE FIELD u ON ${t} TYPE uuid;
+            DEFINE FIELD o ON ${t} TYPE object;
+            DEFINE FIELD a ON ${t} TYPE array<string>;
+            DEFINE FIELD g ON ${t} TYPE geometry<point>;
+            DEFINE FIELD r ON ${t} TYPE option<record<person>>;
+            DEFINE FIELD x ON ${t} TYPE any;
+          `, async (t) => {
+            const columns = await connection.listTableColumns(t)
+            const types = Object.fromEntries(columns.map((c) => [c.columnName, c.bksField.bksType]))
+
+            expect(types).toMatchObject({
+              id: 'SURREALID',
+              s: 'STRING',
+              i: 'INTEGER',
+              f: 'FLOAT',
+              d: 'DECIMAL',
+              n: 'NUMBER',
+              b: 'BOOLEAN',
+              dt: 'DATETIME',
+              du: 'DURATION',
+              u: 'UUID',
+              o: 'OBJECT',
+              a: 'ARRAY',
+              g: 'GEOMETRY',
+              r: 'SURREALID',
+              x: 'UNKNOWN',
+            })
+          })
+        })
+      })
+
+      describe('selectTop serialization', () => {
+        // Table view rows cross IPC (structured clone), so SDK values have to arrive as plain values
+        it('returns SDK values in a form that survives the trip to the renderer', async () => {
+          await withTable('serialize_values', (t) => `
+            DEFINE TABLE ${t} SCHEMAFULL;
+            DEFINE FIELD d ON ${t} TYPE decimal;
+            DEFINE FIELD du ON ${t} TYPE duration;
+            DEFINE FIELD u ON ${t} TYPE uuid;
+            DEFINE FIELD dt ON ${t} TYPE datetime;
+            DEFINE FIELD g ON ${t} TYPE geometry<point>;
+            DEFINE FIELD r ON ${t} TYPE record<person>;
+            CREATE ${t}:1 SET d = 1.25dec, du = 1h30m, u = u'0190f3a2-7b8c-7d4e-9f00-112233445566',
+              dt = d'2026-01-02T03:04:05Z', g = (1, 2), r = person:alice;
+          `, async (t) => {
+            const { result, fields } = await connection.selectTop(t, 0, 10, [], [])
+            const [row] = structuredClone(result)
+
+            expect(row.id).toBe(`${t}:1`)
+            expect(row.d).toBe('1.25')
+            expect(row.du).toBe('1h30m')
+            expect(row.u).toBe('0190f3a2-7b8c-7d4e-9f00-112233445566')
+            expect(String(row.dt)).toContain('2026-01-02T03:04:05')
+            expect(row.g).toEqual({ type: 'Point', coordinates: [1, 2] })
+            expect(row.r).toBe('person:alice')
+
+            const types = Object.fromEntries(fields.map((f) => [f.name, f.bksType]))
+            expect(types).toMatchObject({
+              id: 'SURREALID',
+              d: 'DECIMAL',
+              du: 'DURATION',
+              u: 'UUID',
+              dt: 'DATETIME',
+              g: 'GEOMETRY',
+              r: 'SURREALID',
+            })
+          })
+        })
+      })
+
+      describe('applyChangesSql', () => {
+        // https://github.com/beekeeper-studio/beekeeper-studio/issues/4981
+        // "Copy to SQL" used to go through the generic applyChangesSql, which needs a knex
+        // instance. The SurrealDB client has none, so it threw `knex is not a function`.
+        it('generates SurrealQL for a pending update without a knex instance', async () => {
+          await withTable('edit_sql_update', (t) => `
+            DEFINE TABLE ${t} SCHEMALESS;
+            CREATE ${t}:1 SET name = 'alpha';
+          `, async (t) => {
+            const sql = await connection.applyChangesSql({
+              inserts: [],
+              deletes: [],
+              updates: [{
+                table: t,
+                column: 'name',
+                value: 'beta',
+                primaryKeys: [{ column: 'id', value: `${t}:1` }],
+              }],
+            })
+
+            expect(sql).toMatch(/UPDATE/i)
+            expect(sql).toContain(`${t}:1`)
+            expect(sql).toContain('name')
+            expect(sql).toContain('beta')
+          })
+        })
+
+        it('generates SurrealQL for pending inserts and deletes', async () => {
+          await withTable('edit_sql_insert_delete', (t) => `
+            DEFINE TABLE ${t} SCHEMALESS;
+            CREATE ${t}:2 SET name = 'delta';
+          `, async (t) => {
+            const sql = await connection.applyChangesSql({
+              updates: [],
+              inserts: [{ table: t, data: [{ name: 'gamma' }] }],
+              deletes: [{ table: t, primaryKeys: [{ column: 'id', value: `${t}:2` }] }],
+            })
+
+            expect(sql).toMatch(/CREATE|INSERT/i)
+            expect(sql).toContain('gamma')
+            expect(sql).toMatch(/DELETE/i)
+            expect(sql).toContain(`${t}:2`)
+          })
+        })
+
+        it('generates SurrealQL that runs and makes the same change', async () => {
+          await withTable('edit_sql', (t) => `DEFINE TABLE ${t} SCHEMALESS;`, async (t) => {
+            const sql = await connection.applyChangesSql({
+              updates: [],
+              deletes: [],
+              inserts: [{ table: t, data: [{ name: 'alpha', note: "it's" }] }]
+            })
+
+            expect(sql).toContain('LET $')
+            expect(sql).toContain('CREATE')
+
+            await connection.executeQuery(sql)
+
+            const rows = await selectAll(t)
+            expect(rows).toHaveLength(1)
+            expect(rows[0].name).toBe('alpha')
+            expect(rows[0].note).toBe("it's")
+          })
+        })
       })
     })
   })

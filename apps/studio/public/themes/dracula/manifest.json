@@ -1,0 +1,10 @@
+{
+  "id": "dracula",
+  "name": "Dracula",
+  "author": {
+    "name": "Beekeeper Studio",
+    "url": "https://www.beekeeperstudio.io"
+  },
+  "description": "A theme based on the Dracula palette.",
+  "version": "1.0.0"
+}
