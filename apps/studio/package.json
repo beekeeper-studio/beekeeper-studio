@@ -29,6 +29,7 @@
     "config:build": "CLI_MODE=1 tsx ./src/config/typesGenerator.ts",
     "postinstall": "install-electron && electron-builder install-app-deps",
     "test:integration": "../../bin/integration-tests.sh",
+    "test:integration:setup": "../../bin/get-instant-client.sh .instant",
     "dev:esbuild": "node ./esbuild.mjs watch",
     "dev:vite": "vite dev"
   },

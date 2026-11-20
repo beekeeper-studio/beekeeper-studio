@@ -52,6 +52,7 @@ pnpm lib:dev              # Start UI kit in development/watch mode
 
 # Testing
 pnpm test:unit            # Unit tests (Vitest, tests/vitest/unit) + ui-kit tests
+pnpm test:integration:setup # One-time: download the Oracle instant client (needed for oracle specs and full runs)
 pnpm test:integration     # Integration tests
 pnpm test:e2e             # End-to-end tests with Playwright
 pnpm test:ci              # Non-DB integration tests (alias for vitest:ci)

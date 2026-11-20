@@ -2,7 +2,6 @@
 
 set -euxo pipefail
 
-BINBASE=`dirname $0`
 BASE=`pwd`
 LOCATION="$BASE/.instant"
 
@@ -16,12 +15,11 @@ for arg in "$@"; do
   ARGS+=("${arg#apps/studio/}")
 done
 
-# The oracle instant client is only used by specs whose file name starts with
-# "oracle". CI runs one spec per job, so every other job skips the download.
-# Local runs always fetch it: the download is cached in .instant after the
-# first run, and a run with no filter includes the oracle specs.
+# The oracle specs (file name starts with "oracle") need the oracle instant
+# client, which `pnpm test:integration:setup` downloads into apps/studio/.instant.
+# A run with no spec filter includes them.
 NEEDS_ORACLE=0
-if [ -z "${CI:-}" ] || [ "$#" -eq 0 ]; then
+if [ "$#" -eq 0 ]; then
   NEEDS_ORACLE=1
 fi
 for arg in "$@"; do
@@ -30,10 +28,15 @@ for arg in "$@"; do
   esac
 done
 
-if [ "$NEEDS_ORACLE" -eq 1 ]; then
-  "$BINBASE/get-instant-client.sh" "$LOCATION"
-  export ORACLE_CLI_PATH="$LOCATION/instantclient_21_17/"
+INSTANT_CLIENT="$LOCATION/instantclient_21_17"
+if [ -d "$INSTANT_CLIENT" ]; then
+  export ORACLE_CLI_PATH="$INSTANT_CLIENT/"
   export LD_LIBRARY_PATH="$ORACLE_CLI_PATH"
+elif [ "$NEEDS_ORACLE" -eq 1 ]; then
+  set +x
+  echo "Oracle instant client not found at $INSTANT_CLIENT" >&2
+  echo "Run 'pnpm test:integration:setup' first, then re-run the tests." >&2
+  exit 1
 fi
 
 pnpm -F beekeeper-studio vitest:integration ${ARGS[@]+"${ARGS[@]}"}
