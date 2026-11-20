@@ -49,6 +49,108 @@ export function parseMongoHost(url: string): { host: string; port: number } | nu
   }
 }
 
+// Issue #4802: Helper functions for dotted-path updates and BSON type preservation
+function valuesEqual(a: any, b: any, userOldVal?: any): boolean {
+  if (userOldVal !== undefined && _.isEqual(userOldVal, b)) {
+    return true;
+  }
+  if (_.isEqual(a, b)) return true;
+  if (a instanceof Date && !isNaN(a.getTime())) {
+    if (typeof b === 'string') {
+      const bTime = Date.parse(b);
+      return !isNaN(bTime) && (a.toISOString() === b || a.getTime() === bTime);
+    }
+    if (b instanceof Date && !isNaN(b.getTime())) {
+      return a.getTime() === b.getTime();
+    }
+  }
+  if (b instanceof Date && !isNaN(b.getTime()) && typeof a === 'string') {
+    const aTime = Date.parse(a);
+    return !isNaN(aTime) && (b.toISOString() === a || b.getTime() === aTime);
+  }
+  if (a instanceof ObjectId && typeof b === 'string') {
+    return a.toHexString() === b;
+  }
+  if (b instanceof ObjectId && typeof a === 'string') {
+    return b.toHexString() === a;
+  }
+  return false;
+}
+
+function parsePotentialJson(val: any): any {
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (_.isPlainObject(parsed) && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return val;
+}
+
+function restoreBsonTypeIfNeeded(existingVal: any, newVal: any): any {
+  if (existingVal instanceof Date && !isNaN(existingVal.getTime()) && typeof newVal === 'string') {
+    const parsedTime = Date.parse(newVal);
+    if (!isNaN(parsedTime)) {
+      return new Date(parsedTime);
+    }
+  }
+  if (existingVal instanceof ObjectId && typeof newVal === 'string' && ObjectId.isValid(newVal)) {
+    return new ObjectId(newVal);
+  }
+  return newVal;
+}
+
+function computeDottedUpdates(
+  dbOldVal: Record<string, any>,
+  userNewVal: Record<string, any>,
+  prefix: string,
+  setOps: Record<string, any>,
+  unsetOps: Record<string, any>,
+  userOldVal?: Record<string, any>
+): void {
+  const allKeys = new Set([
+    ...Object.keys(dbOldVal),
+    ...Object.keys(userNewVal),
+    ...(userOldVal ? Object.keys(userOldVal) : [])
+  ]);
+
+  for (const key of allKeys) {
+    const fieldPath = prefix ? `${prefix}.${key}` : key;
+    const hasInNew = Object.prototype.hasOwnProperty.call(userNewVal, key);
+    const hasInDb = Object.prototype.hasOwnProperty.call(dbOldVal, key);
+    const hasInUserOld = userOldVal ? Object.prototype.hasOwnProperty.call(userOldVal, key) : hasInDb;
+
+    if (!hasInNew && (hasInDb || hasInUserOld)) {
+      unsetOps[fieldPath] = "";
+    } else if (hasInNew && !hasInDb) {
+      setOps[fieldPath] = userNewVal[key];
+    } else {
+      const dbVal = dbOldVal[key];
+      const newVal = userNewVal[key];
+      const oldVal = userOldVal ? userOldVal[key] : undefined;
+
+      if (!valuesEqual(dbVal, newVal, oldVal)) {
+        if (_.isPlainObject(dbVal) && _.isPlainObject(newVal)) {
+          computeDottedUpdates(
+            dbVal,
+            newVal,
+            fieldPath,
+            setOps,
+            unsetOps,
+            _.isPlainObject(oldVal) ? oldVal : undefined
+          );
+        } else {
+          setOps[fieldPath] = restoreBsonTypeIfNeeded(dbVal, newVal);
+        }
+      }
+    }
+  }
+}
+
 // Rewrite a MongoDB URL's host:port to point at the local end of an SSH tunnel.
 // Forces directConnection so the driver talks to the tunnelled node directly
 // instead of running topology discovery and trying to reach the server's
@@ -577,24 +679,73 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         // Handle value conversion for special types if needed
         const fieldValue = update.value;
 
-        // Create the update document
-        const updateDoc = {
-          $set: {
-            [update.column]: fieldValue
-          }
-        };
-
         // Get collection
         const collection = connection.collection(update.table);
 
-        // Perform the update
-        const result = await collection.findOneAndUpdate(
-          filter,
-          updateDoc,
-          {
-            returnDocument: 'after',
+        const parsedFieldValue = parsePotentialJson(fieldValue);
+
+        let updateDoc: Record<string, any> = {};
+        let isDiffed = false;
+
+        // Issue #4802: Only attempt dotted-path updates if the new value is an object,
+        // and either the client's oldValue was a plain object or the existing document field in MongoDB is a plain object.
+        if (_.isPlainObject(parsedFieldValue) && !Array.isArray(parsedFieldValue)) {
+          let isEligibleForDiff = false;
+          let dbOldValue: any = undefined;
+
+          if (update.oldValue === undefined || (_.isPlainObject(update.oldValue) && !Array.isArray(update.oldValue))) {
+            const existingDoc = await collection.findOne(filter, { projection: { [update.column]: 1 } });
+            if (existingDoc && _.isPlainObject(existingDoc[update.column]) && !Array.isArray(existingDoc[update.column])) {
+              isEligibleForDiff = true;
+              dbOldValue = existingDoc[update.column];
+            }
           }
-        );
+
+          if (isEligibleForDiff && dbOldValue) {
+            isDiffed = true;
+            const setOps: Record<string, any> = {};
+            const unsetOps: Record<string, any> = {};
+            const userOld = _.isPlainObject(update.oldValue) ? update.oldValue : undefined;
+            computeDottedUpdates(dbOldValue, parsedFieldValue, update.column, setOps, unsetOps, userOld);
+
+            if (Object.keys(setOps).length > 0) {
+              updateDoc.$set = setOps;
+            }
+            if (Object.keys(unsetOps).length > 0) {
+              updateDoc.$unset = unsetOps;
+            }
+            log.debug(`Computed dotted update for ${update.table} column ${update.column}:`, { setOps, unsetOps });
+          }
+        }
+
+        // Perform the update
+        let result;
+        if (isDiffed) {
+          if (Object.keys(updateDoc).length === 0) {
+            result = await collection.findOne(filter);
+          } else {
+            result = await collection.findOneAndUpdate(
+              filter,
+              updateDoc,
+              {
+                returnDocument: 'after',
+             }
+            );
+          }
+        } else {
+          updateDoc = {
+            $set: {
+              [update.column]: fieldValue
+            }
+          };
+          result = await collection.findOneAndUpdate(
+            filter,
+            updateDoc,
+            {
+              returnDocument: 'after',
+            }
+          );
+        }
 
         if (!result) {
           throw new Error(`Failed to update document with _id ${idValue} in ${update.table}`);
