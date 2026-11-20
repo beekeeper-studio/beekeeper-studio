@@ -184,7 +184,9 @@ export default Vue.extend({
         {
           field: 'constraintName',
           title: "Name",
+          minWidth: 200,
           widthGrow: 2,
+          resizable: true,
           editable,
           editor: vueEditor(NullableInputEditorVue),
           contextMenu: copyCellMenu,
@@ -399,6 +401,7 @@ export default Vue.extend({
         columnDefaults: {
           title:'',
           tooltip: true,
+          resizable: 'header',
           headerSort: false,
         },
         placeholder: "No Relations",
