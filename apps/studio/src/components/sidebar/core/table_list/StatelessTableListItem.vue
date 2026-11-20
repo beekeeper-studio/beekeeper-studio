@@ -127,6 +127,7 @@ import Vue from "vue";
 import { mapGetters, mapState } from "vuex";
 import _ from "lodash";
 import TableIcon from "@/components/common/TableIcon.vue";
+import { isTableActiveInTab } from "@/common/utils";
 
 export default Vue.extend({
   props: [
@@ -171,17 +172,7 @@ export default Vue.extend({
       return this.selectedSidebarItem === this.id;
     },
     active() {
-      const activeName = this.activeTab?.tableName || this.activeTab?.table?.name;
-      const activeSchema = this.activeTab?.schemaName ?? this.activeTab?.table?.schema ?? null;
-      const thisSchema = this.table.schema ?? null;
-
-      const tableSelected =
-        this.activeTab &&
-        ["table", "table-properties"].includes(this.activeTab.tabType) &&
-        activeName === this.table.name &&
-        activeSchema === thisSchema;
-
-      return tableSelected;
+      return isTableActiveInTab(this.table, this.activeTab);
     },
     ...mapGetters(["selectedSidebarItem"]),
     ...mapState(["activeTab"]),
