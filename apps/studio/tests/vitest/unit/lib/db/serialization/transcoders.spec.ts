@@ -19,7 +19,7 @@ describe("MongoDBDecimal128Transcoder", () => {
     });
 
     it("preserves precision for high-precision values", () => {
-      const raw = "0.0000000000000000001";
+      const raw = "1234.5678901234567890123456789";
       expect(MongoDBDecimal128Transcoder.serialize(Decimal128.fromString(raw))).toBe(raw);
     });
 
