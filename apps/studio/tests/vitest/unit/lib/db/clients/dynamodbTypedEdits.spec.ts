@@ -1,66 +1,98 @@
 import { describe, it, expect, vi } from "vitest";
 import { NumberValue } from "@aws-sdk/lib-dynamodb";
-import { coerceDynamoValue } from "@commercial/backend/lib/db/clients/dynamodb/coerce";
+import {
+  DynamoDBNumberTranscoder,
+  DynamoDBBooleanTranscoder,
+  DynamoDBJsonTranscoder,
+  DynamoDBNullTranscoder,
+  DynamoBksField,
+} from "@/lib/db/serialization/dynamodb_transcoders";
 import { DynamoDBClient } from "@commercial/backend/lib/db/clients/dynamodb";
 import type { IDbConnectionServer } from "@/lib/db/backendTypes";
 import type { IDbConnectionDatabase } from "@/lib/db/types";
 
-describe("coerceDynamoValue", () => {
-  it("turns Number text into a NumberValue that keeps the exact digits", () => {
-    const out = coerceDynamoValue("99", "Number") as NumberValue;
-    expect(out).toBeInstanceOf(NumberValue);
-    expect(out.toString()).toBe("99");
-    expect((coerceDynamoValue("10.50", "Number") as NumberValue).toString()).toBe("10.50");
-    expect((coerceDynamoValue("12345678901234567890", "Number") as NumberValue).toString()).toBe("12345678901234567890");
+describe("DynamoDB transcoders", () => {
+  describe("DynamoDBNumberTranscoder", () => {
+    it("turns Number text into a NumberValue that keeps the exact digits", () => {
+      const out = DynamoDBNumberTranscoder.deserialize("99") as NumberValue;
+      expect(out).toBeInstanceOf(NumberValue);
+      expect(out.toString()).toBe("99");
+      expect((DynamoDBNumberTranscoder.deserialize("10.50") as NumberValue).toString()).toBe("10.50");
+      expect((DynamoDBNumberTranscoder.deserialize("12345678901234567890") as NumberValue).toString()).toBe(
+        "12345678901234567890"
+      );
+    });
+
+    it("rejects text that is not a number", () => {
+      expect(() => DynamoDBNumberTranscoder.deserialize("abc")).toThrow(/not a valid Number/);
+      expect(() => DynamoDBNumberTranscoder.deserialize("1,5")).toThrow(/not a valid Number/);
+    });
+
+    it("maps blank string to null", () => {
+      expect(DynamoDBNumberTranscoder.deserialize("")).toBeNull();
+      expect(DynamoDBNumberTranscoder.deserialize("   ")).toBeNull();
+    });
+
+    it("leaves non-string values alone", () => {
+      expect(DynamoDBNumberTranscoder.deserialize(42 as any)).toBe(42);
+    });
   });
 
-  it("rejects text that is not a number", () => {
-    expect(() => coerceDynamoValue("abc", "Number")).toThrow(/not a valid Number/);
-    expect(() => coerceDynamoValue("1,5", "Number")).toThrow(/not a valid Number/);
+  describe("DynamoDBBooleanTranscoder", () => {
+    it("parses Boolean text", () => {
+      expect(DynamoDBBooleanTranscoder.deserialize("true")).toBe(true);
+      expect(DynamoDBBooleanTranscoder.deserialize(" FALSE ")).toBe(false);
+      expect(DynamoDBBooleanTranscoder.deserialize("")).toBeNull();
+      expect(() => DynamoDBBooleanTranscoder.deserialize("yes")).toThrow(/not a valid Boolean/);
+    });
   });
 
-  it("maps blank non-string values to null", () => {
-    expect(coerceDynamoValue("", "Number")).toBeNull();
-    expect(coerceDynamoValue("  ", "Map")).toBeNull();
-    expect(coerceDynamoValue("", "List")).toBeNull();
+  describe("DynamoDBJsonTranscoder", () => {
+    it("parses Map JSON into object", () => {
+      const field: DynamoBksField = { name: "meta", bksType: "OBJECT", dynamoType: "M" };
+      expect(DynamoDBJsonTranscoder.deserialize('{"city":"Lyon","n":280,"extra":[1,2]}', field)).toStrictEqual({
+        city: "Lyon",
+        n: 280,
+        extra: [1, 2],
+      });
+    });
+
+    it("rejects Map JSON that is not an object", () => {
+      const field: DynamoBksField = { name: "meta", bksType: "OBJECT", dynamoType: "M" };
+      expect(() => DynamoDBJsonTranscoder.deserialize("[1]", field)).toThrow(/JSON object/);
+      expect(() => DynamoDBJsonTranscoder.deserialize("{invalid", field)).toThrow(/not valid JSON/);
+    });
+
+    it("parses List JSON into array", () => {
+      const field: DynamoBksField = { name: "tags", bksType: "ARRAY", dynamoType: "L" };
+      expect(DynamoDBJsonTranscoder.deserialize("[1,2,3]", field)).toStrictEqual([1, 2, 3]);
+    });
+
+    it("rejects List JSON that is not an array", () => {
+      const field: DynamoBksField = { name: "tags", bksType: "ARRAY", dynamoType: "L" };
+      expect(() => DynamoDBJsonTranscoder.deserialize('{"a":1}', field)).toThrow(/JSON array/);
+    });
+
+    it("builds String Sets and Number Sets", () => {
+      const stringSetField: DynamoBksField = { name: "ss", bksType: "ARRAY", dynamoType: "SS" };
+      expect(DynamoDBJsonTranscoder.deserialize('["a","b"]', stringSetField)).toStrictEqual(new Set(["a", "b"]));
+
+      const numberSetField: DynamoBksField = { name: "ns", bksType: "ARRAY", dynamoType: "NS" };
+      const nums = DynamoDBJsonTranscoder.deserialize("[1,2.5]", numberSetField) as Set<NumberValue>;
+      expect([...nums].map((n) => n.toString())).toStrictEqual(["1", "2.5"]);
+    });
   });
 
-  it("parses Map and List JSON", () => {
-    expect(coerceDynamoValue('{"city":"Lyon","n":280,"extra":[1,2]}', "Map"))
-      .toStrictEqual({ city: "Lyon", n: 280, extra: [1, 2] });
-    expect(coerceDynamoValue("[1,2,3]", "List")).toStrictEqual([1, 2, 3]);
-  });
-
-  it("rejects JSON of the wrong shape", () => {
-    expect(() => coerceDynamoValue("[1]", "Map")).toThrow(/JSON object/);
-    expect(() => coerceDynamoValue('{"a":1}', "List")).toThrow(/JSON array/);
-    expect(() => coerceDynamoValue("{nope", "Map")).toThrow(/not valid JSON/);
-  });
-
-  it("parses Boolean text", () => {
-    expect(coerceDynamoValue("true", "Boolean")).toBe(true);
-    expect(coerceDynamoValue(" FALSE ", "Boolean")).toBe(false);
-    expect(() => coerceDynamoValue("yes", "Boolean")).toThrow(/not a valid Boolean/);
-  });
-
-  it("builds sets", () => {
-    expect(coerceDynamoValue('["a","b"]', "String Set")).toStrictEqual(new Set(["a", "b"]));
-    const nums = coerceDynamoValue("[1,2.5]", "Number Set") as Set<NumberValue>;
-    expect([...nums].map((n) => n.toString())).toStrictEqual(["1", "2.5"]);
-  });
-
-  it("leaves String, Binary, unknown types and non-strings alone", () => {
-    expect(coerceDynamoValue("123", "String")).toBe("123");
-    expect(coerceDynamoValue("123", undefined)).toBe("123");
-    expect(coerceDynamoValue("x", "Binary")).toBe("x");
-    expect(coerceDynamoValue(5, "Number")).toBe(5);
-    const obj = { a: 1 };
-    expect(coerceDynamoValue(obj, "Map")).toBe(obj);
+  describe("DynamoDBNullTranscoder", () => {
+    it("returns null for Null fields", () => {
+      const field: DynamoBksField = { name: "nil", bksType: "UNKNOWN", dynamoType: "NULL" };
+      expect(DynamoDBNullTranscoder.deserialize("anything", field)).toBeNull();
+    });
   });
 });
 
-describe("DynamoDBClient typed edits", () => {
-  function createClient(columns: { columnName: string; dataType: string }[] = []) {
+describe("DynamoDBClient typed edits via applyChanges", () => {
+  function createClient(columns: { columnName: string; dataType: string; bksField: DynamoBksField }[] = []) {
     const client = new DynamoDBClient(
       { config: { readOnlyMode: false } } as unknown as IDbConnectionServer,
       { database: "" } as IDbConnectionDatabase
@@ -72,17 +104,24 @@ describe("DynamoDBClient typed edits", () => {
   }
 
   it("stores an edited Number cell as a number, not a string", async () => {
-    const { client, send } = createClient();
-
-    await client.updateValues([
-      {
-        table: "people",
-        column: "age",
-        columnType: "Number",
-        primaryKeys: [{ column: "id", value: "p1" }],
-        value: "99",
-      },
+    const { client, send } = createClient([
+      { columnName: "id", dataType: "String", bksField: { name: "id", bksType: "STRING", dynamoType: "S" } },
+      { columnName: "age", dataType: "Number", bksField: { name: "age", bksType: "NUMBER", dynamoType: "N" } },
     ]);
+
+    await client.applyChanges({
+      inserts: [],
+      deletes: [],
+      updates: [
+        {
+          table: "people",
+          column: "age",
+          columnType: "Number",
+          primaryKeys: [{ column: "id", value: "p1" }],
+          value: "99",
+        },
+      ],
+    });
 
     const value = send.mock.calls[0][0].input.ExpressionAttributeValues[":v"];
     expect(value).toBeInstanceOf(NumberValue);
@@ -90,48 +129,63 @@ describe("DynamoDBClient typed edits", () => {
   });
 
   it("stores an edited Map cell as a map, not JSON text", async () => {
-    const { client, send } = createClient();
-
-    await client.updateValues([
-      {
-        table: "people",
-        column: "meta",
-        columnType: "Map",
-        primaryKeys: [{ column: "id", value: "p1" }],
-        value: '{"city":"Lyon","n":280}',
-      },
+    const { client, send } = createClient([
+      { columnName: "id", dataType: "String", bksField: { name: "id", bksType: "STRING", dynamoType: "S" } },
+      { columnName: "meta", dataType: "Map", bksField: { name: "meta", bksType: "OBJECT", dynamoType: "M" } },
     ]);
 
-    expect(send.mock.calls[0][0].input.ExpressionAttributeValues[":v"])
-      .toStrictEqual({ city: "Lyon", n: 280 });
+    await client.applyChanges({
+      inserts: [],
+      deletes: [],
+      updates: [
+        {
+          table: "people",
+          column: "meta",
+          columnType: "Map",
+          primaryKeys: [{ column: "id", value: "p1" }],
+          value: '{"city":"Lyon","n":280}',
+        },
+      ],
+    });
+
+    expect(send.mock.calls[0][0].input.ExpressionAttributeValues[":v"]).toStrictEqual({ city: "Lyon", n: 280 });
   });
 
   it("keeps String cells as text", async () => {
-    const { client, send } = createClient();
-
-    await client.updateValues([
-      {
-        table: "people",
-        column: "name",
-        columnType: "String",
-        primaryKeys: [{ column: "id", value: "p1" }],
-        value: "42",
-      },
+    const { client, send } = createClient([
+      { columnName: "id", dataType: "String", bksField: { name: "id", bksType: "STRING", dynamoType: "S" } },
+      { columnName: "name", dataType: "String", bksField: { name: "name", bksType: "STRING", dynamoType: "S" } },
     ]);
+
+    await client.applyChanges({
+      inserts: [],
+      deletes: [],
+      updates: [
+        {
+          table: "people",
+          column: "name",
+          columnType: "String",
+          primaryKeys: [{ column: "id", value: "p1" }],
+          value: "42",
+        },
+      ],
+    });
 
     expect(send.mock.calls[0][0].input.ExpressionAttributeValues[":v"]).toBe("42");
   });
 
   it("types the values of inserted rows by their column", async () => {
     const { client, send } = createClient([
-      { columnName: "id", dataType: "String" },
-      { columnName: "age", dataType: "Number" },
-      { columnName: "meta", dataType: "Map" },
+      { columnName: "id", dataType: "String", bksField: { name: "id", bksType: "STRING", dynamoType: "S" } },
+      { columnName: "age", dataType: "Number", bksField: { name: "age", bksType: "NUMBER", dynamoType: "N" } },
+      { columnName: "meta", dataType: "Map", bksField: { name: "meta", bksType: "OBJECT", dynamoType: "M" } },
     ]);
 
-    await client.insertRows([
-      { table: "people", data: [{ id: "p2", age: "5", meta: '{"a":1}' }] },
-    ]);
+    await client.applyChanges({
+      updates: [],
+      deletes: [],
+      inserts: [{ table: "people", data: [{ id: "p2", age: "5", meta: '{"a":1}' }] }],
+    });
 
     const item = send.mock.calls[0][0].input.RequestItems.people[0].PutRequest.Item;
     expect(item.id).toBe("p2");
@@ -144,7 +198,11 @@ describe("DynamoDBClient typed edits", () => {
     const { client, send } = createClient();
     (client.listTableColumns as any).mockRejectedValue(new Error("boom"));
 
-    await client.insertRows([{ table: "people", data: [{ id: "p3", age: "7" }] }]);
+    await client.applyChanges({
+      updates: [],
+      deletes: [],
+      inserts: [{ table: "people", data: [{ id: "p3", age: "7" }] }],
+    });
 
     const item = send.mock.calls[0][0].input.RequestItems.people[0].PutRequest.Item;
     expect(item).toStrictEqual({ id: "p3", age: "7" });

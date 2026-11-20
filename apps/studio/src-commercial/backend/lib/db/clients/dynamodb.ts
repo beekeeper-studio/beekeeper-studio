@@ -52,12 +52,21 @@ import {
 import { CreateTableSpec, IndexAlterations, TableKey } from '@/shared/lib/dialects/models';
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
 import { DynamoDBChangeBuilder } from '@/shared/lib/sql/change_builder/DynamoDBChangeBuilder';
-import { DynamoDBData, dynamoTypeLabel } from '@/shared/lib/dialects/dynamodb';
+import { DynamoDBData, dynamoTypeLabel, dynamoLabelToCode } from '@/shared/lib/dialects/dynamodb';
 import { errorMessages, resolveAWSCredentials } from '@/lib/db/clients/utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { DynamoDBCursor } from './dynamodb/DynamoDBCursor';
-import { coerceDynamoValue } from './dynamodb/coerce';
+import { TableColumnMap } from '@/lib/db/clients/BasicDatabaseClient';
+import {
+  DynamoBksField,
+  dynamoCodeToBksType,
+  DynamoDBNumberTranscoder,
+  DynamoDBBooleanTranscoder,
+  DynamoDBJsonTranscoder,
+  DynamoDBNullTranscoder,
+} from '@/lib/db/serialization/dynamodb_transcoders';
+import { GenericBinaryTranscoder, Transcoder } from '@/lib/db/serialization/transcoders';
 import BksConfig from '@/common/bksConfig';
 import { identify } from 'sql-query-identifier';
 
@@ -103,6 +112,14 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   doc: DynamoDBDocumentClient;
   region: string;
   endpoint: string | undefined;
+
+  transcoders: Transcoder<any, any>[] = [
+    DynamoDBNumberTranscoder,
+    DynamoDBBooleanTranscoder,
+    DynamoDBJsonTranscoder,
+    DynamoDBNullTranscoder,
+    GenericBinaryTranscoder,
+  ];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, dynamoContext, server, database);
@@ -326,17 +343,24 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       }
     }
 
-    return ordered.map((name, idx) => ({
-      ordinalPosition: idx,
-      schemaName: null,
-      tableName: table,
-      columnName: name,
-      dataType: dynamoTypeLabel(declared.get(name) || discovered.get(name)),
-      primaryKey: keyNames.has(name),
-      hasDefault: false,
-      nullable: !keyNames.has(name),
-      bksField: { name, bksType: 'UNKNOWN' as BksFieldType },
-    } as ExtendedTableColumn));
+    return ordered.map((name, idx) => {
+      const code = declared.get(name) || discovered.get(name);
+      return {
+        ordinalPosition: idx,
+        schemaName: null,
+        tableName: table,
+        columnName: name,
+        dataType: dynamoTypeLabel(code),
+        primaryKey: keyNames.has(name),
+        hasDefault: false,
+        nullable: !keyNames.has(name),
+        bksField: {
+          name,
+          bksType: dynamoCodeToBksType(code),
+          dynamoType: code,
+        } as DynamoBksField,
+      } as ExtendedTableColumn;
+    });
   }
 
   async listTableIndexes(table: string): Promise<TableIndex[]> {
@@ -745,10 +769,50 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     return results;
   }
 
+  protected async deserializeTableChanges(changes: TableChanges) {
+    const targets = _.uniqBy([
+      ...(changes.inserts ?? []),
+      ...(changes.updates ?? []),
+      ...(changes.deletes ?? []),
+    ].map(({ table, schema }) => ({ table, schema })),
+      ({ table, schema }) => this.getTableMapKey(table, schema));
+
+    // table map key -> column name -> column
+    const columns: TableColumnMap = {};
+    await Promise.all(targets.map(async ({ table, schema }) => {
+      try {
+        const tableColumns = await this.listTableColumns(table);
+        columns[this.getTableMapKey(table, schema)] = _.keyBy(tableColumns, 'columnName');
+      } catch (err) {
+        log.warn(`Could not read column types for ${table}; deserializing values as given`, err);
+      }
+    }));
+
+    changes.updates?.forEach((upd) => {
+      const mapKey = this.getTableMapKey(upd.table, upd.schema);
+      if (upd.columnType && columns[mapKey] && !columns[mapKey][upd.column]) {
+        const dynamoType = dynamoLabelToCode(upd.columnType);
+        columns[mapKey][upd.column] = {
+          tableName: upd.table,
+          columnName: upd.column,
+          dataType: upd.columnType,
+          ordinalPosition: 0,
+          bksField: {
+            name: upd.column,
+            bksType: dynamoCodeToBksType(dynamoType),
+            dynamoType,
+          } as DynamoBksField,
+        } as ExtendedTableColumn;
+      }
+    });
+
+    return await super.deserializeTableChanges(changes, columns);
+  }
+
   async insertRows(inserts: TableInsert[]): Promise<void> {
     for (const ins of inserts) {
       if (!ins.table) throw new Error('Missing table name for insert');
-      const rows = await this.coerceInsertRows(ins.table, ins.data || []);
+      const rows = ins.data || [];
       // BatchWriteItem has a 25-item limit per request.
       for (const chunk of _.chunk(rows, 25)) {
         await this.doc.send(new BatchWriteCommand({
@@ -758,22 +822,6 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         }));
       }
     }
-  }
-
-  // The table editor sends cell values as text, which would be stored as a String
-  // attribute. Convert each value to the type its column was discovered with.
-  private async coerceInsertRows(table: string, rows: Record<string, any>[]): Promise<Record<string, any>[]> {
-    let types: Record<string, string>;
-    try {
-      const columns = await this.listTableColumns(table);
-      types = Object.fromEntries(columns.map((c) => [c.columnName, c.dataType]));
-    } catch (err) {
-      log.warn(`Could not read column types for ${table}; inserting values as given`, err);
-      return rows;
-    }
-    return rows.map((row) =>
-      Object.fromEntries(Object.entries(row).map(([k, v]) => [k, coerceDynamoValue(v, types[k])]))
-    );
   }
 
   async updateValues(updates: TableUpdate[]): Promise<TableUpdateResult[]> {
@@ -789,7 +837,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         Key: key,
         UpdateExpression: 'SET #c = :v',
         ExpressionAttributeNames: { '#c': upd.column },
-        ExpressionAttributeValues: { ':v': coerceDynamoValue(upd.value, upd.columnType) },
+        ExpressionAttributeValues: { ':v': upd.value },
         ReturnValues: 'ALL_NEW',
       }));
       out.push(result.Attributes);

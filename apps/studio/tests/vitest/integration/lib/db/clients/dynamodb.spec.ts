@@ -281,7 +281,7 @@ describe('DynamoDB', () => {
 
     beforeAll(async () => {
       await connection.createTable({ table: tableName })
-      await connection.executeApplyChanges({
+      await connection.applyChanges({
         inserts: [{ table: tableName, data: [{ id: 'p1', age: 21, meta: { city: 'Paris', n: 1 } }] }],
         updates: [],
         deletes: [],
@@ -293,7 +293,7 @@ describe('DynamoDB', () => {
     })
 
     it('keeps an edited Number as a Number', async () => {
-      await connection.executeApplyChanges({
+      await connection.applyChanges({
         inserts: [],
         updates: [{
           table: tableName,
@@ -308,7 +308,7 @@ describe('DynamoDB', () => {
     })
 
     it('keeps an edited Map as a Map', async () => {
-      await connection.executeApplyChanges({
+      await connection.applyChanges({
         inserts: [],
         updates: [{
           table: tableName,
@@ -329,7 +329,7 @@ describe('DynamoDB', () => {
     })
 
     it('types the values of a new row typed into the grid', async () => {
-      await connection.executeApplyChanges({
+      await connection.applyChanges({
         inserts: [{ table: tableName, data: [{ id: 'p2', age: '5', meta: '{"city":"Nice"}' }] }],
         updates: [],
         deletes: [],
@@ -340,7 +340,7 @@ describe('DynamoDB', () => {
     })
 
     it('rejects text that is not a valid Number', async () => {
-      await expect(connection.executeApplyChanges({
+      await expect(connection.applyChanges({
         inserts: [],
         updates: [{
           table: tableName,
