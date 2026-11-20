@@ -31,8 +31,8 @@ import {
 } from "./extensions/ls";
 import type * as LSP from "vscode-languageserver-protocol";
 import { VimOptions } from "./extensions/keymap";
-import { redo, selectAll, undo } from "@codemirror/commands";
-import { openSearchPanel } from "@codemirror/search";
+import { redo, selectAll, undo, addCursorAbove, addCursorBelow } from "@codemirror/commands";
+import { openSearchPanel, selectNextOccurrence, selectSelectionMatches } from "@codemirror/search";
 
 export const exposeMethods = ["ls"] as const;
 
@@ -190,7 +190,7 @@ export class TextEditor {
     return this.view.state.sliceDoc(this.view.state.selection.main.from, this.view.state.selection.main.to);
   }
 
-  execCommand(cmd: "undo" | "redo" | "selectAll" | "findAndReplace" ) {
+  execCommand(cmd: "undo" | "redo" | "selectAll" | "findAndReplace" | "selectNextOccurrence" | "selectSelectionMatches" | "addCursorBelow" | "addCursorAbove") {
     const currentState = {
       state: this.view.state,
       dispatch: this.view.dispatch
@@ -207,6 +207,18 @@ export class TextEditor {
         break;
       case "findAndReplace":
         openSearchPanel(this.view);
+        break;
+      case "selectNextOccurrence":
+        selectNextOccurrence(this.view);
+        break;
+      case "selectSelectionMatches":
+        selectSelectionMatches(this.view);
+        break;
+      case "addCursorBelow":
+        addCursorBelow(this.view);
+        break;
+      case "addCursorAbove":
+        addCursorAbove(this.view);
         break;
       default:
         console.warn("command not supported: ", cmd)

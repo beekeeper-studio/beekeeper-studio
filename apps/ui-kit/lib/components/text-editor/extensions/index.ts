@@ -19,8 +19,8 @@ import {
   HighlightStyle,
 } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
+import { defaultKeymap, history, historyKeymap, indentWithTab, addCursorAbove, addCursorBelow } from "@codemirror/commands";
+import { highlightSelectionMatches, search, searchKeymap, selectNextOccurrence, selectSelectionMatches } from "@codemirror/search";
 import {
   autocompletion,
   acceptCompletion,
@@ -119,6 +119,7 @@ export function extensions(config: ExtensionConfiguration = {}) {
     drawSelection(),
     dropCursor(),
     EditorState.allowMultipleSelections.of(true),
+    EditorView.clickAddsSelectionRange.of((event) => event.altKey),
     indentOnInput(),
     syntaxHighlighting(customHighlightStyle),
     bracketMatching(),
@@ -133,11 +134,19 @@ export function extensions(config: ExtensionConfiguration = {}) {
     rectangularSelection(),
     crosshairCursor(),
     highlightActiveLine(),
-    highlightSelectionMatches(),
+    highlightSelectionMatches({
+      highlightWordAroundCursor: true,
+    }),
     search({
       top: true,
     }),
     keymap.of([
+      { key: "Mod-d", run: selectNextOccurrence, preventDefault: true },
+      { key: "Mod-Shift-l", run: selectSelectionMatches, preventDefault: true },
+      { key: "Alt-Shift-ArrowDown", run: addCursorBelow },
+      { key: "Alt-Shift-ArrowUp", run: addCursorAbove },
+      { key: "Mod-Alt-ArrowDown", run: addCursorBelow },
+      { key: "Mod-Alt-ArrowUp", run: addCursorAbove },
       ...closeBracketsKeymap,
       ...defaultKeymap,
       ...searchKeymap,
@@ -180,6 +189,13 @@ export function extensions(config: ExtensionConfiguration = {}) {
       },
       ".cm-selectionMatch": {
         backgroundColor: "var(--editor-matchingselection-bg)",
+        outline: "1px solid var(--editor-matchingselection-border, rgba(128, 128, 128, 0.4))",
+        borderRadius: "2px",
+      },
+      ".cm-selectionMatch-main": {
+        backgroundColor: "var(--editor-matchingselection-bg)",
+        outline: "1px solid var(--editor-matchingselection-border, rgba(128, 128, 128, 0.4))",
+        borderRadius: "2px",
       },
       // Search
       ".cm-searchMatch": {
