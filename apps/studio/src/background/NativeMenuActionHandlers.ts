@@ -12,6 +12,7 @@ import { DevLicenseState } from '@/lib/license';
 import { setAllowBeta } from './update_manager'
 import { CustomMenuAction } from '@/types'
 import { ensureConfigFile, userConfigPath } from '@/common/bksConfig/mainBksConfig'
+import { openWithTerminalEditor } from './lib/linuxTerminalEditor'
 import rawLog from '@bksLogger'
 
 const log = rawLog.scope('NativeMenuActionHandlers')
@@ -139,6 +140,15 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
       log.error(`Failed to create user config at ${filePath}`, e)
       dialog.showErrorBox("Unable to create the config file", `${filePath}\n\n${e.message}`)
       return
+    }
+    // xdg-open can't start terminal editors outside the desktop environments
+    // it knows, so those get a terminal here.
+    if (platformInfo.isLinux) {
+      try {
+        if (await openWithTerminalEditor(filePath)) return
+      } catch (e) {
+        log.warn(`Failed to open ${filePath} in a terminal editor`, e)
+      }
     }
     // openPath resolves to an error message, e.g. when no app is registered
     // for .ini files. Show the file in its folder instead.
