@@ -19,7 +19,23 @@ source gpdb_src/concourse/scripts/common.bash
 # ./configure on the source tree (15-30s), which creating the demo cluster
 # does not need.
 install_gpdb
+
+# setup_gpadmin_user.bash ends with `chown -R gpadmin:gpadmin` on gpadmin's
+# home, which holds ~500MB of root-owned source and tarballs. On Docker's
+# overlay filesystem that copies every file into the container layer (10-15s).
+# The script already makes the source directories writable, so only the home
+# directory itself needs to change owner.
+chown() {
+  if [ "$*" = "-R gpadmin:gpadmin /home/gpadmin" ]; then
+    command chown gpadmin:gpadmin /home/gpadmin
+  else
+    command chown "$@"
+  fi
+}
+export -f chown
 gpdb_src/concourse/scripts/setup_gpadmin_user.bash
+unset -f chown
+
 make_cluster
 
 su - gpadmin -c "cd $REPO_ROOT && \
