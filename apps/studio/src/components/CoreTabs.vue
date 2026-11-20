@@ -384,6 +384,7 @@ import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
 import rawLog from '@bksLogger'
+import { CliCreateTabRequest, CliTabSummary } from '@/cli/protocol'
 
 const log = rawLog.scope('CoreTabs.vue')
 
@@ -420,6 +421,7 @@ export default Vue.extend({
         handle: '.nav-item'
       },
       // below are connected to the modal for delete/truncate
+      cliListenerIds: [],
       sureOpen: false,
       lastFocused: null,
       dbAction: null,
@@ -1086,7 +1088,7 @@ export default Vue.extend({
       t.title = table.name ?? table.tableName
       const existing = this.tabItems.find((tab) => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
-      this.addTab(t)
+      return this.addTab(t)
     },
     async openTable({ table, filters }) {
       let tab = {} as TransportOpenTab;
@@ -1301,6 +1303,36 @@ export default Vue.extend({
 
       this.addTab(tab);
     },
+    async answerCli(requestId: string, work: () => Promise<CliTabSummary>) {
+      try {
+        const result = await work()
+        await this.$util.send('cliServer/answer', { requestId, result })
+      } catch (error) {
+        await this.$util.send('cliServer/answer', {
+          requestId,
+          error: { code: error?.code, message: error?.message ?? String(error) },
+        })
+      }
+    },
+    cliTabSummary(tab: TransportOpenTab): CliTabSummary {
+      return { tabId: String(tab.id), title: tab.title, tabType: tab.tabType }
+    },
+    createTabFromCli({ requestId, ...request }: CliCreateTabRequest & { requestId: string }) {
+      return this.answerCli(requestId, async () => {
+        await this.createQuery(request.sql || null)
+        return this.cliTabSummary(this.activeTab)
+      })
+    },
+    switchTabFromCli({ requestId, tabId }: { requestId: string, tabId: string }) {
+      return this.answerCli(requestId, async () => {
+        const tab = this.tabItems.find((t) => String(t.id) === tabId)
+        if (!tab) {
+          throw Object.assign(new Error(`No open tab with id ${tabId}.`), { code: 'NOT_FOUND' })
+        }
+        await this.setActiveTab(tab)
+        return this.cliTabSummary(tab)
+      })
+    },
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
       this.$copyText(item.tableName)
@@ -1308,11 +1340,16 @@ export default Vue.extend({
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
+    this.cliListenerIds.forEach((id) => this.$util.removeListener(id))
     this.$bks.removeWindowListener('close', this.handleWindowClose)
   },
 
   async mounted() {
     this.registerHandlers(this.rootBindings)
+    this.cliListenerIds = [
+      this.$util.addListener('cli/createTab', this.createTabFromCli),
+      this.$util.addListener('cli/switchTab', this.switchTabFromCli),
+    ]
   }
 })
 </script>

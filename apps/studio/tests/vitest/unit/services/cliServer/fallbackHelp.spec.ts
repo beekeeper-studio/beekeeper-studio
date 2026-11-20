@@ -10,11 +10,10 @@ describe('cliFallbackHelp', () => {
     expect(text).toContain(path.join('/opt/Beekeeper Studio/resources', 'bin', 'bks'))
     expect(text).toContain('/usr/bin/bks')
     expect(text).toContain('AppImage')
-    expect(text).toContain('bks --help')
+    expect(text).toContain('bks help')
     expect(text).toContain(base.socketPath)
     expect(text).toContain('BKS_CLI_SOCKET')
     expect(text).toContain(CLI_DOCS_URL)
-    expect(text).toContain('connections, list-schemas, list-tables, list-entities, structure <name>, query <sql>')
   })
 
   it('suggests a PATH symlink on macOS', () => {

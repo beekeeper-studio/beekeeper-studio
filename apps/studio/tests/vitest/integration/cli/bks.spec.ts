@@ -15,6 +15,7 @@ import { SqliteClient } from "@/lib/db/clients/sqlite";
 import { CliServer } from "@/services/cliServer/CliServer";
 import { CliBackend, createCliMethods } from "@/services/cliServer/commands";
 import { createProgram } from "@/cli/program";
+import { CliError, CliCreateTabRequest } from "@/cli/protocol";
 
 const socketPath =
   process.platform === "win32"
@@ -24,6 +25,7 @@ const socketPath =
 let client: SqliteClient;
 let server: CliServer;
 let requests = 0;
+const created: CliCreateTabRequest[] = [];
 
 beforeAll(async () => {
   client = new SqliteClient(
@@ -55,6 +57,20 @@ beforeAll(async () => {
       },
     ],
     isCliEnabled: async () => true,
+    createTab: async (_connection, request) => {
+      created.push(request);
+      return {
+        tabId: String(created.length),
+        title: "tab",
+        tabType: request.tab,
+      };
+    },
+    switchTab: async (_connection, tabId) => {
+      if (Number(tabId) > created.length) {
+        throw new CliError("NOT_FOUND", `No open tab with id ${tabId}.`);
+      }
+      return { tabId, title: "tab", tabType: created[Number(tabId) - 1].tab };
+    },
   };
   server = new CliServer({ socketPath });
   for (const [name, method] of Object.entries(createCliMethods(backend))) {
@@ -84,12 +100,15 @@ async function bks(str: string) {
   let error = null;
   try {
     await createProgram({
+      version: "1.2.3",
       preventExit: true,
       output: {
         writeOut: (str) => (out += str),
         writeErr: (str) => (err += str),
       },
-    }).parseAsync([...str.split(" "), "--socket", socketPath], { from: "user" });
+    }).parseAsync([...str.split(" "), "--socket", socketPath], {
+      from: "user",
+    });
   } catch (e) {
     error = e;
   }
@@ -111,16 +130,19 @@ describe("bks", () => {
   });
 
   it("lists tables", async () => {
-    const result = await bks("list-tables");
+    const result = await bks("tables");
     const names = result.json().entities.map((e) => e.name);
     expect(names).toEqual(["orders", "users"]);
   });
 
   it.each([
-    ["list-entities -t table,views", ["orders", "recent_users", "users"]],
-    ["list-entities --entity-type view --entity-type table", ["orders", "recent_users", "users"]],
-    ["list-entities -t view", ["recent_users"]],
-    ["list-entities", ["orders", "recent_users", "users"]],
+    ["entities -t table views", ["orders", "recent_users", "users"]],
+    [
+      "entities --type view --type table",
+      ["orders", "recent_users", "users"],
+    ],
+    ["entities -t view", ["recent_users"]],
+    ["entities", ["orders", "recent_users", "users"]],
   ])("lists entities of the given types: %s", async (command, expected) => {
     const result = await bks(command);
     const names = result.json().entities.map((e) => e.name);
@@ -128,9 +150,8 @@ describe("bks", () => {
   });
 
   it("rejects unknown entity types without contacting the app", async () => {
-    const result = await bks("list-entities -t sequence");
+    const result = await bks("entities -t sequence");
     expect(result.error?.code).toBe("commander.invalidArgument");
-    expect(result.err).toContain('Unknown entity type "sequence"');
     expect(result.sent).toBe(false);
   });
 
@@ -157,11 +178,6 @@ describe("bks", () => {
     expect(result.sent).toBe(false);
   });
 
-  it("runs a query from its words", async () => {
-    const result = (await bks("query select name from users order by id")).json();
-    expect(result.results[0].rows).toEqual([{ name: "Ann" }, { name: "Bob" }]);
-  });
-
   it("keeps numeric looking names as text", async () => {
     const result = await bks("structure 2024");
     expect(result.error?.message).toContain('"2024"');
@@ -171,8 +187,11 @@ describe("bks", () => {
     const file = path.join(os.tmpdir(), `bks-cli-it-${process.pid}.sql`);
     fs.writeFileSync(file, "select email from users where id = 2");
     try {
-      const result = (await bks(`query --file ${file}`)).json();
-      expect(result.results[0].rows).toEqual([{ email: "b@example.com" }]);
+      await bks(`create-tab query --file ${file}`);
+      expect(created.at(-1)).toEqual({
+        tab: "query",
+        sql: "select email from users where id = 2",
+      });
     } finally {
       fs.rmSync(file, { force: true });
     }
@@ -182,23 +201,103 @@ describe("bks", () => {
     vi.spyOn(process, "stdin", "get").mockReturnValue(
       Readable.from(["select count(*) as n from users"]) as any,
     );
-    const result = (await bks("query -")).json();
-    expect(result.results[0].rows).toEqual([{ n: 2 }]);
+    await bks("create-tab query -");
+    expect(created.at(-1)).toEqual({
+      tab: "query",
+      sql: "select count(*) as n from users",
+    });
   });
 
   it.each([
-    ["query select 1 --file x.sql", "not both"],
-    ["query", "query needs SQL"],
-  ])("rejects ambiguous or missing sql: %s", async (command, message) => {
+    ["create-tab chart", "commander.unknownCommand"],
+    ["create-tab table users", "commander.unknownCommand"],
+    ["create-tab query --schema public", "commander.unknownOption"],
+  ])("rejects bad create-tab usage: %s", async (command, code) => {
     const result = await bks(command);
-    expect(result.err).toContain(message);
+    expect(result.error?.code).toBe(code);
     expect(result.sent).toBe(false);
   });
 
-  it("renders markdown", async () => {
-    const result = await bks("query select name from users order by id -f md");
-    expect(result.out).toContain("| name |");
-    expect(result.out).toMatch(/\| Ann +\|/);
+  it("rejects sql given both ways", async () => {
+    const result = await bks("create-tab query select 1 --file x.sql");
+    expect(result.err).toContain("not both");
+    expect(result.sent).toBe(false);
+  });
+
+  it("opens a query tab with or without sql", async () => {
+    await bks("create-tab query select count(*) from users");
+    await bks("create-tab query");
+    expect(created.slice(-2)).toEqual([
+      { tab: "query", sql: "select count(*) from users" },
+      { tab: "query" },
+    ]);
+  });
+
+  it("prints the created tab", async () => {
+    const result = (await bks("create-tab query select 1")).json();
+    expect(result).toMatchObject({
+      tabId: String(created.length),
+      connection: { name: "Local Dev" },
+    });
+  });
+
+  it("switches to a tab by the id create-tab query printed", async () => {
+    const { tabId } = (await bks("create-tab query")).json();
+    const result = (await bks(`switch-tab ${tabId}`)).json();
+    expect(result).toMatchObject({ tabId, connection: { name: "Local Dev" } });
+    expect((await bks("switch-tab 999")).error?.message).toContain(
+      "Error (NOT_FOUND): No open tab with id 999.",
+    );
+  });
+
+  it.each(["-v", "--version"])("prints the version: %s", async (flag) => {
+    const result = await bks(flag);
+    expect(result.out).toBe("1.2.3\n");
+    expect(result.sent).toBe(false);
+  });
+
+  it("prints the result as one line of JSON by default and fails on an error reply", async () => {
+    const result = await bks("schemas");
+    expect(result.out.trimEnd()).not.toContain("\n");
+    expect(JSON.parse(result.out)).toMatchObject({ schemas: [] });
+    const missing = await bks("structure nothing");
+    expect(missing.out).toBe("");
+    expect(missing.error?.message).toContain("Error (NOT_FOUND)");
+  });
+
+  it("runs a query from its words", async () => {
+    const result = (
+      await bks("query select name from users order by id")
+    ).json();
+    expect(result.results[0].rows).toEqual([{ name: "Ann" }, { name: "Bob" }]);
+  });
+
+  it("needs sql for a query", async () => {
+    const result = await bks("query");
+    expect(result.err).toContain("query needs SQL");
+    expect(result.sent).toBe(false);
+  });
+
+  it("rejects writes", async () => {
+    const result = await bks("query delete from users");
+    expect(result.error?.message).toContain("Error (READ_ONLY)");
+    const check = (await bks("query select count(*) as n from users")).json();
+    expect(check.results[0].rows).toEqual([{ n: 2 }]);
+  });
+
+  it("prints markdown", async () => {
+    const query = await bks("query select name from users order by id -f md");
+    expect(query.out).toContain("## Result (SELECT, 2 rows)");
+    expect(query.out).toMatch(/\| Ann +\|/);
+
+    expect((await bks("connections -f md")).out).toMatch(/\| Local Dev +\|/);
+    expect((await bks("schemas -f md")).out).toContain("Connection: Local Dev");
+    expect((await bks("entities -f md")).out).toMatch(/\| recent_users +\| view +\|/);
+    const structure = (await bks("structure users -f md")).out;
+    expect(structure).toContain("# users (table)");
+    expect(structure).toContain("## Columns");
+    expect(structure).toContain("## Primary key");
+    expect(structure).toContain("```sql");
   });
 
   it("rejects an unknown format", async () => {
@@ -207,22 +306,28 @@ describe("bks", () => {
     expect(result.sent).toBe(false);
   });
 
-  it.each(["--help", "help", "list-tables -h"])("prints help: %s", async (command) => {
-    const result = await bks(command);
-    expect(result.error?.exitCode).toBe(0);
-    expect(result.out).toContain("Usage: bks");
-    expect(result.sent).toBe(false);
-  });
+  it.each(["--help", "help", "tables -h"])(
+    "prints help: %s",
+    async (command) => {
+      const result = await bks(command);
+      expect(result.error?.exitCode).toBe(0);
+      expect(result.out).toContain("Usage: bks");
+      expect(result.sent).toBe(false);
+    },
+  );
 
   it.each([
     ["frobnicate", "commander.unknownCommand"],
-    ["list-tables --verbose", "commander.unknownOption"],
+    ["tables --verbose", "commander.unknownOption"],
     ["connections extra", "commander.excessArguments"],
     ["connections --file x.sql", "commander.unknownOption"],
-    ["list-tables -t table", "commander.unknownOption"],
-  ])("rejects bad usage without contacting the app: %s", async (command, code) => {
-    const result = await bks(command);
-    expect(result.error?.code).toBe(code);
-    expect(result.sent).toBe(false);
-  });
+    ["tables -t table", "commander.unknownOption"],
+  ])(
+    "rejects bad usage without contacting the app: %s",
+    async (command, code) => {
+      const result = await bks(command);
+      expect(result.error?.code).toBe(code);
+      expect(result.sent).toBe(false);
+    },
+  );
 });

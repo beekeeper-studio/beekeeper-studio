@@ -50,8 +50,7 @@ export function cliFallbackHelp(options: FallbackHelpOptions): string {
 
   lines.push(
     '',
-    'Usage: bks <command> [options]       (bks --help lists everything)',
-    'Commands: connections, list-schemas, list-tables, list-entities, structure <name>, query <sql>',
+    'Usage: bks <command> [options]       (Run `bks help` for the full help.)',
     '',
     `This app answers CLI requests on ${options.socketPath}`,
     'Set BKS_CLI_SOCKET to that path if bks cannot find it on its own.',

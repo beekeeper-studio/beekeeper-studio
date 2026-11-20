@@ -10,6 +10,7 @@ import { IExportHandlers } from "./exportHandlers";
 import { IImportHandlers } from "./importHandlers";
 import { IBackupHandlers } from "./backupHandlers";
 import { ICliHandlers } from "./cliHandlers";
+import { ICliServerHandlers } from "@/handlers/cliServerHandlers";
 import { IEnumHandlers } from "./enumHandlers";
 import { IThemeHandlers } from "@/handlers/themeHandlers";
 import { IAwsHandlers } from "./awsHandlers";
@@ -23,6 +24,7 @@ export interface Handlers
     IExportHandlers,
     IBackupHandlers,
     ICliHandlers,
+    ICliServerHandlers,
     IFileHandlers,
     IEnumHandlers,
     IThemeHandlers,

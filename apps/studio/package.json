@@ -56,6 +56,7 @@
     "@codemirror/language": "^6.11.0",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
+    "@commander-js/extra-typings": "^15.1.0",
     "@coresql/mysql2-auth-ed25519": "^1.0.0",
     "@duckdb/node-api": "1.4.5-r.1",
     "@electron/remote": "^2.0.10",

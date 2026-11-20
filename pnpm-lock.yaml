@@ -248,6 +248,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.36.2
         version: 6.39.12
+      '@commander-js/extra-typings':
+        specifier: ^15.1.0
+        version: 15.1.0(commander@15.1.0)
       '@coresql/mysql2-auth-ed25519':
         specifier: ^1.0.0
         version: 1.0.0(mysql2@3.23.1(@types/node@22.19.11))
@@ -2053,6 +2056,11 @@ packages:
   '@colors/colors@1.6.0':
     resolution: {integrity: sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==}
     engines: {node: '>=0.1.90'}
+
+  '@commander-js/extra-typings@15.1.0':
+    resolution: {integrity: sha512-FsI7l5tFON52RyyDKyCkvwFl+peHZuP5TZ7AhxbDFGo/5T6KQd4+KE48aJ8jrDSSAQDvZ8hYKX47fmwZ5bGFNw==}
+    peerDependencies:
+      commander: ~15.1.0
 
   '@coresql/mysql2-auth-ed25519@1.0.0':
     resolution: {integrity: sha512-pqH/XGycnw5QrVf/SmU2vhsGp6B4E898/4IjACQ2ENA7wZpiN4sQjNXA6C+mjW5xJuH3ss7NCSab2NX7s2DkNg==}
@@ -7098,6 +7106,7 @@ packages:
 
   mongodb-build-info@1.9.8:
     resolution: {integrity: sha512-WTGZsohmcEe7yXCTN5hocLUhBWhfF/UySDUoM3ihNzrj67IYJ95Kb6Vi+heBKhqCwzkF8ihq0pzooXcyRnv0ZQ==}
+    deprecated: This package is archived and deprecated, it will not get any updates. Use @mongodb-js/mongodb-build-info instead.
 
   mongodb-client-encryption@7.0.0:
     resolution: {integrity: sha512-0egSmyCQ31MLdDFH2j5fHnX8OkAWytUC4ZoPuelU0E+lgPQ2/UcpxkYQXF20SW0rCzADIc0qouiULtqAKDs/uQ==}
@@ -11286,6 +11295,10 @@ snapshots:
       w3c-keyname: 2.2.8
 
   '@colors/colors@1.6.0': {}
+
+  '@commander-js/extra-typings@15.1.0(commander@15.1.0)':
+    dependencies:
+      commander: 15.1.0
 
   '@coresql/mysql2-auth-ed25519@1.0.0(mysql2@3.23.1(@types/node@22.19.11))':
     dependencies:

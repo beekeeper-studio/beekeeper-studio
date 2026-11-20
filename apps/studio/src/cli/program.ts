@@ -1,144 +1,269 @@
-import { Command, InvalidArgumentError, OutputConfiguration } from "commander";
-import { isCliError } from "./protocol";
+import {
+  Argument,
+  Command,
+  InvalidArgumentError,
+  Option,
+  OutputConfiguration,
+} from "@commander-js/extra-typings";
+import {
+  connectionOption,
+  fileOption,
+  formatOption,
+  parseTableName,
+  readSql,
+  schemaOption,
+  send,
+  tableTarget,
+} from "./common";
 import {
   CliClient,
+  ENTITY_TYPE_ALIASES,
+  EntityTypeAlias,
   formatErrorPayload,
   isConnectError,
   notRunningMessage,
 } from "./CliClient";
-import commandDefinitions from "./commands";
+import { isCliError } from "./protocol";
 import { defaultCliSocketPath } from "./socketPath";
-
-const formats = ["json", "markdown"] as const;
-
-export type CliOutputFormat = (typeof formats)[number];
-
-function parseFormat(value: string): CliOutputFormat {
-  const format = value.trim().toLowerCase();
-  const normalized = format === "md" ? "markdown" : format;
-  if (!formats.includes(normalized as CliOutputFormat)) {
-    throw new InvalidArgumentError(
-      `Expected one of: ${formats.join(", ")}.`,
-    );
-  }
-  return normalized as CliOutputFormat;
-}
-
-function parseTimeout(value: string): number {
-  const timeout = Number(value);
-  if (!Number.isInteger(timeout) || timeout < 0) {
-    throw new InvalidArgumentError("Expected a whole number of milliseconds.");
-  }
-  return timeout;
-}
 
 /**
  * The `bks` program. Each command sends its request to the running app and
  * prints the result; help and usage errors are printed by commander, which
  * then exits the process.
  */
-export function createProgram(options?: {
+export function createProgram(options: {
   /** Throws error without exiting the process. Useful for testing. */
   preventExit?: boolean;
   /** Where help, errors and command results are written. Defaults to stdout and stderr. */
   output?: OutputConfiguration;
+  version: string;
 }): Command {
   const program = new Command("bks")
-    .usage("<command> [options]")
+    .version(options.version, "-v, --version", "Output the version number")
     .description(
       "Runs read-only commands against a database connection that is already open in the Beekeeper Studio desktop app.",
     )
     .configureHelp({ showGlobalOptions: true })
-    .showHelpAfterError()
-    .helpCommand(true)
-    .option(
-      "--socket <path>",
-      "Socket the app listens on (beekeeper-studio cli prints it). Overrides BKS_CLI_SOCKET",
-      defaultCliSocketPath(),
+    .showHelpAfterError("(add --help for usage)")
+    .addOption(
+      new Option(
+        "--socket <path>",
+        "Socket the app listens on (beekeeper-studio cli prints it).",
+      )
+        .env("BKS_CLI_SOCKET")
+        .default(defaultCliSocketPath(), "the app's socket"),
     )
-    .option(
-      "--timeout <ms>",
-      "Give up waiting for the app after this many milliseconds. 0 waits forever",
-      parseTimeout,
-      5000,
-    )
-    .option(
-      "-f, --format <format>",
-      "Output format: json or markdown",
-      parseFormat,
-      "json",
+    .addOption(
+      new Option(
+        "--timeout <ms>",
+        "Give up waiting for the app after this many milliseconds. 0 waits forever",
+      )
+        .argParser((value) => {
+          const timeout = Number(value);
+          if (!Number.isInteger(timeout) || timeout < 0) {
+            throw new InvalidArgumentError(
+              "Expected a whole number of milliseconds.",
+            );
+          }
+          return timeout;
+        })
+        .default(5000),
     )
     .addHelpText(
       "after",
       `
-Environment:
-  BKS_CLI_SOCKET            Socket the app listens on, when it is not in the default
-                            location (beekeeper-studio cli prints it)
-  BKS_CLI_DEV=1             Talk to a development build of the app
-
 Examples:
   bks connections
-  bks list-tables --schema public
+  bks tables --schema public
   bks structure users --schema public
   bks query "select id, email from users limit 10"
-  bks query --file ./report.sql --format markdown
-  echo "select count(*) from orders" | bks query -`,
+  bks create-tab query "select id, email from users limit 10"`,
     );
-  if (options?.preventExit) {
+
+  let client: CliClient;
+
+  program.hook("preAction", () => {
+    const globals = program.opts();
+    client = new CliClient({
+      socketPath: globals.socket,
+      timeout: globals.timeout,
+    });
+    client.on("error", (error) => {
+      if (isConnectError(error)) {
+        program.error(notRunningMessage(globals.socket));
+      }
+      if (isCliError(error)) {
+        program.error(formatErrorPayload(error.toPayload()));
+      }
+    });
+  });
+
+  if (options.preventExit) {
     program.exitOverride();
   }
-  if (options?.output) {
+  if (options.output) {
     program.configureOutput(options.output);
   }
 
-  for (const definition of commandDefinitions) {
-    const command = new Command(definition.name)
-      .configureHelp({ showGlobalOptions: true })
-      .showHelpAfterError()
-      .description(definition.description);
-    for (const argument of definition.arguments ?? []) {
-      command.addArgument(argument);
-    }
-    for (const option of definition.options ?? []) {
-      command.addOption(option);
-    }
-    command.action(async function (this: Command) {
-      const globals = program.opts<{
-        socket: string;
-        timeout: number;
-        format: CliOutputFormat;
-      }>();
-      const client = new CliClient({
-        socketPath: globals.socket,
-        timeout: globals.timeout,
+  const writeOut = program.configureOutput().writeOut;
+
+  // =========== Commands ============
+
+  program
+    .command("connections")
+    .description("List the connections currently open in the app")
+    .addOption(formatOption)
+    .action(async (opts, command) => {
+      await send(command, async () => {
+        const reply = await client.connections();
+        return opts.format === "md" ? reply.markdown() : reply.raw();
       });
-      let result: unknown;
-      try {
-        result = await definition.run(client, command);
-      } catch (error) {
-        if (isConnectError(error)) {
-          command.error(notRunningMessage(globals.socket));
-        }
-        if (isCliError(error)) {
-          command.error(formatErrorPayload(error.toPayload()));
-        }
-        throw error;
-      }
-      const formatter = definition.formatters?.[globals.format];
-      const formatted = formatter
-        ? formatter(result)
-        : JSON.stringify(result, null, 2);
-      const output = program.configureOutput();
-      output.writeOut(formatted + "\n");
     });
-    if (options?.preventExit) {
-      command.exitOverride();
-    }
-    if (options?.output) {
-      command.configureOutput(options.output);
-    }
-    program.addCommand(command);
-  }
+
+  program
+    .command("schemas")
+    .description("List the schemas in the connected database")
+    .addOption(connectionOption)
+    .addOption(formatOption)
+    .action(async (opts, command) => {
+      await send(command, async () => {
+        const reply = await client.schemas({ connection: opts.connection });
+        return opts.format === "md" ? reply.markdown() : reply.raw();
+      });
+    });
+
+  program
+    .command("tables")
+    .description("List tables (same as entities --type table)")
+    .addOption(connectionOption)
+    .addOption(schemaOption)
+    .addOption(formatOption)
+    .action(async (opts, command) => {
+      await send(command, async () => {
+        const reply = await client.entities({
+          connection: opts.connection,
+          schema: opts.schema,
+          entityTypes: ["table"],
+        });
+        return opts.format === "md" ? reply.markdown() : reply.raw();
+      });
+    });
+
+  program
+    .command("entities")
+    .description("List tables, views, materialized views and routines")
+    .addOption(connectionOption)
+    .addOption(schemaOption)
+    .addOption(
+      new Option("-t, --type <types...>", "Only these types").choices(
+        Object.keys(ENTITY_TYPE_ALIASES) as EntityTypeAlias[],
+      ),
+    )
+    .addOption(formatOption)
+    .action(async (opts, command) => {
+      await send(command, async () => {
+        const reply = await client.entities({
+          connection: opts.connection,
+          schema: opts.schema,
+          entityTypes: opts.type,
+        });
+        return opts.format === "md" ? reply.markdown() : reply.raw();
+      });
+    });
+
+  program
+    .command("structure")
+    .description(
+      "Columns, keys, indexes, relations, triggers and DDL of a table or view",
+    )
+    .addArgument(
+      new Argument(
+        "<name>",
+        "Table or view, optionally as schema.name",
+      ).argParser(parseTableName),
+    )
+    .addOption(connectionOption)
+    .addOption(schemaOption)
+    .addOption(formatOption)
+    .action(async (name, opts, command) => {
+      await send(command, async () => {
+        const reply = await client.structure({
+          connection: opts.connection,
+          ...tableTarget(name, opts.schema),
+        });
+        return opts.format === "md" ? reply.markdown() : reply.raw();
+      });
+    });
+
+  program
+    .command("query")
+    .description(
+      "Run a read-only SQL statement and print the results (at most 20,000 rows per result)",
+    )
+    .addArgument(
+      new Argument("[sql...]", "SQL to run, or - to read it from stdin"),
+    )
+    .addOption(connectionOption)
+    .addOption(fileOption)
+    .addOption(formatOption)
+    .action(async (words, opts, command) => {
+      const sql = await readSql(command, words, opts.file, {
+        required: true,
+      });
+      await send(command, async () => {
+        const reply = await client.query({
+          connection: opts.connection,
+          sql: sql as string,
+        });
+        return opts.format === "md" ? reply.markdown() : reply.raw();
+      });
+    });
+
+  const createTab = program
+    .command("create-tab")
+    .description("Open a new tab and switch to that tab");
+
+  createTab
+    .command("query")
+    .description(
+      "Open a new query tab, prefilled with the SQL. The SQL is not run",
+    )
+    .addArgument(
+      new Argument(
+        "[sql...]",
+        "SQL to put in the tab, or - to read it from stdin",
+      ),
+    )
+    .addOption(connectionOption)
+    .addOption(fileOption)
+    .action(async (words, opts, command) => {
+      const sql = await readSql(command, words, opts.file, {
+        required: false,
+      });
+      await send(command, async () => {
+        const reply = await client.createTab({
+          connection: opts.connection,
+          tab: "query",
+          sql,
+        });
+        return reply.raw();
+      });
+    });
+
+  program
+    .command("switch-tab")
+    .description("Switch to an open tab")
+    .addArgument(new Argument("<id>", "Id of the tab"))
+    .addOption(connectionOption)
+    .action(async (id, opts, command) => {
+      await send(command, async () => {
+        const reply = await client.switchTab({
+          connection: opts.connection,
+          tabId: id,
+        });
+        return reply.raw();
+      });
+    });
 
   return program;
 }

@@ -37,12 +37,39 @@ describe('buildAuditEntry', () => {
     expect(JSON.stringify(entry)).not.toContain('"rows":[')
   })
 
+  it('records a successful entities with a summary instead of the entities', () => {
+    const response: CliResponse = {
+      ok: true,
+      result: {
+        connection: { id: 'sid-1', name: 'Local Dev' },
+        schema: 'public',
+        entityTypes: ['table'],
+        entities: [
+          { schema: 'public', name: 'customers', entityType: 'table' },
+          { schema: 'public', name: 'invoices', entityType: 'table' },
+          { schema: 'public', name: 'payroll', entityType: 'table' },
+        ],
+        warnings: [],
+      },
+    }
+    const entry = buildAuditEntry(
+      { request: request('entities', { schema: 'public', entityTypes: ['table'] }), response, durationMs: 4, responseBytes: 300 },
+      now
+    )
+    expect(entry.connection).toEqual({ id: 'sid-1', name: 'Local Dev' })
+    expect(entry.result).toEqual({ schema: 'public', entityTypes: ['table'], entities: 3, warnings: 0 })
+    const line = JSON.stringify(entry)
+    for (const name of ['customers', 'invoices', 'payroll']) {
+      expect(line).not.toContain(name)
+    }
+  })
+
   it('records errors with their code', () => {
     const response: CliResponse = {
       ok: false,
       error: { code: 'CLI_DISABLED', message: 'CLI access is not enabled for the open connection "Prod".', hint: 'Check the box.' },
     }
-    const entry = buildAuditEntry({ request: request('listEntities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
+    const entry = buildAuditEntry({ request: request('entities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
     expect(entry.ok).toBe(false)
     expect(entry.connection).toBeNull()
     expect(entry.error).toEqual({ code: 'CLI_DISABLED', message: 'CLI access is not enabled for the open connection "Prod".' })
@@ -83,8 +110,8 @@ describe('buildAuditEntry', () => {
 describe('summarizeResult', () => {
   it('summarizes each method', () => {
     expect(summarizeResult('connections', { connections: [{ cliEnabled: true }, { cliEnabled: false }] })).toEqual({ connections: 2, cliEnabled: 1 })
-    expect(summarizeResult('listSchemas', { schemas: ['a', 'b'] })).toEqual({ schemas: 2 })
-    expect(summarizeResult('listEntities', { schema: 'public', entityTypes: ['table'], entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
+    expect(summarizeResult('schemas', { schemas: ['a', 'b'] })).toEqual({ schemas: 2 })
+    expect(summarizeResult('entities', { schema: 'public', entityTypes: ['table'], entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
       schema: 'public',
       entityTypes: ['table'],
       entities: 3,

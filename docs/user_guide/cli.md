@@ -1,70 +1,54 @@
 ---
 title: Command Line Interface
-summary: "Query the database that is open in Beekeeper Studio from a terminal, a script, or an AI coding agent with the bks command."
+summary: "Inspect the database that is open in Beekeeper Studio from a terminal, a script, or an AI coding agent with the bks command."
 icon: material/console
 ---
 
-# Command Line Interface
+`bks` is a command line tool that ships with Beekeeper Studio. It runs **read-only** commands against a connection that is **already open in the app**, and prints JSON by default.
 
-`bks` is a small command line tool that ships with Beekeeper Studio. It runs a handful of **read-only** commands against a database connection that is **already open in the app**: list schemas and tables, describe a table, run a query. The output is JSON by default, which makes it a good fit for scripts and for AI coding agents that need to look at a schema or check some data without being handed database credentials.
-
-`bks` does not connect to databases on its own, and it does not start the app. It talks to the running desktop app over a local socket, and the app runs the command on the connection it already holds. Close the app, or disconnect, and `bks` stops working. Every call is recorded in a [log file](#audit-log).
+It's a good fit for scripts and AI coding agents: they can inspect a schema or check some data without being given database credentials.
 
 ```bash
-bks list-tables --schema public
+bks tables --schema public
 bks structure public.users
-bks query "select id, email from users order by id limit 5"
+bks create-tab query "select id, email from users order by id limit 5"
 ```
+
+!!! note "`bks` doesn't connect to databases or start the app. It doesn't work when the app is closed or disconnected."
 
 ## Enabling CLI access
 
-CLI access is off for every connection by default. Turn it on in one of two ways:
+CLI access is off by default. Turn it on:
 
-1. **Per connection**: check **Enable CLI Access** in the connection form (next to **Read Only Mode**), save the connection, and connect. Only connections with the box checked answer CLI commands. Changing the box on a saved connection takes effect on the next CLI call, no reconnect needed.
-2. **For every connection**: add this to your [user configuration file](configuration.md) and restart Beekeeper Studio:
+- **Per connection**: check **Enable CLI Access** in the connection form, save, and connect.
+- **For every connection**: add this to your [config file](configuration.md) and restart the app:
 
     ```ini
     [cli]
     enableForAllConnections = true
     ```
 
-When CLI access is not enabled the command fails with a message that says which connection is open and how to enable it, so an agent that hits the error can tell you what to do:
+If access is off, the command fails with `CLI_DISABLED` and says how to turn it on.
 
-```text
-Error (CLI_DISABLED): CLI access is not enabled for the open connection "Production (replica)".
-To enable it, edit the connection in Beekeeper Studio, check "Enable CLI Access", save, and connect again. ...
-```
+## Get Started
 
-## Read only
-
-The CLI never writes to a database, whatever the connection's own **Read Only Mode** setting is. `query` accepts statements that read data (`SELECT`, `WITH ... SELECT`, `SHOW`, `EXPLAIN`, `DESCRIBE` and so on, the same set the app allows in Read Only Mode). An `INSERT`, `UPDATE`, `DELETE`, DDL statement, or a batch that contains one, is rejected before anything runs:
-
-```text
-Error (READ_ONLY): The statement was rejected because the CLI is read only.
-The CLI is read only. It runs statements that read data (SELECT, SHOW, EXPLAIN, DESCRIBE and the like) on any connection; run writes in the Beekeeper Studio app.
-```
-
-The other commands only read catalog information.
-
-## Finding the command
-
-`bks` is installed with the app, under `resources/bin` in the install directory. It needs no separate Node.js install: it runs with the app's own runtime. Where that is depends on how you installed Beekeeper Studio:
+`bks` is installed with the app in `resources/bin`. No separate Node.js install is needed.
 
 === "Linux"
-    The deb and rpm packages link it as `/usr/bin/bks`, so it is simply:
+    The deb and rpm packages install it as `/usr/bin/bks`:
 
     ```bash
     bks connections
     ```
 
-    Other formats keep it inside the install directory, for example `/opt/Beekeeper Studio/resources/bin/bks`. An AppImage cannot be unpacked onto your `PATH`, so the AppImage hands the `cli` argument to `bks` for you:
+    With an AppImage, pass `cli` to the AppImage instead:
 
     ```bash
     ./Beekeeper-Studio-*.AppImage cli connections
     ```
 
 === "macOS"
-    The command lives inside the app bundle. Link it once onto your `PATH`:
+    Link it onto your `PATH` once:
 
     ```bash
     ln -s "/Applications/Beekeeper Studio.app/Contents/Resources/bin/bks" /usr/local/bin/bks
@@ -72,95 +56,225 @@ The other commands only read catalog information.
     ```
 
 === "Windows"
-    The command is `bks.cmd` in the install directory's `resources\bin` folder:
+    Run `bks.cmd` from the `resources\bin` folder, or add that folder to your `PATH`:
 
     ```powershell
     & "$env:LOCALAPPDATA\Programs\beekeeper-studio\resources\bin\bks.cmd" connections
     ```
 
-    Add that folder to your `PATH` to call it as `bks`. Per-machine (MSI) installs live under `C:\Program Files\beekeeper-studio` instead.
+!!! tip "Run `beekeeper-studio cli` to print where `bks` is installed and the socket the app listens on."
 
-Not sure where it is? Run `beekeeper-studio cli` (or `beekeeper-studio cli --help`). The app does not run CLI commands itself, but it prints the exact location of `bks` for your install and the socket it listens on, then exits.
+Run `bks help` for the full help.
 
-!!! tip "Agents with Node.js"
-    `bks` is a plain Node.js program. If a tool already has `node`, it can also run `node "<install dir>/resources/bin/cli.js" <command>` directly.
+```text
+$ bks help
+Usage: bks [options] [command]
+
+Runs read-only commands against a database connection that is already open in
+the Beekeeper Studio desktop app.
+
+Options:
+  -v, --version               Output the version number
+  --socket <path>             Socket the app listens on (beekeeper-studio cli
+                              prints it). (default: the app's socket, env:
+                              BKS_CLI_SOCKET)
+  --timeout <ms>              Give up waiting for the app after this many
+                              milliseconds. 0 waits forever (default: 5000)
+  -h, --help                  display help for command
+
+Commands:
+  connections [options]       List the connections currently open in the app
+  schemas [options]           List the schemas in the connected database
+  tables [options]            List tables (same as entities --type table)
+  entities [options]          List tables, views, materialized views and
+                              routines
+  structure [options] <name>  Columns, keys, indexes, relations, triggers and
+                              DDL of a table or view
+  query [options] [sql...]    Run a read-only SQL statement and print the
+                              results (at most 20,000 rows per result)
+  create-tab                  Open a new tab and switch to that tab
+  switch-tab [options] <id>   Switch to an open tab
+  help [command]              display help for command
+
+Examples:
+  bks connections
+  bks tables --schema public
+  bks structure users --schema public
+  bks query "select id, email from users limit 10"
+  bks create-tab query "select id, email from users limit 10"
+```
+
+## Examples
+
+```bash
+# List open connections
+bks connections
+
+# List tables in the public schema
+bks tables --schema public
+
+# Describe a table
+bks structure public.users
+
+# Run a query
+bks query "select id, email from users limit 10"
+
+# Run SQL from a file and print it as markdown
+bks query --file ./report.sql --format md
+
+# Read SQL from stdin
+echo "select count(*) from orders" | bks query -
+
+# Open a query tab in the app with this SQL
+bks create-tab query "select * from orders"
+```
+
+## Global Options
+
+| Option | Description |
+| ------ | ------- |
+| `--timeout <ms>` | Give up after this many milliseconds (default `5000`). `0` waits forever |
+| `--socket <path>` | Socket the app listens on. Defaults to `BKS_CLI_SOCKET` or the app's socket |
+| `-h, --help` | Prints usage |
 
 ## Commands
 
-| Command | What it does |
-| ------- | ------------ |
-| `connections` | Lists the connections open in the app, with their id and whether CLI access is enabled |
-| `list-schemas` | Lists the schemas in the connected database |
-| `list-tables` | Lists tables. Same as `list-entities --entity-type table` |
-| `list-entities` | Lists tables, views, materialized views and routines |
-| `structure <name>` | Columns, primary key, indexes, foreign keys, triggers and the create script of a table or view |
-| `query <sql>` | Runs a read-only SQL statement and prints the results. Each result is capped at 20,000 rows |
-| `help` | Prints the usage text |
+### `connections`
 
-### Options
-
-| Option | Applies to | Meaning |
-| ------ | ---------- | ------- |
-| `-c, --connection <name>` | all | Which open connection to use, by name or id. Required when more than one open connection has CLI access enabled |
-| `-s, --schema <schema>` | `list-tables`, `list-entities`, `structure` | Limit to one schema. `structure` also accepts `schema.table` |
-| `-t, --entity-type <type>` | `list-entities` | `table`, `view`, `materialized-view` or `routine`. Repeat the flag or comma-separate values |
-| `--file <path>` | `query` | Read the SQL from a file. Pass `-` as the SQL argument to read it from stdin instead |
-| `-f, --format <format>` | all | `json` (default) or `markdown` |
-| `-h, --help` | all | Usage text |
-
-### Choosing a connection
-
-Every window in Beekeeper Studio can hold its own connection. If exactly one open connection has CLI access enabled it is used automatically. Otherwise pass `--connection`:
+Lists the connections open in the app, with each one's id, name, database type and whether CLI access is enabled. Use the name or id with `--connection`.
 
 ```bash
 bks connections
-bks list-tables --connection "Local Postgres"
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-f, --format <format>` | `json` (default; the result as one line of JSON) or `md` (markdown) |
+
+### `schemas`
+
+Lists the schemas in the connected database.
+
+```bash
+bks schemas [options]
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-c, --connection <name>` | Connection name or id |
+| `-f, --format <format>` | `json` (default; the result as one line of JSON) or `md` (markdown) |
+
+### `tables`
+
+Lists the tables in the connected database. Same as `entities --type table`.
+
+```bash
+bks tables [options]
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-c, --connection <name>` | Connection name or id |
+| `-s, --schema <schema>` | Limit to one schema |
+| `-f, --format <format>` | `json` (default; the result as one line of JSON) or `md` (markdown) |
+
+### `entities`
+
+Lists tables, views, materialized views and routines. Use `--type` to list only some of them.
+
+```bash
+bks entities [options]
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-c, --connection <name>` | Connection name or id |
+| `-s, --schema <schema>` | Limit to one schema |
+| `-t, --type <types...>` | One or more of `table`, `view`, `materialized-view` and `routine`. Plurals and the aliases `materialized_view`, `matview`, `function` and `procedure` also work |
+| `-f, --format <format>` | `json` (default; the result as one line of JSON) or `md` (markdown) |
+
+### `structure`
+
+Describes a table or view: its columns, primary key, indexes, foreign keys, triggers and create script. Views only include columns and the create script.
+
+```bash
+bks structure <name> [options]
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-c, --connection <name>` | Connection name or id |
+| `-s, --schema <schema>` | Limit to one schema. `<name>` also accepts `schema.table` |
+| `-f, --format <format>` | `json` (default; the result as one line of JSON) or `md` (markdown) |
+
+### `query`
+
+Runs SQL and prints the results. Only statements that read data are allowed, such as `SELECT`, `SHOW` and `EXPLAIN`; anything else fails with `READ_ONLY`. Each result is capped at 20,000 rows.
+
+Pass the SQL as an argument, with `--file`, or as `-` to read stdin.
+
+```bash
+bks query <sql> [options]
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-c, --connection <name>` | Connection name or id |
+| `--file <path>` | Read SQL from a file. Pass `-` as the SQL to read stdin |
+| `-f, --format <format>` | `json` (default; the result as one line of JSON) or `md` (markdown) |
+
+### `create-tab query`
+
+Opens a query tab, prefilled with the SQL if given. The SQL is not run.
+
+```bash
+bks create-tab query [sql] [options]
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-c, --connection <name>` | Connection name or id |
+| `--file <path>` | Read SQL from a file. Pass `-` as the SQL to read stdin |
+
+### `switch-tab`
+
+Switches the app to an open tab. Use the id `create-tab` printed.
+
+```bash
+bks switch-tab <id> [options]
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-c, --connection <name>` | Connection name or id |
+
+### `help`
+
+Prints usage for `bks`, or for one command.
+
+```bash
+bks help [command]
+```
+
+### Choosing a connection
+
+If only one open connection has CLI access, it's used automatically. Otherwise pass `--connection`:
+
+```bash
+bks tables --connection "Local Postgres"
 ```
 
 ### Environment variables
 
-| Variable | Meaning |
+| Variable | Description |
 | -------- | ------- |
-| `BKS_CLI_SOCKET` | The socket (or Windows named pipe) the app listens on, when the app uses a non-standard data directory. `beekeeper-studio cli` prints the path |
-| `BKS_CLI_DEV` | Set to `1` to talk to a development build of the app, which uses a separate socket |
-| `BKS_ELECTRON_BINARY` | For the `bks` shell script only: the Beekeeper Studio executable to run the client with, if it is not found next to the script |
-
-## Output
-
-Results are JSON objects. Every result includes the connection that answered, so a script can check it ran against the database it expected.
-
-```bash
-$ bks query "select id, email from users limit 2"
-{
-  "connection": { "id": "7e1c…", "name": "Local Postgres" },
-  "results": [
-    {
-      "command": "SELECT",
-      "columns": ["id", "email"],
-      "rows": [
-        { "id": 1, "email": "ann@example.com" },
-        { "id": 2, "email": "bo@example.com" }
-      ],
-      "rowCount": 2,
-      "totalRowCount": 2,
-      "truncated": false,
-      "maxRows": 20000,
-      "affectedRows": null
-    }
-  ]
-}
-```
-
-- Rows are objects keyed by column name. Duplicate column names get a numeric suffix (`id`, `id_2`).
-- A statement that returns more than 20,000 rows is cut off: `truncated` is `true` and `totalRowCount` holds the full count. Add a `LIMIT` to the query to page through large tables.
-- Binary values are encoded as `{ "type": "binary", "encoding": "hex", "data": "…" }`. Integers outside JavaScript's safe range are returned as strings.
-- `--format markdown` prints tables instead, which is easier to read in a terminal or to paste into a chat.
-
-Errors are printed to stderr as `Error (CODE): message`, followed by a hint, and the process exits with status `1` (`2` for a usage mistake). Codes you may see: `NO_OPEN_CONNECTIONS`, `CLI_DISABLED`, `AMBIGUOUS_CONNECTION`, `UNKNOWN_CONNECTION`, `NOT_FOUND`, `READ_ONLY`, `QUERY_FAILED`.
+| `BKS_CLI_SOCKET` | Socket the app listens on, if it's not in the default location |
+| `BKS_CLI_DEV` | Set to `1` to talk to a development build |
+| `BKS_ELECTRON_BINARY` | Beekeeper Studio executable for the `bks` script, if it's not next to the script |
 
 ## Audit log
 
-The app writes one line of JSON to `cli.log` for every CLI call it answers, including calls that failed. The file sits next to the other Beekeeper Studio log files and rotates at 10 MB (the previous file is kept as `cli.old.log`):
+Every CLI call is logged as one line of JSON in `cli.log`, next to the app's other logs. It rotates at 10 MB to `cli.old.log`.
 
 | Platform | Location |
 | -------- | -------- |
@@ -168,34 +282,24 @@ The app writes one line of JSON to `cli.log` for every CLI call it answers, incl
 | macOS | `~/Library/Logs/beekeeper-studio/cli.log` |
 | Windows | `%APPDATA%\beekeeper-studio\logs\cli.log` |
 
-Each line records what was asked and a summary of what came back, never the data itself:
+Each line records the request and a summary of the result, never the data:
 
 ```json
-{"time":"2026-10-30T13:12:40.512Z","command":"query","args":{"sql":"select id, email from users limit 2"},"connection":{"id":"7e1c…","name":"Local Postgres"},"ok":true,"durationMs":14,"responseBytes":412,"result":{"statements":1,"commands":["SELECT"],"rows":2,"totalRows":2,"truncated":false,"affectedRows":0}}
-{"time":"2026-10-30T13:13:02.081Z","command":"list-tables","args":{"schema":"public"},"connection":null,"ok":false,"durationMs":1,"responseBytes":655,"error":{"code":"CLI_DISABLED","message":"CLI access is not enabled for the open connection \"Prod\"."}}
+{"time":"2026-10-30T13:12:40.512Z","method":"structure","params":{"name":"users","schema":"public"},"connection":{"id":"7e1c…","name":"Local Postgres"},"ok":true,"durationMs":14,"responseBytes":412,"result":{"schema":"public","name":"users","entityType":"table","columns":4,"warnings":0}}
 ```
 
-- `args` is what the caller sent, SQL included. SQL longer than 10,000 characters is cut, with `sqlLength` and `sqlTruncated` added.
-- `connection` is the connection that answered, when one was selected.
-- `result` depends on the command: counts of connections, schemas, entities or columns, or for `query` the number of statements, rows returned and whether a result hit the row cap.
-- `error` carries the error code and message of a failed call.
-
-Because the file is line-delimited JSON, `tail -f` shows calls as they happen and `jq` can filter them, for example `jq 'select(.ok == false)' cli.log`.
+!!! note "SQL longer than 10,000 characters is cut in the log."
 
 ## Using it with an AI coding agent
 
-Point your agent at the CLI instead of giving it a connection string. A short note in the project's agent instructions is enough:
+Give your agent the CLI instead of a connection string. Add a note to the project's agent instructions:
 
 ```text
 The database for this project is open in Beekeeper Studio. Inspect it with
-`bks list-tables`, `bks structure <table>` and `bks query "<sql>"`. If a command
+`bks tables`, `bks structure <table>` and `bks query "<sql>"`. If a command
 fails with CLI_DISABLED, ask me to enable CLI access for the connection.
 ```
 
-The agent only ever sees what the app lets it see: every command is read only, the 20,000 row cap applies, each call is written to `cli.log`, and when you disconnect in the app the agent loses access.
-
 ## How it works
 
-The app listens on a local socket (a Unix domain socket in the Beekeeper Studio data directory on Linux and macOS, a named pipe on Windows) that only your user account can open. `bks` sends one request over that socket and prints the reply. Nothing is exposed on the network, and no credentials leave the app.
-
-`bks` itself is a single JavaScript file, `resources/bin/cli.js`, started by a tiny shell script (`bks`) or batch file (`bks.cmd`) that runs the app's executable in Node.js mode. That is why it starts in a fraction of a second and prints nothing but the result: the desktop app and its browser engine never load.
+`bks` sends one request over a local socket (a named pipe on Windows) that only your user account can open, and prints the reply. Nothing is exposed on the network and no credentials leave the app.

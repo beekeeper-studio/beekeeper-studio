@@ -13,10 +13,12 @@ export const CLI_MAX_QUERY_ROWS = 20000
 
 export const CLI_METHODS = [
   'connections',
-  'listSchemas',
-  'listEntities',
+  'schemas',
+  'entities',
   'structure',
   'query',
+  'createTab',
+  'switchTab',
 ] as const
 
 export type CliMethodName = typeof CLI_METHODS[number]
@@ -25,26 +27,74 @@ export const CLI_ENTITY_TYPES = ['table', 'view', 'materialized-view', 'routine'
 
 export type CliEntityType = typeof CLI_ENTITY_TYPES[number]
 
-export interface CliParams {
+export const CLI_TAB_TYPES = ['query'] as const
+
+export type CliTabType = typeof CLI_TAB_TYPES[number]
+
+export interface SchemasParams {
   /** Name or id of the open connection to use. Optional when exactly one is enabled. */
   connection?: string
-  /** Schema filter for list-entities and structure. */
+}
+
+export interface EntitiesParams {
+  connection?: string
   schema?: string
-  /** Entity types for list-entities. Defaults to every type. */
+  /** Defaults to every type. */
   entityTypes?: CliEntityType[]
-  /** Table or view name for structure. */
-  name?: string
-  /** SQL text for query. */
+}
+
+export interface StructureParams {
+  connection?: string
+  /** Table or view name. */
+  name: string
+  schema?: string
+}
+
+export interface CreateTabParams {
+  connection?: string
+  tab: CliTabType
+  /** SQL to prefill a query tab with. */
   sql?: string
+}
+
+export interface QueryParams {
+  connection?: string
+  sql: string
+}
+
+export interface SwitchTabParams {
+  connection?: string
+  tabId: string
+}
+
+/** What the app window is asked to open. Table tabs name an entity that is known to exist. */
+export interface CliCreateTabRequest {
+  tab: CliTabType
+  sql?: string
+}
+
+/** The tab the app window created or switched to. */
+export interface CliTabSummary {
+  tabId: string
+  title: string
+  tabType: string
 }
 
 export interface CliRequest {
   method: CliMethodName
-  params: CliParams
+  params: unknown
 }
 
 /** What the app answers each method with. A thrown CliError becomes an error reply. */
-export type CliMethods = Record<CliMethodName, (params: CliParams) => Promise<unknown>>
+export interface CliMethods {
+  connections(): Promise<unknown>
+  schemas(params: SchemasParams): Promise<unknown>
+  entities(params: EntitiesParams): Promise<unknown>
+  structure(params: StructureParams): Promise<unknown>
+  query(params: QueryParams): Promise<unknown>
+  createTab(params: CreateTabParams): Promise<unknown>
+  switchTab(params: SwitchTabParams): Promise<unknown>
+}
 
 export type CliErrorCode =
   | 'USAGE'
@@ -67,9 +117,17 @@ export interface CliErrorPayload {
   details?: unknown
 }
 
-export type CliResponse =
-  | { ok: true; result: unknown }
-  | { ok: false; error: CliErrorPayload }
+export interface CliResultResponse {
+  ok: true
+  result: unknown
+}
+
+export interface CliErrorResponse {
+  ok: false
+  error: CliErrorPayload
+}
+
+export type CliResponse = CliResultResponse | CliErrorResponse
 
 export class CliError extends Error {
   code: CliErrorCode
@@ -131,6 +189,13 @@ export interface CliColumn {
   generated?: boolean
   array?: boolean
   enumValues?: string[]
+}
+
+/** A binary cell value, which JSON has no type for. */
+export interface CliBinaryValue {
+  type: 'binary'
+  encoding: 'hex'
+  data: string
 }
 
 export interface CliQueryResult {

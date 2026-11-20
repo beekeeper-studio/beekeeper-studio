@@ -12,15 +12,18 @@ import {
 import {
   CLI_ENTITY_TYPES,
   CLI_MAX_QUERY_ROWS,
+  CLI_TAB_TYPES,
+  CliBinaryValue,
   CliColumn,
   CliConnectionRef,
   CliConnectionSummary,
   CliEntity,
   CliEntityType,
   CliError,
-  CliQueryResult,
   CliMethods,
-  CliParams,
+  CliCreateTabRequest,
+  CliQueryResult,
+  CliTabSummary,
   isCliError,
 } from '@/cli/protocol'
 
@@ -40,6 +43,10 @@ export interface CliOpenConnection {
 export interface CliBackend {
   openConnections(): CliOpenConnection[]
   isCliEnabled(connection: CliOpenConnection): Promise<boolean>
+  /** Asks the window that owns the connection to open a tab, or switch to an equal one it has. */
+  createTab(connection: CliOpenConnection, request: CliCreateTabRequest): Promise<CliTabSummary>
+  /** Asks the window that owns the connection to switch to one of its tabs. */
+  switchTab(connection: CliOpenConnection, tabId: string): Promise<CliTabSummary>
 }
 
 export const ENABLE_CLI_HINT =
@@ -171,7 +178,7 @@ function toEntity(entity: DatabaseEntity, entityType: CliEntityType): CliEntity 
   return { schema: entity.schema ?? null, name: entity.name, entityType }
 }
 
-async function listEntities(
+async function loadEntities(
   client: BasicDatabaseClient<any, any>,
   schema: string | undefined,
   types: CliEntityType[],
@@ -220,13 +227,13 @@ function toColumn(column: ExtendedTableColumn | TableColumn): CliColumn {
   ) as CliColumn
 }
 
-async function describeEntity(
+async function findEntity(
   client: BasicDatabaseClient<any, any>,
   name: string,
   schema: string | undefined
-) {
+): Promise<{ entity: CliEntity; warnings: string[] }> {
   const warnings: string[] = []
-  const all = await listEntities(client, schema, ['table', 'view', 'materialized-view'], warnings)
+  const all = await loadEntities(client, schema, ['table', 'view', 'materialized-view'], warnings)
 
   let matches = all.filter((e) => e.name === name)
   if (matches.length === 0) {
@@ -236,7 +243,7 @@ async function describeEntity(
   if (matches.length === 0) {
     const where = schema ? ` in schema "${schema}"` : ''
     throw new CliError('NOT_FOUND', `No table or view named "${name}"${where}.`, {
-      hint: 'Run `list-entities` to see the available names.',
+      hint: 'Run `entities` to see the available names.',
     })
   }
   if (matches.length > 1) {
@@ -248,7 +255,15 @@ async function describeEntity(
     )
   }
 
-  const entity = matches[0]
+  return { entity: matches[0], warnings }
+}
+
+async function describeEntity(
+  client: BasicDatabaseClient<any, any>,
+  name: string,
+  schema: string | undefined
+) {
+  const { entity, warnings } = await findEntity(client, name, schema)
   const target = entity.schema ?? undefined
 
   const rawColumns =
@@ -316,6 +331,18 @@ export function uniqueColumnNames(names: string[]): string[] {
   })
 }
 
+/** Binary cells as hex; JSON would otherwise write a Buffer as an array of bytes. */
+function cellValue(value: unknown): unknown {
+  if (value instanceof ArrayBuffer) {
+    return { type: 'binary', encoding: 'hex', data: Buffer.from(value).toString('hex') } satisfies CliBinaryValue
+  }
+  if (ArrayBuffer.isView(value)) {
+    const buffer = Buffer.from(value.buffer, value.byteOffset, value.byteLength)
+    return { type: 'binary', encoding: 'hex', data: buffer.toString('hex') } satisfies CliBinaryValue
+  }
+  return value
+}
+
 export function formatQueryResult(result: NgQueryResult): CliQueryResult {
   const rows = result.rows || []
   const fields =
@@ -328,7 +355,7 @@ export function formatQueryResult(result: NgQueryResult): CliQueryResult {
   const mapped = limited.map((row) => {
     const out: Record<string, unknown> = {}
     fields.forEach((field, index) => {
-      out[columns[index]] = Array.isArray(row) ? row[index] : row[field.id]
+      out[columns[index]] = cellValue(Array.isArray(row) ? row[index] : row[field.id])
     })
     return out
   })
@@ -386,13 +413,13 @@ function validateEntityTypes(types: string[] | undefined) {
 
 async function onConnection<T>(
   backend: CliBackend,
-  params: CliParams,
-  run: (client: BasicDatabaseClient<any, any>, connection: CliConnectionRef) => Promise<T>
+  params: { connection?: string },
+  run: (client: BasicDatabaseClient<any, any>, connection: CliConnectionRef, open: CliOpenConnection) => Promise<T>
 ): Promise<T> {
   const selected = await selectConnection(backend, params.connection)
   const connection = ref(selected.summary)
   try {
-    return await run(selected.connection.client, connection)
+    return await run(selected.connection.client, connection, selected.connection)
   } catch (error) {
     // The audit log wants to know which connection a failed call ran against.
     if (isCliError(error)) {
@@ -408,18 +435,18 @@ export function createCliMethods(backend: CliBackend): CliMethods {
       const all = await candidates(backend)
       return { connections: all.map((item) => item.summary) }
     },
-    async listSchemas(params) {
+    async schemas(params) {
       return onConnection(backend, params, async (client, connection) => {
         const schemas = await client.listSchemas()
         return { connection, schemas: schemas || [] }
       })
     },
-    async listEntities(params) {
+    async entities(params) {
       validateEntityTypes(params.entityTypes)
       return onConnection(backend, params, async (client, connection) => {
         const warnings: string[] = []
         const types = params.entityTypes || [...CLI_ENTITY_TYPES]
-        const entities = await listEntities(client, params.schema, types, warnings)
+        const entities = await loadEntities(client, params.schema, types, warnings)
         return { connection, schema: params.schema ?? null, entityTypes: types, entities, warnings }
       })
     },
@@ -436,6 +463,28 @@ export function createCliMethods(backend: CliBackend): CliMethods {
       return onConnection(backend, params, async (client, connection) => {
         const results = await runQuery(client, params.sql)
         return { connection, results }
+      })
+    },
+    async createTab(params) {
+      const tab = params.tab
+      if (!(CLI_TAB_TYPES as readonly string[]).includes(tab)) {
+        throw new CliError('USAGE', `Unknown tab type "${tab}".`, {
+          hint: `Tab types: ${CLI_TAB_TYPES.join(', ')}.`,
+        })
+      }
+      return onConnection(backend, params, async (_client, connection, open) => {
+        const request: CliCreateTabRequest = { tab, sql: params.sql }
+        const summary = await backend.createTab(open, request)
+        return { connection, ...request, ...summary }
+      })
+    },
+    async switchTab(params) {
+      if (!params.tabId) {
+        throw new CliError('USAGE', 'switch-tab needs the id of a tab.')
+      }
+      return onConnection(backend, params, async (_client, connection, open) => {
+        const summary = await backend.switchTab(open, String(params.tabId))
+        return { connection, ...summary }
       })
     },
   }

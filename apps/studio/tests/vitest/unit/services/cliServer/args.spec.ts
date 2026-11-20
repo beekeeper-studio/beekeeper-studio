@@ -3,13 +3,13 @@ import { cliArgsFromProcessArgv, extractCliArgs } from '@/services/cliServer/arg
 
 describe('extractCliArgs', () => {
   it('returns the arguments after a leading cli command', () => {
-    expect(extractCliArgs(['cli', 'list-tables', '--schema', 'public'])).toEqual(['list-tables', '--schema', 'public'])
+    expect(extractCliArgs(['cli', 'tables', '--schema', 'public'])).toEqual(['tables', '--schema', 'public'])
     expect(extractCliArgs(['cli'])).toEqual([])
   })
 
   it('skips launcher flags that come before cli', () => {
     // the linux launcher script prepends --no-sandbox, bks-flags.conf may add more
-    expect(extractCliArgs(['--no-sandbox', 'cli', 'query', 'select 1'])).toEqual(['query', 'select 1'])
+    expect(extractCliArgs(['--no-sandbox', 'cli', 'open-query-tab', 'select 1'])).toEqual(['open-query-tab', 'select 1'])
     expect(extractCliArgs(['--no-sandbox', '--ozone-platform-hint=auto', 'cli'])).toEqual([])
   })
 

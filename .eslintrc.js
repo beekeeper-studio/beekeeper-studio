@@ -148,7 +148,7 @@ module.exports = {
               "message": "src/cli runs outside electron."
             },
             {
-              "group": ["@/*", "!@/cli", "!@/cli/*", "@commercial/*", "@shared/*", "@bksLogger", "assets/*", "../*"],
+              "group": ["@/*", "!@/cli", "!@/cli/*", "@commercial/*", "@shared/*", "@bksLogger", "assets/*", "../*", "!../..", "../../*", "!../../package.json"],
               "message": "src/cli must not import app code; it talks to the app over its socket."
             }
           ]

@@ -7,8 +7,9 @@
  * electron or the rest of the app; eslint and the esbuild target enforce it.
  */
 import { createProgram } from "./program";
+import { version } from "../../package.json";
 
-const program = createProgram();
+const program = createProgram({ version });
 
 program
   .parseAsync(process.argv, { from: "node" })

@@ -1,10 +1,10 @@
 import fs from 'fs'
 import net from 'net'
 import { CliRequestEvent } from './auditLog'
-import { CliError, CliParams, CliRequest, CliResponse, isCliError } from '@/cli/protocol'
+import { CliError, CliRequest, CliResponse, isCliError } from '@/cli/protocol'
 import { isWindowsPipePath } from '@/cli/socketPath'
 import { EventEmitter } from '@/common/EventEmitter'
-import { sanitizeForJson } from './json'
+import { serializeBigInt } from '@/services/plugin/utils'
 import rawLog from '@bksLogger';
 
 const log = rawLog.scope('CliServer');
@@ -20,7 +20,7 @@ export interface CliServerEventMap {
   requestHandled: (event: CliRequestEvent) => void
 }
 
-export type CliServerMethod = (params: CliParams) => Promise<unknown>
+export type CliServerMethod = (params: unknown) => Promise<unknown>
 
 const DEFAULT_MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
@@ -221,10 +221,10 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
         })
       }
       const result = await method(request.params || {})
-      return { ok: true, result: sanitizeForJson(result) }
+      return { ok: true, result }
     } catch (error) {
       if (isCliError(error)) {
-        return { ok: false, error: sanitizeForJson(error.toPayload()) }
+        return { ok: false, error: error.toPayload() }
       }
       log.error('CLI request failed', error)
       return { ok: false, error: { code: 'INTERNAL', message: error?.message ?? String(error) } }
@@ -234,7 +234,7 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
   private respond(socket: net.Socket, response: CliResponse, request: CliRequest | null, started: number): void {
     let payload: string
     try {
-      payload = JSON.stringify(response)
+      payload = JSON.stringify(response, (_key, value) => serializeBigInt(value))
     } catch (error) {
       response = {
         ok: false,

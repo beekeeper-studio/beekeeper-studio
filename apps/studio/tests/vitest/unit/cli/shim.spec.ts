@@ -47,8 +47,8 @@ unixOnly('bks shim', () => {
 
   it('runs cli.js with the linux app binary in node mode', () => {
     const app = linuxLayout('linux')
-    const out = execFileSync(path.join(app, 'resources', 'bin', 'bks'), ['list-tables', '--schema', 'public'], { encoding: 'utf8' })
-    expect(JSON.parse(out)).toEqual({ args: ['list-tables', '--schema', 'public'], runAsNode: '1' })
+    const out = execFileSync(path.join(app, 'resources', 'bin', 'bks'), ['tables', '--schema', 'public'], { encoding: 'utf8' })
+    expect(JSON.parse(out)).toEqual({ args: ['tables', '--schema', 'public'], runAsNode: '1' })
   })
 
   it('works through a /usr/bin style symlink', () => {

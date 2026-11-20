@@ -2,8 +2,10 @@ import BksConfig from '@/common/bksConfig'
 import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { LocalWorkspace } from '@/common/interfaces/IWorkspace'
-import { allStates } from '@/handlers/handlerState'
+import { allStates, state } from '@/handlers/handlerState'
 import { CliBackend, CliOpenConnection } from './commands'
+import { CliError, CliCreateTabRequest, CliTabSummary } from '@/cli/protocol'
+import { askWindow } from './windowRequests'
 
 export interface CliEnabledDeps {
   /** `[cli] enableForAllConnections` from the ini config. */
@@ -27,6 +29,14 @@ export async function resolveCliEnabled(connection: CliOpenConnection, deps: Cli
   return !!config.cliEnabled
 }
 
+function windowPort(connection: CliOpenConnection) {
+  const port = state(connection.id)?.port
+  if (!port) {
+    throw new CliError('INTERNAL', 'The window that owns this connection is not reachable.')
+  }
+  return port
+}
+
 /** The real backend: the utility process's per-window connection states. */
 export const utilityCliBackend: CliBackend = {
   openConnections(): CliOpenConnection[] {
@@ -48,5 +58,13 @@ export const utilityCliBackend: CliBackend = {
       enableForAll: !!BksConfig.cli?.enableForAllConnections,
       findSaved: (id) => SavedConnection.findOneBy({ id }),
     })
+  },
+
+  async createTab(connection: CliOpenConnection, request: CliCreateTabRequest): Promise<CliTabSummary> {
+    return (await askWindow(windowPort(connection), 'cli/createTab', { ...request })) as CliTabSummary
+  },
+
+  async switchTab(connection: CliOpenConnection, tabId: string): Promise<CliTabSummary> {
+    return (await askWindow(windowPort(connection), 'cli/switchTab', { tabId })) as CliTabSummary
   },
 }

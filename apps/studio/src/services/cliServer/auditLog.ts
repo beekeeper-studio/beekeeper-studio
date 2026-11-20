@@ -40,9 +40,9 @@ export function summarizeResult(method: string | null, result: any): Record<stri
       const connections: any[] = result.connections || []
       return { connections: connections.length, cliEnabled: connections.filter((c) => c?.cliEnabled).length }
     }
-    case 'listSchemas':
+    case 'schemas':
       return { schemas: (result.schemas || []).length }
-    case 'listEntities':
+    case 'entities':
       return {
         schema: result.schema ?? null,
         entityTypes: result.entityTypes ?? null,
