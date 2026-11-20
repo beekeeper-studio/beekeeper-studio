@@ -200,7 +200,7 @@ export class DBTestUtil {
 
   async disconnect() {
     if (this.connection) await this.connection.disconnect();
-    // https://github.com/jestjs/jest/issues/11463
+    // An open knex pool keeps the test worker from exiting.
     if (this.knex) await this.knex.destroy();
     await TestOrmConnection.disconnect()
   }
@@ -1487,7 +1487,7 @@ export class DBTestUtil {
     }
     if (this.dbType === 'sqlite') {
       // The streaming path below issues ~200 autocommit batches, each of which
-      // fsyncs; on a slow CI disk that outlives the jest hook timeout. One
+      // fsyncs; on a slow CI disk that outlives the hook timeout. One
       // transaction commits once. skipEmptyLines: unlike the streaming parser,
       // a whole-file parse emits a trailing all-empty row for the final newline.
       const rows = Papa.parse(fs.readFileSync(fileLocation, 'utf-8'), {
@@ -1510,10 +1510,10 @@ export class DBTestUtil {
       const maxBatch = this.dbType === 'firebird' ? 255 : 233
 
       // The first failed batch is remembered and stops the pump. Batch
-      // promises never reject — each records its error instead — because jest
-      // may already have abandoned this hook (timeout) or torn the suite down
+      // promises never reject — each records its error instead — because the test
+      // runner may already have abandoned this hook (timeout) or torn the suite down
       // (knex.destroy() in afterAll) while Papa is still streaming chunks; a
-      // rejected promise with no handler attached kills the whole jest worker.
+      // rejected promise with no handler attached kills the whole test worker.
       let pumpError: Error | null = null
       const execBatch = async (batch: Record<string, any>[]) => {
         if (pumpError) return
