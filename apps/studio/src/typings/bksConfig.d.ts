@@ -530,6 +530,7 @@ declare interface IBksConfig {
         };
         export: {
             errorNoticeTimeout: number;
+            htmlIncludeHeaders: boolean;
         };
         general: {
             binaryEncoding: string;
