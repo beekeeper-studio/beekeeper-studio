@@ -55,12 +55,11 @@ export class SqlServerBackupClient extends BaseCommandClient {
         },
         {
           controlType: 'input',
-          settingName: 'filename',
-          settingDesc: 'Filename',
-          required: true,
-          actions: [
-            this.fileTypeAction
-          ]
+          settingName: 'filenameTemplate',
+          settingDesc: 'Filename Template',
+          required: false,
+          supportsTemplate: true,
+          showPreview: true,
         }
       ]
     }
