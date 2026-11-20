@@ -16,8 +16,7 @@ import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { convertValueByType } from "./cassandra/valueConverter";
-import { CassandraDecimalTranscoder, CassandraDurationTranscoder, columnTypeToBksType } from "./cassandra/transcoders";
-import { Transcoder } from "@/lib/db/serialization/transcoders";
+import { parseEditedValue, parseInsertedValue, parseKeyValue } from "./cassandra/editedValues";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { applyChangesSql } from "@/lib/db/clients/utils";
 import _ from "lodash";
@@ -66,10 +65,6 @@ type CassandraVersion = {
 export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   client: cassandra.Client;
   versionInfo: CassandraVersion;
-  transcoders: Transcoder<any, any>[] = [
-    CassandraDecimalTranscoder,
-    CassandraDurationTranscoder,
-  ];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, cassandraContext, server, database);
@@ -635,7 +630,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       const columns = Object.keys(data)
       return {
         query: `INSERT INTO ${row.table} (${columns.join(', ')}) VALUES (${Array(columns.length).fill('?', 0, columns.length)})`,
-        params: columns.map(c => data[c] || null)
+        params: columns.map(c => data[c] ?? null)
       }
     })
   }
@@ -794,7 +789,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   parseTableColumn(column: { column_name: string; type: string }): BksField {
     return {
       name: column.column_name,
-      bksType: columnTypeToBksType(column.type),
+      bksType: column.type.includes('blob') ? 'BINARY' : 'UNKNOWN',
     };
   }
 
@@ -811,14 +806,40 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     ].map(({ table, schema }) => ({ table, schema }));
     const targets = _.uniqBy(changed, ({ table, schema }) => this.getTableMapKey(table, schema));
 
-    // the transcoders are picked by column type, which the changes don't carry
+    // the changes don't carry the column types
     const columns: TableColumnMap = {};
     await Promise.all(targets.map(async ({ table, schema }) => {
       const tableColumns = await this.listTableColumns(table, schema);
       columns[this.getTableMapKey(table, schema)] = _.keyBy(tableColumns, 'columnName');
     }));
+    const typeOf = (table: string, schema: string, column: string) => {
+      const type = columns[this.getTableMapKey(table, schema)]?.[column]?.dataType;
+      if (!type) throw new Error(`Column ${column} not found in ${table}`);
+      return type;
+    };
 
-    return await super.deserializeTableChanges(changes, columns);
+    changes.inserts?.forEach((insert) => {
+      insert.data.forEach((row) => {
+        Object.keys(row).forEach((column) => {
+          row[column] = parseInsertedValue(row[column], typeOf(insert.table, insert.schema, column));
+        });
+      });
+    });
+
+    changes.updates?.forEach((update) => {
+      update.value = parseEditedValue(update.value, typeOf(update.table, update.schema, update.column));
+      update.primaryKeys.forEach((key) => {
+        key.value = parseKeyValue(key.value, typeOf(update.table, update.schema, key.column));
+      });
+    });
+
+    changes.deletes?.forEach((del) => {
+      del.primaryKeys.forEach((key) => {
+        key.value = parseKeyValue(key.value, typeOf(del.table, del.schema, key.column));
+      });
+    });
+
+    return changes;
   }
 
   private parseRows(rows, columns) {

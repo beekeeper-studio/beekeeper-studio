@@ -60,7 +60,7 @@
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
   import { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
-  import { dialectFor, formatOptionsFor } from '@shared/lib/dialects/models'
+  import { dialectFor, formatOptionsFor, isEditableColumnType } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import Papa from 'papaparse'
@@ -585,7 +585,8 @@
               log.error('Failed to preserve object for', value)
               return true
             },
-            typeHint: editData?.dataType?.toLowerCase(),
+            // with a list of editable types the backend parses the text itself
+            typeHint: this.dialectData?.editableColumnTypes ? undefined : editData?.dataType?.toLowerCase(),
             bksField: editData?.bksField,
             binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
           },
@@ -659,7 +660,7 @@
           return false;
         }
 
-        return fieldEditData.editable;
+        return fieldEditData.editable && isEditableColumnType(this.dialectData, fieldEditData.dataType);
       },
       cellEdited(cell: CellComponent) {
         const fieldEditData: FieldEditData = this.editData?.get(cell.getField());

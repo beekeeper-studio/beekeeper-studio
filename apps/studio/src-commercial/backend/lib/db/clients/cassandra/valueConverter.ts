@@ -20,7 +20,7 @@ const { dataTypes, BigDecimal, Integer, Long } = cassandra.types;
 // Protocol v4 has no duration type code, so the column is described as this custom type
 const durationClassName = 'org.apache.cassandra.db.marshal.DurationType';
 
-export function decimalToString(value: any): string {
+function decimalToString(value: any): string {
   // BigDecimal#toString() assumes a non-negative scale and renders 1.5E+4
   // (15 with scale -3) as "15.", so use scientific notation for it like cqlsh.
   const buffer = BigDecimal.toBuffer(value);
@@ -44,7 +44,7 @@ const nanoUnits: [typeof Long.ONE, string][] = [
   [Long.ONE, 'ns'],
 ];
 
-export function durationToString(value: any): string {
+function durationToString(value: any): string {
   // Same format as cqlsh. Duration#toString() rounds the years, so 18 months
   // comes out as "2y6mo".
   const { months, days, nanoseconds } = value;
