@@ -76,6 +76,7 @@ jobs:
         run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
 
       - name: Restore node_modules cache
+        id: cache-nm
         uses: actions/cache/restore@v5
         with:
           path: |
@@ -83,7 +84,19 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
           key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
-          fail-on-cache-miss: true
+
+      # prep normally saves this cache, but other workflows share the key: when
+      # one of them is saving it at the same moment, prep's save is skipped and
+      # the cache may not exist yet when this job starts.
+      - name: Install dependencies (cache miss)
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
+        env:
+          HUSKY: "0"
 
       - name: Lint
         run: pnpm -F beekeeper-studio run lint
@@ -140,6 +153,7 @@ jobs:
         run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
 
       - name: Restore node_modules cache
+        id: cache-nm
         uses: actions/cache/restore@v5
         with:
           path: |
@@ -147,7 +161,19 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
           key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
-          fail-on-cache-miss: true
+
+      # prep normally saves this cache, but other workflows share the key: when
+      # one of them is saving it at the same moment, prep's save is skipped and
+      # the cache may not exist yet when this job starts.
+      - name: Install dependencies (cache miss)
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
+        env:
+          HUSKY: "0"
 
       - name: Install libaio (for oracle)
         if: startsWith(matrix.chunk[0], 'oracle')
