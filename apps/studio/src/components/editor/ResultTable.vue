@@ -80,8 +80,7 @@
   import { FieldDescriptor, FieldEditData, FieldReadOnlyReasonStr, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
-  import { safeSqlFormat } from '@/common/utils'
-  import { stringToTypedArray } from '@/common/utils'
+  import { safeSqlFormat, stringToTypedArray, toHtmlTable } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
@@ -1051,6 +1050,14 @@
           };
         }
 
+        if(format === 'html'){
+          formatter = (rows, options, setFileContents) => {
+            const headers = rows.length > 0 && rows[0].columns ? rows[0].columns.map(col => col.component?.getDefinition?.()?.title || col.component?.getField?.() || '') : [];
+            const values = rows.map(row => row.columns.map(col => typeof col.value === 'object' ? JSON.stringify(col.value) : col.value));
+            setFileContents(toHtmlTable(this.$bksConfig.ui.export.htmlIncludeHeaders ? headers : null, values), 'text/html');
+          };
+        }
+
         // Fix Issue #1493 Lost column names in json query download
         // by overriding the tabulator-generated json with ...what cipboard() does, below:
         if(format === 'json'){
@@ -1115,6 +1122,14 @@
                 )
           ];
           await this.$native.clipboard.writeText(markdownTable(mdContent))
+        } else if (format === 'html') {
+          const headers = Object.keys(result[0]);
+          const rows = result.map((row) =>
+            Object.values(row).map(v =>
+              (typeof v === 'object') ? JSON.stringify(v) : v
+            )
+          );
+          await this.$native.clipboard.writeText(toHtmlTable(this.$bksConfig.ui.export.htmlIncludeHeaders ? headers : null, rows));
         } else if (format === 'json') {
           await this.$native.clipboard.writeText(JSON.stringify(result))
         } else {

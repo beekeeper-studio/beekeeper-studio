@@ -97,6 +97,7 @@
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
+        @clipboardHtml="clipboardHtml"
         @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
         :active="active"
@@ -343,6 +344,11 @@ export default Vue.extend({
       // eslint-disable-next-line
       // @ts-ignore
       const data = this.$refs.table.clipboard('md')
+    },
+    clipboardHtml() {
+      // eslint-disable-next-line
+      // @ts-ignore
+      const data = this.$refs.table.clipboard('html')
     },
     selectEditor() {
       this.focusElement = 'text-editor'

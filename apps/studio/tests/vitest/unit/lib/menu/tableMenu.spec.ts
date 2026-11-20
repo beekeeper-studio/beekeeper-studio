@@ -161,6 +161,30 @@ describe("buildCopyText - asIn type", () => {
   });
 });
 
+describe("buildCopyText - html type", () => {
+  it("renders the range as an escaped HTML table", async () => {
+    const text = await buildCopyText(
+      [{ name: "<b>Ann</b>", age: 30 }] as any,
+      { type: "html" }
+    );
+    expect(text).toContain("<table>");
+    expect(text).toContain("<th>name</th>");
+    expect(text).toContain("<td>&lt;b&gt;Ann&lt;/b&gt;</td>");
+    expect(text).toContain("<td>30</td>");
+  });
+
+  it("omits the header row when ui.export.htmlIncludeHeaders is false", async () => {
+    (window as any).bksConfig = { ui: { export: { htmlIncludeHeaders: false } } };
+    try {
+      const text = await buildCopyText([{ name: "Ann" }] as any, { type: "html" });
+      expect(text).not.toContain("<thead>");
+      expect(text).toContain("<td>Ann</td>");
+    } finally {
+      delete (window as any).bksConfig;
+    }
+  });
+});
+
 describe("buildTiledPasteData", () => {
   it("tiles an exact multiple to fill the whole selection", () => {
     // Copy 2 rows into a 4-row selection -> both rows pasted twice.

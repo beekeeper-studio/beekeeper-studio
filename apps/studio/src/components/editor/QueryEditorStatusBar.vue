@@ -165,6 +165,9 @@
         <x-menuitem @click.prevent="download('md')">
           <x-label>Download as Markdown</x-label>
         </x-menuitem>
+        <x-menuitem @click.prevent="download('html')">
+          <x-label>Download as HTML</x-label>
+        </x-menuitem>
         <span
           v-if="dialect !== 'mongodb'"
           v-tooltip="{
@@ -200,6 +203,12 @@
           @click.prevent="copyToClipboardMarkdown"
         >
           <x-label>Copy to Clipboard (Markdown)</x-label>
+        </x-menuitem>
+        <x-menuitem
+          title="Probably don't do this with large results (500+)"
+          @click.prevent="copyToClipboardHtml"
+        >
+          <x-label>Copy to Clipboard (HTML)</x-label>
         </x-menuitem>
       </x-menu>
     </x-button>
@@ -424,6 +433,9 @@ export default {
     },
     copyToClipboardMarkdown() {
       this.$emit('clipboardMarkdown')
+    },
+    copyToClipboardHtml() {
+      this.$emit('clipboardHtml')
     },
     submitCurrentQueryToFile() {
       this.$emit('submitCurrentQueryToFile')
