@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { Decimal128 } from "mongodb";
 import {
   MongoDBDecimal128Transcoder,
