@@ -22,6 +22,15 @@ export function dynamoTypeLabel(code: string | undefined | null): string {
   return DYNAMO_TYPE_LABELS[code] || code
 }
 
+const LABEL_TO_CODE = Object.fromEntries(
+  Object.entries(DYNAMO_TYPE_LABELS).map(([code, label]) => [label, code])
+);
+
+export function dynamoLabelToCode(label: string | undefined | null): string {
+  if (!label) return 'S';
+  return LABEL_TO_CODE[label] || label;
+}
+
 export const DynamoDBData: DialectData = {
   sqlLabel: "code",
   columnTypes: Object.values(DYNAMO_TYPE_LABELS).map((t) => new ColumnType(t)),
