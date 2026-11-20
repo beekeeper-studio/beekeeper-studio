@@ -32,6 +32,24 @@ export class PsqlCursor extends BeeCursor {
     this.error = error
   }
 
+  private readonly onClientError = this.handleError.bind(this)
+
+  // Give the client back to the pool exactly once. After an error the
+  // connection's state is unknown, so the pool destroys it instead of
+  // handing it to the next query.
+  private releaseClient(destroy: boolean) {
+    const client = this.client
+    if (!client) return
+    this.client = undefined
+    this.cursor = undefined
+    client.off('error', this.onClientError)
+    try {
+      client.release(destroy)
+    } catch (ex) {
+      log.warn(ex.message)
+    }
+  }
+
   get columns(): TableColumn[] | null {
     if (!this.fields) return null;
     return this.fields.map((f) => ({
@@ -42,7 +60,7 @@ export class PsqlCursor extends BeeCursor {
 
   async start() {
     this.client = await this.options.connector.getRawConnection()
-    this.client.on('error', this.handleError.bind(this))
+    this.client.on('error', this.onClientError)
     const { query, params } = this.options
     this.cursor = this.client.query(new Cursor(query, params, {rowMode: 'array'}))
   }
@@ -50,12 +68,16 @@ export class PsqlCursor extends BeeCursor {
   read(): Promise<any[][]> {
 
     return new Promise((resolve, reject) => {
-      if (this.error) return reject(this.error)
+      if (this.error) {
+        this.releaseClient(true)
+        return reject(this.error)
+      }
       if (!this.client || !this.cursor) {
         reject("You need to call start first")
       } else {
         this.cursor.read(this.chunkSize, (err, rows, result) => {
           if (err) {
+            this.releaseClient(true)
             reject(err.message)
           } else {
             if (!this.fields && result.fields) {
@@ -69,22 +91,19 @@ export class PsqlCursor extends BeeCursor {
   }
   cancel(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.cursor) {
-        this.cursor.close((err) => {
-          if (err) {
-            reject(err.message)
-          } else {
-            try {
-              this.client?.release()
-
-            } catch(ex) {
-              log.warn(ex.message)
-            }finally {
-              resolve()
-            }
-          }
-        })
+      const cursor = this.cursor
+      if (!cursor) {
+        this.releaseClient(false)
+        return resolve()
       }
+      cursor.close((err) => {
+        this.releaseClient(!!err)
+        if (err) {
+          reject(err.message)
+        } else {
+          resolve()
+        }
+      })
     })
   }
 
