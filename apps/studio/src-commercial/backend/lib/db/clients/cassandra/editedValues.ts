@@ -98,7 +98,7 @@ function parseTime(text: string) {
 }
 
 const parsers: Record<EditableColumnType, Parser> = {
-  ascii: (text) => (/^[\x00-\x7F]*$/.test(text) ? text : undefined),
+  ascii: (text) => ([...text].every((char) => char.charCodeAt(0) <= 0x7f) ? text : undefined),
   text: (text) => text,
   varchar: (text) => text,
   tinyint: integer(8),
