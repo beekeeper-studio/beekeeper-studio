@@ -6,6 +6,7 @@ import { createServer } from "@commercial/backend/lib/db/server";
 import { setupDB } from "./mongodb/setupDb";
 import { TableOrView } from "@/lib/db/models";
 import { DatabaseElement } from "@/lib/db/types";
+import { Decimal128, MongoClient } from "mongodb";
 
 
 describe(`MongoDB`, () => {
@@ -170,6 +171,34 @@ describe(`MongoDB`, () => {
         if (i < salaries2.length - 1) {
           expect(salaries2[i]).toBeGreaterThanOrEqual(salaries2[i + 1]);
         }
+      }
+    });
+
+    it("Should render Decimal128 values as readable decimal strings", async () => {
+      const testCollection = `decimal128_test_${Date.now()}`;
+      const client = new MongoClient(config.url);
+
+      try {
+        await client.connect();
+        await client.db().collection(testCollection).insertMany([
+          { name: 'a_small', price: Decimal128.fromString('12.34') },
+          { name: 'b_precise', price: Decimal128.fromString('1234.5678901234567890123456789') },
+          { name: 'c_large', price: Decimal128.fromString('123456789012345678901234567890') },
+        ]);
+
+        const r = await connection.selectTop(testCollection, 0, 10, [{ field: 'name', dir: 'ASC' }], []);
+        const prices = r.result.map((row: any) => row.price);
+
+        // Previously these came back as raw Decimal128 objects, which the
+        // table and JSON views rendered as { bytes: { 0: ..., 1: ... } }
+        expect(prices).toStrictEqual([
+          '12.34',
+          '1234.5678901234567890123456789',
+          '123456789012345678901234567890',
+        ]);
+      } finally {
+        await client.db().collection(testCollection).drop().catch(() => undefined);
+        await client.close();
       }
     });
   });
