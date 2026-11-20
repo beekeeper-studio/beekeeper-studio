@@ -20,11 +20,16 @@ source gpdb_src/concourse/scripts/common.bash
 # does not need.
 install_gpdb
 
-# setup_gpadmin_user.bash ends with `chown -R gpadmin:gpadmin` on gpadmin's
-# home, which holds ~500MB of root-owned source and tarballs. On Docker's
-# overlay filesystem that copies every file into the container layer (10-15s).
-# The script already makes the source directories writable, so only the home
-# directory itself needs to change owner.
+# HACK: shadow `chown` with a shell function so one specific call made by the
+# upstream setup_gpadmin_user.bash is rewritten. This depends on the exact
+# arguments upstream passes; if upstream changes that line the function stops
+# matching and startup just gets slower again (nothing breaks).
+#
+# Why: the script ends with `chown -R gpadmin:gpadmin /home/gpadmin`, and that
+# directory holds ~500MB of root-owned source and tarballs. On Docker's overlay
+# filesystem a chown copies every file into the container layer, which costs
+# about 5s of startup. The script already makes the source directories
+# writable, so only the home directory itself needs to change owner.
 chown() {
   if [ "$*" = "-R gpadmin:gpadmin /home/gpadmin" ]; then
     command chown gpadmin:gpadmin /home/gpadmin
