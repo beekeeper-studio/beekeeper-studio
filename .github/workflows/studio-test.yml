@@ -109,7 +109,6 @@ jobs:
       - name: Build UI Kit
         run: pnpm lib:build
 
-      # Everything runs under vitest (see apps/studio/tests/VITEST_MIGRATION.md)
       - name: Unit Tests
         run: pnpm -F beekeeper-studio run test:unit --silent
 
