@@ -41,7 +41,7 @@ function primitiveTranscoder<T>(
 }
 
 export const NUMERIC_REGEX = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
-const INTEGER_REGEX = /^[+-]?\d+$/;
+export const INTEGER_REGEX = /^[+-]?\d+$/;
 
 function parseInteger(value: string): number | bigint | undefined {
   const trimmed = value.trim();

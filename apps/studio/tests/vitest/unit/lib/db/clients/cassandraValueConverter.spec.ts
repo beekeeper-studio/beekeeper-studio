@@ -50,6 +50,78 @@ describe("cassandra valueConverter", () => {
       expect(convertValueByType(date, { code: dataTypes.timestamp })).toBe("2026-08-28T10:11:12.000Z")
     })
 
+    it("converts a decimal to a string", () => {
+      const decimal = { code: dataTypes.decimal }
+      expect(convertValueByType(cassandra.types.BigDecimal.fromString("12345.6789"), decimal)).toBe("12345.6789")
+      expect(convertValueByType(cassandra.types.BigDecimal.fromString("-0.000123"), decimal)).toBe("-0.000123")
+    })
+
+    it("keeps the exponent of a decimal with a negative scale", () => {
+      // 1.5E+4 in CQL is stored as 15 with scale -3
+      const decimal = (unscaled: number, scale: number) =>
+        new cassandra.types.BigDecimal(cassandra.types.Integer.fromNumber(unscaled) as any, scale)
+      expect(convertValueByType(decimal(15, -3), { code: dataTypes.decimal })).toBe("1.5E+4")
+      expect(convertValueByType(decimal(-150, -2), { code: dataTypes.decimal })).toBe("-1.50E+4")
+      expect(convertValueByType(decimal(7, -1), { code: dataTypes.decimal })).toBe("7E+1")
+    })
+
+    it("converts a varint to a string", () => {
+      const varint = { code: dataTypes.varint }
+      expect(convertValueByType(cassandra.types.Integer.fromString("123456789012345678901234567890"), varint))
+        .toBe("123456789012345678901234567890")
+      expect(convertValueByType(cassandra.types.Integer.fromString("-42"), varint)).toBe("-42")
+    })
+
+    it("converts a duration to a cqlsh style string", () => {
+      const duration = { code: dataTypes.duration }
+      const convert = (value: string) => convertValueByType(cassandra.types.Duration.fromString(value), duration)
+
+      expect(convert("1h30m")).toBe("1h30m")
+      expect(convert("2d3h4m5s6ms7us8ns")).toBe("2d3h4m5s6ms7us8ns")
+      expect(convert("-2d3h")).toBe("-2d3h")
+      expect(convert("0s")).toBe("0s")
+    })
+
+    it("converts a duration described as a custom type", () => {
+      // what protocol v4 sends for a duration column
+      const duration = { code: dataTypes.custom, info: "org.apache.cassandra.db.marshal.DurationType" }
+      const value = cassandra.types.Duration.fromString("1y6mo2d")
+
+      expect(convertValueByType(value, duration)).toBe("1y6mo2d")
+      expect(convertValueByType([value], { code: dataTypes.list, info: duration })).toEqual(["1y6mo2d"])
+    })
+
+    it("does not round the years of a duration up", () => {
+      // Duration#toString() gives "2y6mo" here
+      const value = cassandra.types.Duration.fromString("1y6mo")
+      expect(convertValueByType(value, { code: dataTypes.duration })).toBe("1y6mo")
+    })
+
+    it("converts a float to its shortest float32 representation", () => {
+      // the driver decodes a float into a double, so 3.14 arrives as 3.140000104904175
+      const float = { code: dataTypes.float }
+      const decoded = (value: number) => {
+        const buffer = Buffer.alloc(4)
+        buffer.writeFloatBE(value)
+        return buffer.readFloatBE(0)
+      }
+
+      expect(decoded(3.14)).toBe(3.140000104904175)
+      expect(convertValueByType(decoded(3.14), float)).toBe(3.14)
+      expect(convertValueByType(decoded(0.1), float)).toBe(0.1)
+      expect(convertValueByType(decoded(-123.456), float)).toBe(-123.456)
+      expect(convertValueByType(decoded(16777216), float)).toBe(16777216)
+      expect(convertValueByType(decoded(3.4028235e38), float)).toBe(3.4028235e38)
+      expect(convertValueByType(decoded(1e-45), float)).toBe(1e-45)
+      expect(convertValueByType(decoded(1.04833964e-14), float)).toBe(1.04833964e-14)
+      expect(convertValueByType(NaN, float)).toBeNaN()
+      expect(convertValueByType(Infinity, float)).toBe(Infinity)
+    })
+
+    it("leaves a double alone", () => {
+      expect(convertValueByType(3.140000104904175, { code: dataTypes.double })).toBe(3.140000104904175)
+    })
+
     it("leaves plain types alone", () => {
       expect(convertValueByType("hello", text)).toBe("hello")
       expect(convertValueByType(7, int)).toBe(7)
@@ -104,6 +176,17 @@ describe("cassandra valueConverter", () => {
 
       expect(convertValueByType(value, map({ code: dataTypes.timestamp }, uuid())))
         .toEqual({ [key]: ID_A })
+    })
+
+    it("converts decimals, varints and floats inside collections", () => {
+      // map keys arrive already stringified by the driver
+      const value = {
+        "12.50": cassandra.types.Integer.fromString("99999999999999999999"),
+      }
+      expect(convertValueByType(value, map({ code: dataTypes.decimal }, { code: dataTypes.varint })))
+        .toEqual({ "12.50": "99999999999999999999" })
+
+      expect(convertValueByType([Math.fround(2.2)], list({ code: dataTypes.float }))).toEqual([2.2])
     })
   })
 

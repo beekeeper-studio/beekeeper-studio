@@ -2,7 +2,7 @@ import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
-import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions, TableColumnMap } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from 'knex';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs');
@@ -16,7 +16,9 @@ import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { convertValueByType } from "./cassandra/valueConverter";
+import { parseEditedValue, parseInsertedValue, parseKeyValue } from "./cassandra/editedValues";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
+import { applyChangesSql } from "@/lib/db/clients/utils";
 import _ from "lodash";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
@@ -639,7 +641,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       const columns = Object.keys(data)
       return {
         query: `INSERT INTO ${row.table} (${columns.join(', ')}) VALUES (${Array(columns.length).fill('?', 0, columns.length)})`,
-        params: columns.map(c => data[c] || null)
+        params: columns.map(c => data[c] ?? null)
       }
     })
   }
@@ -688,7 +690,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     const selectPromises: any = await Promise.all(updatePromises);
 
     return selectPromises.reduce((acc: Array<any>, sp: any) => {
-      const [data] = sp.rows;
+      const [data] = this.parseRows(sp.rows, sp.columns);
       if (data) acc.push(data);
 
       return acc;
@@ -800,6 +802,55 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       name: column.column_name,
       bksType: column.type.includes('blob') ? 'BINARY' : 'UNKNOWN',
     };
+  }
+
+  async applyChangesSql(changes: TableChanges): Promise<string> {
+    // The SQL is built from the edited text, driver values would be printed as JSON
+    return applyChangesSql(changes, this.knex);
+  }
+
+  protected async deserializeTableChanges(changes: TableChanges) {
+    const changed = [
+      ...(changes.inserts ?? []),
+      ...(changes.updates ?? []),
+      ...(changes.deletes ?? []),
+    ].map(({ table, schema }) => ({ table, schema }));
+    const targets = _.uniqBy(changed, ({ table, schema }) => this.getTableMapKey(table, schema));
+
+    // the changes don't carry the column types
+    const columns: TableColumnMap = {};
+    await Promise.all(targets.map(async ({ table, schema }) => {
+      const tableColumns = await this.listTableColumns(table, schema);
+      columns[this.getTableMapKey(table, schema)] = _.keyBy(tableColumns, 'columnName');
+    }));
+    const typeOf = (table: string, schema: string, column: string) => {
+      const type = columns[this.getTableMapKey(table, schema)]?.[column]?.dataType;
+      if (!type) throw new Error(`Column ${column} not found in ${table}`);
+      return type;
+    };
+
+    changes.inserts?.forEach((insert) => {
+      insert.data.forEach((row) => {
+        Object.keys(row).forEach((column) => {
+          row[column] = parseInsertedValue(row[column], typeOf(insert.table, insert.schema, column));
+        });
+      });
+    });
+
+    changes.updates?.forEach((update) => {
+      update.value = parseEditedValue(update.value, typeOf(update.table, update.schema, update.column));
+      update.primaryKeys.forEach((key) => {
+        key.value = parseKeyValue(key.value, typeOf(update.table, update.schema, key.column));
+      });
+    });
+
+    changes.deletes?.forEach((del) => {
+      del.primaryKeys.forEach((key) => {
+        key.value = parseKeyValue(key.value, typeOf(del.table, del.schema, key.column));
+      });
+    });
+
+    return changes;
   }
 
   private parseRows(rows, columns) {
