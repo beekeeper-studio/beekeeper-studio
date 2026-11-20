@@ -51,7 +51,6 @@ import {
   IndexColumn,
   TableKey,
 } from "@shared/lib/dialects/models";
-import { Stream } from "stream";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { ClickHouseChangeBuilder } from "@shared/lib/sql/change_builder/ClickHouseChangeBuilder";
 import {
@@ -72,13 +71,14 @@ interface JSONResult {
   resultType: "json";
 }
 
-interface StreamResult {
+interface TextResult {
   statement: IdentifyResult;
-  data: Stream;
-  resultType: "stream";
+  /** Raw response body of an exec() call, already read in full */
+  data: string;
+  resultType: "text";
 }
 
-type JSONOrStreamResult = JSONResult | StreamResult;
+type JSONOrTextResult = JSONResult | TextResult;
 
 interface ResultColumn {
   name: string;
@@ -90,7 +90,7 @@ interface BaseResult {
   arrayMode: boolean;
 }
 
-type Result = BaseResult & JSONOrStreamResult;
+type Result = BaseResult & JSONOrTextResult;
 
 interface ExecuteQueryOptions {
   params?: Record<string, any>;
@@ -707,10 +707,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     });
     const ret = [];
     for (const result of results) {
-      const data =
-        result.resultType === "stream"
-          ? await streamToString(result.data)
-          : result.data;
+      const data = result.data;
 
       const isEmptyResult = !data;
 
@@ -809,8 +806,12 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
             wait_end_of_query: 1,
           },
         });
-        data = result.stream;
-        resultType = "stream";
+        // Always read the response to the end, even when the caller ignores
+        // it. An unread response keeps its socket checked out of the driver's
+        // pool (10 sockets), and once the pool is empty every statement waits
+        // for the server to drop an idle socket (~10s).
+        data = await streamToString(result.stream);
+        resultType = "text";
       }
       results.push({ statement, data, resultType, rows, columns, arrayMode: options.arrayMode });
     }
