@@ -160,7 +160,11 @@ jobs:
 
       - name: Download Oracle instant client (for oracle)
         if: startsWith(matrix.chunk[0], 'oracle')
-        run: pnpm -F beekeeper-studio run test:integration:setup
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: pnpm -F beekeeper-studio run test:integration:setup
 
       - name: Install PostgreSQL 15 (for postgres-backup)
         if: matrix.chunk[0] == 'postgres-backup.spec.ts'
