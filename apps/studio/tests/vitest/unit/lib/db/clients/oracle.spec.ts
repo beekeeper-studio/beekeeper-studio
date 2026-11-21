@@ -287,3 +287,139 @@ describe('OracleClient.parseForeignKeys', () => {
     ]);
   });
 });
+
+describe('OracleClient connect string', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    _resetOracleStateForTesting();
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    mockCreatePool.mockResolvedValue({ getConnection: vi.fn() });
+  });
+
+  afterEach(() => {
+    (oracledb as any).thin = true;
+    vi.restoreAllMocks();
+  });
+
+  async function connect(overrides: Record<string, any>) {
+    const client = new OracleClient(buildServer({ instantClientLocation: null, ...overrides }), buildDatabase());
+    client['driverExecuteSimple'] = vi.fn().mockResolvedValue([{ BANNER: 'Oracle 19c' }]);
+    await client.connect();
+    return client;
+  }
+
+  it('builds host:port/service in manual mode', async () => {
+    await connect({});
+    expect(mockCreatePool.mock.calls[0][0].connectString).toBe('localhost:1521/ORCL');
+  });
+
+  // A blank Service Name used to be interpolated as-is, so the listener was asked for a
+  // service literally called "null" (NJS-518: Service "null" is not registered).
+  it.each([null, undefined, '', '   '])('leaves the service off the connect string when Service Name is %j', async (serviceName) => {
+    await connect({ serviceName });
+    expect(mockCreatePool.mock.calls[0][0].connectString).toBe('localhost:1521');
+  });
+
+  it('trims the service name', async () => {
+    await connect({ serviceName: ' ORCL ', ssl: true });
+    expect(mockCreatePool.mock.calls[0][0].connectString).toBe('tcps://localhost:1521/ORCL');
+  });
+});
+
+describe('OracleClient connection string credentials', () => {
+  const connectionString = (value: string) => ({ connectionMethod: 'connectionString', connectionString: value });
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    _resetOracleStateForTesting();
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    mockCreatePool.mockResolvedValue({ getConnection: vi.fn() });
+  });
+
+  afterEach(() => {
+    (oracledb as any).thin = true;
+    vi.restoreAllMocks();
+  });
+
+  function build(overrides: Record<string, any>) {
+    const client = new OracleClient(buildServer({ instantClientLocation: null, ...overrides }), buildDatabase());
+    client['driverExecuteSimple'] = vi.fn().mockResolvedValue([{ BANNER: 'Oracle 19c' }]);
+    return client;
+  }
+
+  it('passes the User and Password fields through', async () => {
+    await build({ options: connectionString('dbhost:1521/ORCL') }).connect();
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig).toMatchObject({ user: 'testuser', password: 'testpass', connectString: 'dbhost:1521/ORCL' });
+    expect(poolConfig).not.toHaveProperty('externalAuth');
+  });
+
+  // node-oracledb does not read credentials out of the connect string, so the SQL*Plus
+  // form failed with NJS-101: no credentials specified.
+  it('reads user/password@ off the front of the connection string when the fields are blank', async () => {
+    const client = build({ user: null, password: null, options: connectionString(' scott/t1g@r@dbhost:1521/ORCL\n') });
+    await client.connect();
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig).toMatchObject({ user: 'scott', password: 't1g@r', connectString: 'dbhost:1521/ORCL' });
+    expect(await client.defaultSchema()).toBe('SCOTT');
+  });
+
+  it('prefers the User and Password fields over credentials in the connection string', async () => {
+    await build({ options: connectionString('scott/tiger@dbhost:1521/ORCL') }).connect();
+    expect(mockCreatePool.mock.calls[0][0]).toMatchObject({
+      user: 'testuser', password: 'testpass', connectString: 'dbhost:1521/ORCL',
+    });
+  });
+
+  it('does not mistake a descriptor or URL for credentials', async () => {
+    const descriptor = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=dbhost)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=a/b@c)))';
+    await build({ options: connectionString(descriptor) }).connect();
+    expect(mockCreatePool.mock.calls[0][0].connectString).toBe(descriptor);
+
+    for (const untouched of [
+      'tcps://dbhost:1521/ORCL',
+      'dbhost/ORCL',
+      'dbhost/ORCL?wallet_location=/home/me@work/wallet',
+    ]) {
+      mockCreatePool.mockClear();
+      await build({ options: connectionString(untouched) }).connect();
+      expect(mockCreatePool.mock.calls[0][0].connectString).toBe(untouched);
+    }
+  });
+
+  // The form labels both fields optional: blank means wallet / OS (external) authentication,
+  // which only the Instant Client supports.
+  it('uses external authentication in thick mode when no credentials are given', async () => {
+    mockInitOracleClient.mockImplementation(() => { (oracledb as any).thin = false; });
+    const client = build({
+      user: null, password: null, instantClientLocation: '/fake/client/path', options: connectionString('MYALIAS'),
+    });
+    await client.connect();
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig.externalAuth).toBe(true);
+    expect(poolConfig).not.toHaveProperty('user');
+    expect(poolConfig).not.toHaveProperty('password');
+    expect(poolConfig.connectString).toBe('MYALIAS');
+  });
+
+  it('explains what is missing in thin mode instead of failing in the driver', async () => {
+    const client = build({ user: null, password: null, options: connectionString('MYALIAS') });
+    await expect(client.connect()).rejects.toThrow(/User and Password are required.*Instant Client/s);
+    expect(mockCreatePool).not.toHaveBeenCalled();
+  });
+
+  it('asks the database for the default schema when no user was entered', async () => {
+    mockInitOracleClient.mockImplementation(() => { (oracledb as any).thin = false; });
+    const client = build({
+      user: null, password: null, instantClientLocation: '/fake/client/path', options: connectionString('MYALIAS'),
+    });
+    await client.connect();
+    (client['driverExecuteSimple'] as Mock).mockResolvedValue([{ CURRENT_SCHEMA: 'OPS$ALICE' }]);
+    expect(await client.defaultSchema()).toBe('OPS$ALICE');
+  });
+
+  it('upper-cases the entered user for the default schema', async () => {
+    const client = build({});
+    expect(await client.defaultSchema()).toBe('TESTUSER');
+  });
+});

@@ -68,6 +68,23 @@ export function _resetOracleStateForTesting() {
   oracleInitConfigDir = null
 }
 
+// SQL*Plus style `user/password@connect_identifier`. node-oracledb does not read credentials
+// out of the connect string, so they are split off here. Descriptors and URLs are left alone:
+// neither `(DESCRIPTION=...)` nor `tcps://host/service` has a user before the first slash.
+export function splitOracleConnectionString(raw?: string): { connectString: string, user?: string, password?: string } {
+  const value = (raw || '').trim()
+  const slash = value.indexOf('/')
+  const at = value.lastIndexOf('@')
+  const user = slash > 0 ? value.slice(0, slash) : ''
+  const password = at > slash ? value.slice(slash + 1, at) : ''
+  // `host/service?wallet_location=/a@b` is Easy Connect, not credentials: a password
+  // holding `/` or `?` has to be quoted in SQL*Plus anyway, so those are not split.
+  if (!password || !/^[^\s@:()=]+$/.test(user) || /[/?]/.test(password)) {
+    return { connectString: value }
+  }
+  return { connectString: value.slice(at + 1).trim(), user, password }
+}
+
 const privileges = {
   SYSDBA: oracle.SYSDBA,
   SYSOPER: oracle.SYSOPER,
@@ -87,13 +104,21 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
   instantClientLocation: string
+  // The user read out of the connection string, when the User field was left blank.
+  connectedUser?: string
   version: string
   readOnlyMode: boolean
   transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knexLib({ client: Client_Oracledb }), NoOpContextProvider, server, database);
-    this.defaultSchema = async (): Promise<string> => server.config.user.toUpperCase()
+    this.defaultSchema = async (): Promise<string> => {
+      const user = this.connectedUser || server.config.user
+      if (user) return user.toUpperCase()
+      // No user was entered (external authentication), so ask the session.
+      const rows = await this.driverExecuteSimple("SELECT SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA') AS CURRENT_SCHEMA FROM DUAL")
+      return rows[0]?.CURRENT_SCHEMA
+    }
     this.instantClientLocation = server.config.instantClientLocation
     this.readOnlyMode = server?.config?.readOnlyMode || false
     // Typescript wasn't having it that createUpsertFunc could be either a function or null, so this ended up working
@@ -723,20 +748,40 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       poolMax: BksConfig.db.oracle.maxConnections,
     }
 
+    this.connectedUser = undefined
     if (connectionMethod === 'connectionString') {
+      const parsed = splitOracleConnectionString(this.server.config.options.connectionString)
       poolConfig = {
         ...poolConfig,
-        connectString: this.server.config.options.connectionString,
+        connectString: parsed.connectString,
       }
-      const { user, password } = this.server.config
+      // The form's fields win; credentials in the string only fill in what is blank.
+      const user = this.server.config.user || parsed.user
+      const password = this.server.config.password || parsed.password
       if (user) poolConfig['user'] = user
       if (password) poolConfig['password'] = password
+      if (!this.server.config.user) this.connectedUser = parsed.user
+
+      if (!user && !password) {
+        // Both fields blank means external authentication (wallet or OS), which only the
+        // Instant Client supports. Without the flag the driver fails with NJS-101.
+        if (oracle.thin) {
+          throw new Error(
+            'User and Password are required in thin mode. Connecting without them uses external ' +
+            'authentication (wallet or OS), which requires the Oracle Instant Client.'
+          )
+        }
+        poolConfig['externalAuth'] = true
+      }
     } else {
-      const { serviceName, ssl } = this.server.config
+      const { ssl } = this.server.config
+      const serviceName = (this.server.config.serviceName || '').trim()
       const host = this.server.sshTunnel ? this.server.config.localHost : this.server.config.host
       const port = this.server.sshTunnel ? this.server.config.localPort : this.server.config.port
       const scheme = ssl ? 'tcps://' : ''
-      const str = `${scheme}${host}:${port}/${serviceName}`
+      // A blank Service Name is left off so the listener's default service answers, instead
+      // of asking for a service literally called "null".
+      const str = `${scheme}${host}:${port}${serviceName ? `/${serviceName}` : ''}`
       poolConfig = {
         ...poolConfig,
         user: this.server.config.user,

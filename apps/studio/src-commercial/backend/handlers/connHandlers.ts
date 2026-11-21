@@ -42,7 +42,10 @@ async function ensureAzureTokenCache(config: IConnection): Promise<void> {
     return;
   }
 
-  if (config.authId) return;
+  // The cache can be gone while the id lingers: a duplicated connection shares its
+  // original's cache, and recent connections keep theirs, so signing out of one deletes it
+  // for the others.
+  if (config.authId && await TokenCache.findOneBy({ id: config.authId })) return;
 
   const cache = await new TokenCache().save();
   config.authId = cache.id;

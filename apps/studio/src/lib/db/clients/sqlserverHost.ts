@@ -9,14 +9,29 @@
 export interface ParsedSqlServerHost {
   host: string
   instanceName?: string
+  // Set only when the port was typed into the Host field (`host,1433`).
+  port?: number
 }
 
 // SSMS accepts these as "this machine". They reach the driver untranslated and die at DNS
 // resolution (getaddrinfo ENOTFOUND .), so map them onto a name the resolver knows.
 const LOCAL_MACHINE_ALIASES = ['.', '(local)', '(localdb)']
 
+// SSMS, sqlcmd and the Azure portal write the port after a comma (`host,1433`,
+// `host\instance,1433`) and may prefix the protocol (`tcp:host,1433`). Neither means anything
+// to tedious, which treats the whole value as a DNS name.
+const PROTOCOL_PREFIX = /^tcp:/i
+const TRAILING_PORT = /^(.*),\s*(\d+)$/
+
 export function parseSqlServerHost(raw: string): ParsedSqlServerHost {
-  const value = (raw || '').trim()
+  let value = (raw || '').trim().replace(PROTOCOL_PREFIX, '').trim()
+
+  let port: number | undefined = undefined
+  const withPort = TRAILING_PORT.exec(value)
+  if (withPort) {
+    value = withPort[1].trim()
+    port = Number(withPort[2])
+  }
 
   // Split on the FIRST backslash: `host\a\b` has no valid reading other than instance
   // `a\b`, and letting it through unchanged produces a worse error than the driver's.
@@ -27,8 +42,10 @@ export function parseSqlServerHost(raw: string): ParsedSqlServerHost {
   const host = rawHost.trim()
   const instanceName = rawInstance.trim()
 
-  return {
+  const parsed: ParsedSqlServerHost = {
     host: LOCAL_MACHINE_ALIASES.includes(host.toLowerCase()) ? 'localhost' : host,
     instanceName: instanceName || undefined,
   }
+  if (port !== undefined) parsed.port = port
+  return parsed
 }

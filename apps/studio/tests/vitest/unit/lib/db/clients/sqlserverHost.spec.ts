@@ -70,4 +70,34 @@ describe('parseSqlServerHost', () => {
     expect(parseSqlServerHost('')).toEqual({ host: '', instanceName: undefined })
     expect(parseSqlServerHost(undefined as unknown as string)).toEqual({ host: '', instanceName: undefined })
   })
+
+  // SSMS, sqlcmd and the Azure portal all hand out `host,port` and `tcp:host,port`. Passed
+  // through as-is they die at DNS resolution (getaddrinfo ENOTFOUND localhost,1433).
+  it('splits a trailing ,port off the host', () => {
+    expect(parseSqlServerHost('localhost,14330')).toEqual({ host: 'localhost', instanceName: undefined, port: 14330 })
+    expect(parseSqlServerHost(' db.example.com , 1433 ')).toEqual({ host: 'db.example.com', instanceName: undefined, port: 1433 })
+  })
+
+  it('strips the tcp: protocol prefix', () => {
+    expect(parseSqlServerHost('tcp:db.example.com')).toEqual({ host: 'db.example.com', instanceName: undefined })
+    expect(parseSqlServerHost('TCP:myserver.database.windows.net,1433')).toEqual({
+      host: 'myserver.database.windows.net',
+      instanceName: undefined,
+      port: 1433,
+    })
+  })
+
+  it('reads the port after an instance name', () => {
+    expect(parseSqlServerHost('localhost\\SQL2019,14330')).toEqual({
+      host: 'localhost',
+      instanceName: 'SQL2019',
+      port: 14330,
+    })
+    expect(parseSqlServerHost('tcp:.\\SQL2019,14330')).toEqual({ host: 'localhost', instanceName: 'SQL2019', port: 14330 })
+  })
+
+  it('leaves a comma that is not followed by a port number alone', () => {
+    expect(parseSqlServerHost('localhost,abc').host).toBe('localhost,abc')
+    expect(parseSqlServerHost('localhost,abc').port).toBeUndefined()
+  })
 })

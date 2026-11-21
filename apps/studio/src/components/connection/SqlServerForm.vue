@@ -65,7 +65,7 @@
               Trust Server Certificate?
               <i
                 class="material-icons"
-                v-tooltip="'Use this for local dev servers and self-signed certificates. ssl -> rejectUnauthorized overrides this setting if ssl is enabled'"
+                v-tooltip="'Use this for local dev servers and self-signed certificates. With SSL enabled and certificate files provided, Reject Unauthorized decides instead'"
               >help_outlined</i>
             </label>
           </div>

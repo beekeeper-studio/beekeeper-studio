@@ -391,7 +391,8 @@ export class SqlServerConnector extends DatabaseConnector<
   async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
     // `.`/`(local)` and stray whitespace never reach the driver, and the instance name is
     // split off here so config.server holds a bare host -- see parseSqlServerHost.
-    const { host, instanceName } = parseSqlServerHost(server.config.host)
+    // A port typed into the Host field (`host,1433`) is explicit and wins over the Port field.
+    const { host, instanceName, port: hostPort } = parseSqlServerHost(server.config.host)
 
     const config: any = {
       server: host,
@@ -418,15 +419,18 @@ export class SqlServerConnector extends DatabaseConnector<
         encrypt: true
       };
 
+      if (hostPort) config.port = hostPort;
+
       return config;
     }
 
     if (server.config.windowsAuthEnabled) {
-      config.port = Number(server.config.port);
+      config.port = hostPort ?? Number(server.config.port);
 
       // msnodesqlv8 rebuilds Server=host\instance from server + options.instanceName and the
       // ODBC driver runs its own browser lookup, so the instance is passed straight through.
-      let winAuthInstance = instanceName;
+      // It drops the port when it does, so `host\instance,port` goes by port alone.
+      let winAuthInstance = hostPort ? undefined : instanceName;
 
       if (server.sshTunnel) {
         config.server = server.config.localHost;
@@ -453,7 +457,7 @@ export class SqlServerConnector extends DatabaseConnector<
     config.user = server.config.user;
     config.password = server.config.password;
 
-    const port = Number(server.config.port);
+    const port = hostPort ?? Number(server.config.port);
     // mssql drops the port whenever an instance name is set, forcing a SQL Browser lookup.
     // Treat the client default of 1433 as "unspecified" so a user who knows the instance's
     // static port can bypass the browser, which is often stopped or firewalled. The Port
@@ -461,7 +465,7 @@ export class SqlServerConnector extends DatabaseConnector<
     let browserLookupInstance: string | undefined = undefined;
 
     if (instanceName) {
-      if (Number.isFinite(port) && port > 0 && port !== 1433) {
+      if (hostPort || (Number.isFinite(port) && port > 0 && port !== 1433)) {
         config.port = port;
       } else {
         browserLookupInstance = instanceName;
@@ -503,11 +507,17 @@ export class SqlServerConnector extends DatabaseConnector<
       }
 
 
-      if (server.config.sslCaFile && server.config.sslCertFile && server.config.sslKeyFile) {
+      if (server.config.sslCaFile || server.config.sslCertFile || server.config.sslKeyFile) {
+        // Certificate files were provided, so Reject Unauthorized decides.
         // trust = !reject
         // mssql driver reverses this setting for no obvious reason
         // other drivers simply pass through to the SSL library.
         options.trustServerCertificate = !server.config.sslRejectUnauthorized
+      } else {
+        // No files: Reject Unauthorized does not apply, so the Trust Server Certificate
+        // checkbox still decides -- as it does with SSL off, where the driver encrypts anyway.
+        // Dropping it here fails every self-signed server with the box ticked.
+        options.trustServerCertificate = server.config.trustServerCertificate
       }
 
       config.options = options;

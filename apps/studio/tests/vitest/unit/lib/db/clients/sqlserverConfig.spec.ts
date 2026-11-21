@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+import { mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
 import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints, sqlServerLoginMessage } from '@/lib/db/clients/sqlserver'
 import { IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
@@ -102,6 +105,76 @@ describe('configDatabase - certificate trust', () => {
 
     const untrusted = await buildConfig({ trustServerCertificate: false })
     expect(untrusted.options.trustServerCertificate).toBe(false)
+  })
+})
+
+describe('configDatabase - certificate trust with SSL enabled', () => {
+  // The ssl branch rebuilds options from scratch. It used to carry the checkbox over only
+  // when CA, cert and key were all set, so "Enable SSL" on a stock (self-signed) server failed
+  // with the checkbox ticked -- and the hint told the user to tick it.
+  it('keeps the Trust Server Certificate checkbox when no certificate files are given', async () => {
+    const trusted = await buildConfig({ ssl: true, trustServerCertificate: true })
+    expect(trusted.options.encrypt).toBe(true)
+    expect(trusted.options.trustServerCertificate).toBe(true)
+
+    const untrusted = await buildConfig({ ssl: true, trustServerCertificate: false })
+    expect(untrusted.options.trustServerCertificate).toBe(false)
+  })
+
+  it('keeps the checkbox together with a named instance', async () => {
+    const config = await buildConfig({ host: 'localhost\\SQL2019', ssl: true, trustServerCertificate: true })
+    expect(config.options.trustServerCertificate).toBe(true)
+    expect(config.options.instanceName).toBe('SQL2019')
+  })
+
+  it('lets Reject Unauthorized decide once a certificate file is given', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bks-mssql-ssl-'))
+    const ca = join(dir, 'ca.pem')
+    writeFileSync(ca, 'not a real certificate')
+    try {
+      // A CA file means "validate against this CA", whatever the checkbox defaulted to.
+      const validating = await buildConfig({
+        ssl: true, sslCaFile: ca, sslRejectUnauthorized: true, trustServerCertificate: true,
+      })
+      expect(validating.options.trustServerCertificate).toBe(false)
+
+      const trusting = await buildConfig({
+        ssl: true, sslCaFile: ca, sslRejectUnauthorized: false, trustServerCertificate: false,
+      })
+      expect(trusting.options.trustServerCertificate).toBe(true)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('configDatabase - port typed into the Host field', () => {
+  it('uses host,port over the Port field', async () => {
+    const config = await buildConfig({ host: 'localhost,14330', port: 1433 })
+    expect(config.server).toBe('localhost')
+    expect(config.port).toBe(14330)
+  })
+
+  it('accepts the tcp:host,port form the Azure portal hands out', async () => {
+    const config = await buildConfig({ host: 'tcp:myserver.database.windows.net,1433', port: 1433 })
+    expect(config.server).toBe('myserver.database.windows.net')
+    expect(config.port).toBe(1433)
+  })
+
+  it('connects straight to the port and skips the browser lookup for host\\instance,port', async () => {
+    // Even 1433: typed next to the instance it is explicit, not the client default.
+    const config = await buildConfig({ host: 'localhost\\SQL2019,1433', port: 1433 })
+    expect(config.server).toBe('localhost')
+    expect(config.port).toBe(1433)
+    expect(config.options.instanceName).toBeUndefined()
+  })
+
+  it('applies to integrated authentication', async () => {
+    const config = await buildConfig({ host: 'localhost\\SQL2019,14330', port: 1433, windowsAuthEnabled: true })
+    expect(config.server).toBe('localhost')
+    expect(config.port).toBe(14330)
+    // mssql/msnodesqlv8 drops the port whenever an instance name is set.
+    expect(config.options.instanceName).toBeUndefined()
   })
 })
 

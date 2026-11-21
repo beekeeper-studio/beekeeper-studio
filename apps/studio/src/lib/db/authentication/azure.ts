@@ -170,6 +170,9 @@ export class AzureAuthService {
     }
 
     localCache = await TokenCache.findOneBy({ id: authId });
+    if (!localCache) {
+      throw new Error("No TokenCache entry found in database");
+    }
 
     const clientConfig = {
      auth: {
