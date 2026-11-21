@@ -62,6 +62,12 @@ interface ForwardingOptions {
   toHost?: string
 }
 
+interface SocketForwardingOptions {
+  fromPort: number
+  /** Path of the Unix socket on the far side of the SSH connection. */
+  socketPath: string
+}
+
 class SSHConnection {
 
   private log: rawLog.LogFunctions
@@ -313,6 +319,54 @@ class SSHConnection {
         resolve({})
       })
 
+    })
+  }
+
+  /**
+   * Forward a Unix socket on the far side of the SSH connection to a local TCP
+   * port, the same way `ssh -L <port>:<socket>` does. Uses the
+   * `direct-streamlocal@openssh.com` channel extension, which OpenSSH servers
+   * support; the `socketPath` is resolved on the server.
+   */
+  async forwardSocket(options: SocketForwardingOptions) {
+    this.debug("Starting socket forward")
+    const connection = await this.establish()
+    this.debug("connection established")
+    return new Promise<any>((resolve, reject) => {
+      this.server = net.createServer((socket) => {
+        this.debug('Forwarding connection from "localhost:%d" to unix socket "%s"', options.fromPort, options.socketPath)
+        socket.on('error', (err) => {
+          this.debug('socket error: %s', err.message)
+        })
+        try {
+          // ssh2's forwardOut only speaks direct-tcpip; the OpenSSH channel
+          // extension is the only way to ask the server for a Unix socket.
+          (connection as any).openssh_forwardOutStreamLocal(
+            options.socketPath,
+            (error: Error, stream: any) => {
+              if (error) {
+                this.debug('openssh_forwardOutStreamLocal error: %s', error.message)
+                socket.destroy(error)
+                return
+              }
+              socket.pipe(stream)
+              stream.pipe(socket)
+              stream.on('error', (err) => {
+                this.debug('stream error: %s', err.message)
+                socket.destroy()
+              })
+            }
+          )
+        } catch (err) {
+          this.debug('openssh_forwardOutStreamLocal threw: %s', err.message)
+          socket.destroy(err)
+        }
+      }).on('error', (err) => {
+        reject(err)
+      }).listen(options.fromPort, this.options.bindHost, () => {
+        this.debug("Socket tunnel listening configured")
+        resolve({})
+      })
     })
   }
 }

@@ -40,6 +40,14 @@ export abstract class BaseCommandClient {
   protected static port?: number;
   protected static socket?: string;
   protected static socketPathEnabled?: boolean;
+
+  // A socket path names a socket on the database server's own filesystem, so it
+  // can only be reached locally. With an SSH tunnel connectTunnel forwards that
+  // socket to `_localHost:_localPort`, which the CLI tools have to dial instead.
+  protected static get usesSocket(): boolean {
+    return !!BaseCommandClient.socketPathEnabled && !BaseCommandClient._localHost;
+  }
+
   protected static ssl?: boolean;
   protected static sslCA?: string;
   protected static sslCert?: string;

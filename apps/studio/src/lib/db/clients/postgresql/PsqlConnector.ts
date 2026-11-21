@@ -155,15 +155,16 @@ export class PsqlConnector extends DatabaseConnector<PoolClient> {
       config.user = server.config.osUser;
     }
 
-    if (server.config.socketPathEnabled) {
-      config.host = server.config.socketPath;
-      config.port = server.config.port;
-      return config;
-    }
-
+    // With an SSH tunnel the socket lives on the far side, and connectTunnel
+    // forwards it to localHost:localPort, so the driver always dials that.
+    // Without a tunnel, socket mode means a socket on this machine.
     if (server.sshTunnel) {
       config.host = server.config.localHost;
       config.port = server.config.localPort;
+    } else if (server.config.socketPathEnabled) {
+      config.host = server.config.socketPath;
+      config.port = server.config.port;
+      return config;
     }
 
     if (server.config.ssl) {

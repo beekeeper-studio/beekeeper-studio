@@ -78,7 +78,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
       ]
     });
 
-    if (BaseCommandClient.socketPathEnabled) {
+    if (BaseCommandClient.usesSocket) {
       command.options.push(...[
         `--protocol=SOCKET`,
         `--socket=${BaseCommandClient.socket}`
@@ -130,7 +130,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
       ]
     });
 
-    if (BaseCommandClient.socketPathEnabled) {
+    if (BaseCommandClient.usesSocket) {
       command.options.push(...[
         `--protocol=SOCKET`,
         `--socket=${BaseCommandClient.socket}`
