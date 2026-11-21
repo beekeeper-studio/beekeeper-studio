@@ -28,13 +28,15 @@ The Beekeeper Studio Connection Screen
 
 ## Connection Mode
 
-You can connect to some databases with either a `socket` or a `TCP` connection. Socket connections only work when the database server is running on your local machine (it's the default set-up for a MySQL installation for example). TCP connections require a hostname and port.
+You can connect to some databases with either a `socket` or a `TCP` connection. Socket connections use a Unix socket on the local machine (it's the default set-up for a MySQL installation for example). TCP connections require a hostname and port.
+
+Socket connections also work through an SSH tunnel, which forwards the socket on the far side to a local port.
 
 ![Image Alt Tag](../../assets/images/first-page-6.png)
 
 TCP (Host/Port) connection example
 
-Note that SSL, SSH, and other advanced connection options are only available with a TCP connection.
+Note that SSL and the other advanced connection options are only available with a TCP connection.
 
 ## SSL
 

@@ -173,7 +173,7 @@ export class PostgresBackupClient extends BaseCommandClient {
       ]
     });
 
-    if (BaseCommandClient.socketPathEnabled) {
+    if (BaseCommandClient.usesSocket) {
       command.options.push(...[
         `--host=${BaseCommandClient.socket}`
       ]);
