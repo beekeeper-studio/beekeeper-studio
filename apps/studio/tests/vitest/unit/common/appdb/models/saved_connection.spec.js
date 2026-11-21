@@ -68,6 +68,45 @@ describe("Saved Connection", () => {
     expect(count).toBe(0)
   })
 
+  // Each of these was reproduced in the running app via "Import from URL".
+  describe("postgres / mysql url import edge cases", () => {
+    const parse = (url) => {
+      const c = new SavedConnection()
+      expect(c.parse(url)).toBe(true)
+      return c
+    }
+
+    it("keeps host, port and database when the url has no credentials", () => {
+      const c = parse("postgres://localhost:15432/mydb")
+      expect(c.host).toBe("localhost")
+      expect(c.port).toBe(15432)
+      expect(c.defaultDatabase).toBe("mydb")
+    })
+
+    it("parses an IPv6 host", () => {
+      const c = parse("postgresql://postgres:example@[::1]:15432/postgres")
+      expect(c.host).toBe("::1")
+      expect(c.port).toBe(15432)
+      expect(c.defaultDatabase).toBe("postgres")
+    })
+
+    it("does not treat an @ in a query parameter as the credentials separator", () => {
+      const c = parse("postgresql://postgres:example@localhost:15432/postgres?application_name=me@work")
+      expect(c.host).toBe("localhost")
+      expect(c.port).toBe(15432)
+      expect(c.username).toBe("postgres")
+      expect(c.password).toBe("example")
+      expect(c.defaultDatabase).toBe("postgres")
+    })
+
+    it("decodes a percent-encoded database name", () => {
+      const pg = parse("postgresql://postgres:example@localhost:15432/my%20db")
+      expect(pg.defaultDatabase).toBe("my db")
+      const my = parse("mysql://root:example@localhost:3306/my%20db")
+      expect(my.defaultDatabase).toBe("my db")
+    })
+  })
+
   it("should update itself from a url", () => {
     const testCases = {
       "one:123": {host: 'one', port: 123},

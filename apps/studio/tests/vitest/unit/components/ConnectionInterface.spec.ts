@@ -190,4 +190,43 @@ describe('ConnectionInterface', () => {
 
     expect(wrapper.vm.config.id).toBeNull()
   })
+
+  // "Import from URL" copies the parsed url onto the form's config, the same
+  // way ImportButton does. Reproduced in the running app: a url with no
+  // credentials came back as localhost / default port / empty database.
+  describe('importing a url with no credentials', () => {
+    async function importUrl(url: string) {
+      const conf = await wrapper.vm.$util.send('appdb/saved/parseUrl', { url })
+      Object.assign(wrapper.vm.config, conf)
+      // let the connectionType watcher and its appdb/saved/new round trip settle
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+    }
+
+    it('keeps the postgres host, port and database', async () => {
+      await importUrl('postgresql://dbhost.example.com:15432/analytics')
+
+      expect(wrapper.vm.config.connectionType).toBe('postgresql')
+      expect(wrapper.vm.config.host).toBe('dbhost.example.com')
+      expect(wrapper.vm.config.port).toBe(15432)
+      expect(wrapper.vm.config.defaultDatabase).toBe('analytics')
+    })
+
+    it('keeps the mysql host, port and database', async () => {
+      await importUrl('mysql://dbhost.example.com:13306/shop')
+
+      expect(wrapper.vm.config.connectionType).toBe('mysql')
+      expect(wrapper.vm.config.host).toBe('dbhost.example.com')
+      expect(wrapper.vm.config.port).toBe(13306)
+      expect(wrapper.vm.config.defaultDatabase).toBe('shop')
+    })
+
+    it('still keeps everything when the url has credentials', async () => {
+      await importUrl('postgresql://app:secret@dbhost.example.com:15432/analytics')
+
+      expect(wrapper.vm.config.host).toBe('dbhost.example.com')
+      expect(wrapper.vm.config.port).toBe(15432)
+      expect(wrapper.vm.config.defaultDatabase).toBe('analytics')
+    })
+  })
 })

@@ -269,4 +269,34 @@ describe("Postgres UNIT tests (no connection required)", () => {
     })
   })
 
+  // Reproduced in the running app against postgres:18beta1: partitions were
+  // listed as plain tables, the Partitions tab was missing and the triggers
+  // query failed with `column "condition_timing" does not exist`.
+  describe("getVersion", () => {
+    const versionOf = async (version) => {
+      const c = new PostgresClient(null, null);
+      c.driverExecuteSingle = vi.fn().mockResolvedValue({ rows: [{ version }] });
+      return await c.getVersion();
+    }
+
+    it("parses release versions", async () => {
+      const v = await versionOf("PostgreSQL 16.16 (Debian 16.16-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit");
+      expect(v.number).toBe(161600);
+      expect(v.hasPartitions).toBe(true);
+    })
+
+    const preReleases = {
+      "PostgreSQL 18beta1 (Debian 18~beta1-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit": 180000,
+      "PostgreSQL 17rc1 (Debian 17~rc1-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit": 170000,
+      "PostgreSQL 19devel on x86_64-pc-linux-gnu, compiled by gcc (GCC) 14.2.0, 64-bit": 190000,
+    }
+
+    Object.entries(preReleases).forEach(([version, expected]) => {
+      it(`treats pre-release '${version.split(" (")[0].split(" on ")[0]}' as its major version`, async () => {
+        const v = await versionOf(version);
+        expect(v.number).toBeGreaterThanOrEqual(expected);
+        expect(v.hasPartitions).toBe(true);
+      })
+    })
+  })
 })
