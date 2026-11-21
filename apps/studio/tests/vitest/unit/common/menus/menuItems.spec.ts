@@ -69,4 +69,9 @@ describe("menuItems", () => {
       expect(withSetting(true).checked).toBe(false);
     });
   });
+  it("shows the user config in the file manager", () => {
+    const item = buildItems({ isMac: false, isWindows: true }).showUserConfig;
+    expect(item.label).toBe("Show User Config in Filesystem");
+    expect(typeof item.click).toBe("function");
+  });
 });

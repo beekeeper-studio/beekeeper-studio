@@ -12,7 +12,6 @@ import { DevLicenseState } from '@/lib/license';
 import { setAllowBeta } from './update_manager'
 import { CustomMenuAction } from '@/types'
 import { ensureConfigFile, userConfigPath } from '@/common/bksConfig/mainBksConfig'
-import { openWithTerminalEditor } from './lib/linuxTerminalEditor'
 import rawLog from '@bksLogger'
 
 const log = rawLog.scope('NativeMenuActionHandlers')
@@ -132,7 +131,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     safeOpenExternal("https://docs.beekeeperstudio.io/getting-started-guide/")
   }
 
-  async openUserConfig(): Promise<void> {
+  showUserConfig(): void {
     const filePath = userConfigPath()
     try {
       ensureConfigFile(filePath)
@@ -141,22 +140,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
       dialog.showErrorBox("Unable to create the config file", `${filePath}\n\n${e.message}`)
       return
     }
-    // xdg-open can't start terminal editors outside the desktop environments
-    // it knows, so those get a terminal here.
-    if (platformInfo.isLinux) {
-      try {
-        if (await openWithTerminalEditor(filePath)) return
-      } catch (e) {
-        log.warn(`Failed to open ${filePath} in a terminal editor`, e)
-      }
-    }
-    // openPath resolves to an error message, e.g. when no app is registered
-    // for .ini files. Show the file in its folder instead.
-    const error = await shell.openPath(filePath)
-    if (error) {
-      log.warn(`Failed to open ${filePath}: ${error}`)
-      shell.showItemInFolder(filePath)
-    }
+    // Shown in its folder rather than opened: the default app for .ini
+    // varies too much between systems (e.g. terminal editors on Linux), so
+    // the user opens it with their own editor.
+    shell.showItemInFolder(filePath)
   }
 
   checkForUpdates(_menuItem: Electron.MenuItem, _win: Electron.BrowserWindow): void {
