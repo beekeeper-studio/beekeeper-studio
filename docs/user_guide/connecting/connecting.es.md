@@ -28,13 +28,15 @@ La pantalla de conexion de Beekeeper Studio
 
 ## Modo de conexion
 
-Puedes conectarte a algunas bases de datos con una conexion `socket` o `TCP`. Las conexiones socket solo funcionan cuando el servidor de base de datos se ejecuta en tu maquina local (es la configuracion predeterminada para una instalacion de MySQL, por ejemplo). Las conexiones TCP requieren un nombre de host y puerto.
+Puedes conectarte a algunas bases de datos con una conexion `socket` o `TCP`. Las conexiones socket usan un socket Unix en la maquina local (es la configuracion predeterminada para una instalacion de MySQL, por ejemplo). Las conexiones TCP requieren un nombre de host y puerto.
+
+Las conexiones socket tambien funcionan a traves de un tunel SSH, que reenvia el socket del otro lado a un puerto local.
 
 ![Image Alt Tag](../../assets/images/first-page-6.png)
 
 Ejemplo de conexion TCP (Host/Puerto)
 
-Ten en cuenta que SSL, SSH y otras opciones de conexion avanzadas solo estan disponibles con una conexion TCP.
+Ten en cuenta que SSL y las demas opciones de conexion avanzadas solo estan disponibles con una conexion TCP.
 
 ## SSL
 
