@@ -269,3 +269,41 @@ class ExpandableTextWidget extends WidgetType {
     dom.removeEventListener('click', this.onClick);
   }
 }
+
+export function createShowLessTextDecoration(
+  onClick: () => void
+): Decoration {
+  return Decoration.widget({
+    widget: new ShowLessWidget(onClick),
+    side: 1,
+  });
+}
+
+class ShowLessWidget extends WidgetType {
+  constructor(
+    private readonly onClick: () => void
+  ) {
+    super();
+  }
+
+  toDOM(): HTMLElement {
+    const element = document.createElement("a");
+    element.classList.add("truncatable-value", "bks-tooltip-wrapper", "show-less-wrapper");
+
+    const less = document.createElement("span");
+    less.classList.add("more", "show-less");
+    less.textContent = "Show less";
+
+    element.appendChild(less);
+    element.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.onClick();
+    });
+    return element;
+  }
+
+  destroy(dom: HTMLElement) {
+    dom.removeEventListener('click', this.onClick);
+  }
+}
