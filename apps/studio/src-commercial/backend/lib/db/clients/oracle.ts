@@ -69,20 +69,30 @@ export function _resetOracleStateForTesting() {
 }
 
 // SQL*Plus style `user/password@connect_identifier`. node-oracledb does not read credentials
-// out of the connect string, so they are split off here. Descriptors and URLs are left alone:
-// neither `(DESCRIPTION=...)` nor `tcps://host/service` has a user before the first slash.
-export function splitOracleConnectionString(raw?: string): { connectString: string, user?: string, password?: string } {
+// out of the connect string, so they are split off here. `/@connect_identifier` is the
+// SQL*Plus spelling of external (wallet or OS) authentication.
+//
+// Descriptors and URLs are left alone: neither `(DESCRIPTION=...)` nor `tcps://host/service`
+// has a user before the first slash. The split is at the first `@` after the password, so an
+// `@` later in the identifier survives. A password holding `@` or `/` must be double-quoted,
+// as in SQL*Plus -- which also keeps `host/service?wallet_location=/a@b` from being split.
+export interface OracleConnectionStringParts {
+  connectString: string
+  user?: string
+  password?: string
+  externalAuth?: boolean
+}
+
+const ORACLE_CREDENTIALS = /^([^\s@:()=/"]+)\/(?:"([^"]*)"|([^\s@/?"]+))@(.+)$/s
+
+export function splitOracleConnectionString(raw?: string): OracleConnectionStringParts {
   const value = (raw || '').trim()
-  const slash = value.indexOf('/')
-  const at = value.lastIndexOf('@')
-  const user = slash > 0 ? value.slice(0, slash) : ''
-  const password = at > slash ? value.slice(slash + 1, at) : ''
-  // `host/service?wallet_location=/a@b` is Easy Connect, not credentials: a password
-  // holding `/` or `?` has to be quoted in SQL*Plus anyway, so those are not split.
-  if (!password || !/^[^\s@:()=]+$/.test(user) || /[/?]/.test(password)) {
-    return { connectString: value }
+  if (value.startsWith('/@') && value.length > 2) {
+    return { connectString: value.slice(2).trim(), externalAuth: true }
   }
-  return { connectString: value.slice(at + 1).trim(), user, password }
+  const match = ORACLE_CREDENTIALS.exec(value)
+  if (!match) return { connectString: value }
+  return { connectString: match[4].trim(), user: match[1], password: match[2] ?? match[3] }
 }
 
 const privileges = {
@@ -755,12 +765,14 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         ...poolConfig,
         connectString: parsed.connectString,
       }
-      // The form's fields win; credentials in the string only fill in what is blank.
-      const user = this.server.config.user || parsed.user
-      const password = this.server.config.password || parsed.password
+      // One source for the pair: the form's fields when either is filled in, otherwise the
+      // credentials in the string. Mixing them would log one user in with another's password.
+      const fromFields = !!(this.server.config.user || this.server.config.password)
+      const user = fromFields ? this.server.config.user : parsed.user
+      const password = fromFields ? this.server.config.password : parsed.password
       if (user) poolConfig['user'] = user
       if (password) poolConfig['password'] = password
-      if (!this.server.config.user) this.connectedUser = parsed.user
+      if (!fromFields) this.connectedUser = parsed.user
 
       if (!user && !password) {
         // Both fields blank means external authentication (wallet or OS), which only the

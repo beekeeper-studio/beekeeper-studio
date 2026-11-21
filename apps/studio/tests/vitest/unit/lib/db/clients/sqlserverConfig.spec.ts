@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, onTestFinished } from 'vitest'
+import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
 import { mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints, sqlServerLoginMessage } from '@/lib/db/clients/sqlserver'
-import { IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
+import { AzureAuthType, IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 
@@ -142,6 +143,10 @@ describe('configDatabase - certificate trust with SSL enabled', () => {
         ssl: true, sslCaFile: ca, sslRejectUnauthorized: false, trustServerCertificate: false,
       })
       expect(trusting.options.trustServerCertificate).toBe(true)
+
+      // A config without the field (older or imported) must not read as "trust everything".
+      const missing = await buildConfig({ ssl: true, sslCaFile: ca, sslRejectUnauthorized: undefined })
+      expect(missing.options.trustServerCertificate).toBe(false)
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
@@ -175,6 +180,21 @@ describe('configDatabase - port typed into the Host field', () => {
     expect(config.port).toBe(14330)
     // mssql/msnodesqlv8 drops the port whenever an instance name is set.
     expect(config.options.instanceName).toBeUndefined()
+  })
+})
+
+describe('configDatabase - Entra ID', () => {
+  it('uses a port typed into the Host field', async () => {
+    await TestOrmConnection.connect()
+    onTestFinished(() => TestOrmConnection.disconnect())
+    const config = await buildConfig({
+      host: 'tcp:myserver.database.windows.net,3342',
+      authId: 1,
+      azureAuthOptions: { azureAuthEnabled: true, azureAuthType: AzureAuthType.ServicePrincipalSecret, tenantId: 't', clientId: 'c', clientSecret: 's' },
+    })
+    expect(config.server).toBe('myserver.database.windows.net')
+    expect(config.port).toBe(3342)
+    expect(config.authentication.type).toBe('azure-active-directory-service-principal-secret')
   })
 })
 

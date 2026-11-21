@@ -1,4 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team
+import { sqlServerTunnelTarget } from './clients/sqlserverHost'
 import fs from 'fs'
 import path from 'path'
 import rawLog from "@bksLogger";
@@ -212,10 +213,13 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         console.log("tunnel/ GOT TUNNEL PORT", localPort)
         // workaround for `getPortPromise` not releasing the port quickly enough
         await new Promise(resolve => setTimeout(resolve, 500));
+        const target = config.client === 'sqlserver'
+          ? sqlServerTunnelTarget(config.host, config.port)
+          : { host: config.host, port: config.port }
         const tunnelConfig = {
           fromPort: localPort,
-          toPort: config.port || 22,
-          toHost: config.host
+          toPort: target.port || 22,
+          toHost: target.host
         }
         console.log("tunnel config: ", tunnelConfig)
         const tunnel = await connection.forward(tunnelConfig)

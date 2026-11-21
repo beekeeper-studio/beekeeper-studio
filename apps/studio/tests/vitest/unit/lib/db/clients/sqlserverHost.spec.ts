@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSqlServerHost } from '@/lib/db/clients/sqlserverHost'
+import { parseSqlServerHost, sqlServerTunnelTarget } from '@/lib/db/clients/sqlserverHost'
 
 // Verifies how the SQL Server Host field is normalised before it reaches the driver, without
 // needing a live server. The integration suite (sqlserver.spec.ts) proves the end-to-end
@@ -99,5 +99,26 @@ describe('parseSqlServerHost', () => {
   it('leaves a comma that is not followed by a port number alone', () => {
     expect(parseSqlServerHost('localhost,abc').host).toBe('localhost,abc')
     expect(parseSqlServerHost('localhost,abc').port).toBeUndefined()
+  })
+
+  it('only treats a valid TCP port as a port', () => {
+    for (const bad of ['localhost,0', 'localhost,99999', 'localhost,123456789012345678901234567890']) {
+      expect(parseSqlServerHost(bad).port).toBeUndefined()
+      expect(parseSqlServerHost(bad).host).toBe(bad)
+    }
+    expect(parseSqlServerHost('localhost,65535').port).toBe(65535)
+  })
+})
+
+// The SSH tunnel is opened before the driver config is built, from the raw Host field.
+describe('sqlServerTunnelTarget', () => {
+  it('forwards to the parsed host and the port typed into the Host field', () => {
+    expect(sqlServerTunnelTarget('tcp:db.internal,14330', 1433)).toEqual({ host: 'db.internal', port: 14330 })
+    expect(sqlServerTunnelTarget('db.internal\\SQL2019,14330', 1433)).toEqual({ host: 'db.internal', port: 14330 })
+  })
+
+  it('falls back to the Port field', () => {
+    expect(sqlServerTunnelTarget('tcp:db.internal', 14331)).toEqual({ host: 'db.internal', port: 14331 })
+    expect(sqlServerTunnelTarget('db.internal\\SQL2019', 14331)).toEqual({ host: 'db.internal', port: 14331 })
   })
 })

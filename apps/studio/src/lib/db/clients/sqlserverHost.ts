@@ -28,7 +28,9 @@ export function parseSqlServerHost(raw: string): ParsedSqlServerHost {
 
   let port: number | undefined = undefined
   const withPort = TRAILING_PORT.exec(value)
-  if (withPort) {
+  // Anything outside the TCP range is not a port; leave the value whole so the driver's
+  // error names what was typed.
+  if (withPort && Number(withPort[2]) >= 1 && Number(withPort[2]) <= 65535) {
     value = withPort[1].trim()
     port = Number(withPort[2])
   }
@@ -48,4 +50,12 @@ export function parseSqlServerHost(raw: string): ParsedSqlServerHost {
   }
   if (port !== undefined) parsed.port = port
   return parsed
+}
+
+// Where an SSH tunnel has to forward to. The tunnel is opened from the raw Host field before
+// the driver config exists, so it needs the same parsing. The instance name is dropped: a
+// tunnel forwards one TCP port and a UDP 1434 browser lookup cannot follow it.
+export function sqlServerTunnelTarget(rawHost: string, portField?: number | null): { host: string, port?: number | null } {
+  const { host, port } = parseSqlServerHost(rawHost)
+  return { host, port: port ?? portField }
 }

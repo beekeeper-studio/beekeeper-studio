@@ -85,7 +85,6 @@
         </div>
         <small class="help text-muted">
           Leave both blank for external authentication (wallet or OS), which requires the Instant Client.
-          Credentials written as user/password@ in the connection string are also accepted.
         </small>
         <div class="form-group">
           <label for="oracleRole">Role</label>

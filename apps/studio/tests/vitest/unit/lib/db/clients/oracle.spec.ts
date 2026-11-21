@@ -27,7 +27,7 @@ vi.mock('oracledb', () => {
 
 import fs from 'fs';
 import oracledb from 'oracledb';
-import { OracleClient, _resetOracleStateForTesting } from '@commercial/backend/lib/db/clients/oracle';
+import { OracleClient, _resetOracleStateForTesting, splitOracleConnectionString } from '@commercial/backend/lib/db/clients/oracle';
 
 function buildServer(overrides: Record<string, any> = {}) {
   return {
@@ -357,7 +357,7 @@ describe('OracleClient connection string credentials', () => {
   // node-oracledb does not read credentials out of the connect string, so the SQL*Plus
   // form failed with NJS-101: no credentials specified.
   it('reads user/password@ off the front of the connection string when the fields are blank', async () => {
-    const client = build({ user: null, password: null, options: connectionString(' scott/t1g@r@dbhost:1521/ORCL\n') });
+    const client = build({ user: null, password: null, options: connectionString(' scott/"t1g@r"@dbhost:1521/ORCL\n') });
     await client.connect();
     const poolConfig = mockCreatePool.mock.calls[0][0];
     expect(poolConfig).toMatchObject({ user: 'scott', password: 't1g@r', connectString: 'dbhost:1521/ORCL' });
@@ -421,5 +421,70 @@ describe('OracleClient connection string credentials', () => {
   it('upper-cases the entered user for the default schema', async () => {
     const client = build({});
     expect(await client.defaultSchema()).toBe('TESTUSER');
+  });
+});
+
+describe('splitOracleConnectionString', () => {
+  it('splits at the first @ after the password, so an @ later in the string is left alone', () => {
+    expect(splitOracleConnectionString('scott/tiger@(DESCRIPTION=(CONNECT_DATA=(SERVICE_NAME=a@b)))')).toEqual({
+      user: 'scott', password: 'tiger', connectString: '(DESCRIPTION=(CONNECT_DATA=(SERVICE_NAME=a@b)))',
+    })
+    expect(splitOracleConnectionString('scott/tiger@host/svc?wallet_location=/home/me@work/w')).toEqual({
+      user: 'scott', password: 'tiger', connectString: 'host/svc?wallet_location=/home/me@work/w',
+    })
+  })
+
+  it('unquotes a quoted password, which may hold @ and /', () => {
+    expect(splitOracleConnectionString('scott/"p@ss"@host/svc')).toEqual({ user: 'scott', password: 'p@ss', connectString: 'host/svc' })
+    expect(splitOracleConnectionString('scott/"p/ss"@host/svc')).toEqual({ user: 'scott', password: 'p/ss', connectString: 'host/svc' })
+  })
+
+  it('reads /@alias as external authentication', () => {
+    expect(splitOracleConnectionString('/@mydb')).toEqual({ connectString: 'mydb', externalAuth: true })
+    expect(splitOracleConnectionString(' /@host:1521/svc ')).toEqual({ connectString: 'host:1521/svc', externalAuth: true })
+  })
+
+  it('leaves aliases, Easy Connect and descriptors alone', () => {
+    for (const s of ['MYALIAS', 'host:1521/svc', 'host/svc', 'tcps://host:1522/svc?wallet_location=/a@b', 'host/svc?wallet_location=/home/me@work/w']) {
+      expect(splitOracleConnectionString(s)).toEqual({ connectString: s })
+    }
+  })
+})
+
+describe('OracleClient connection string credentials - sources', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    _resetOracleStateForTesting();
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    mockCreatePool.mockResolvedValue({ getConnection: vi.fn() });
+  });
+
+  afterEach(() => {
+    (oracledb as any).thin = true;
+    vi.restoreAllMocks();
+  });
+
+  function build(overrides: Record<string, any>, connectionString: string) {
+    const client = new OracleClient(buildServer({
+      instantClientLocation: null, ...overrides, options: { connectionMethod: 'connectionString', connectionString },
+    }), buildDatabase());
+    client['driverExecuteSimple'] = vi.fn().mockResolvedValue([{ BANNER: 'Oracle 19c' }]);
+    return client;
+  }
+
+  it('never pairs the User field with a password from the connection string', async () => {
+    await build({ user: 'alice', password: null }, 'scott/tiger@dbhost/ORCL').connect();
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig.user).toBe('alice');
+    expect(poolConfig).not.toHaveProperty('password');
+    expect(poolConfig.connectString).toBe('dbhost/ORCL');
+  });
+
+  it('uses external authentication for /@alias in thick mode', async () => {
+    mockInitOracleClient.mockImplementation(() => { (oracledb as any).thin = false; });
+    await build({ user: null, password: null, instantClientLocation: '/fake/client/path' }, '/@mydb').connect();
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig).toMatchObject({ externalAuth: true, connectString: 'mydb' });
+    expect(poolConfig).not.toHaveProperty('user');
   });
 });

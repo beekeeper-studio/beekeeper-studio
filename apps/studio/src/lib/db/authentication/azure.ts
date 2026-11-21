@@ -149,10 +149,10 @@ let localCache: TokenCache;
 
 const cachePlugin = {
   beforeCacheAccess: async (cacheContext: msal.TokenCacheContext): Promise<void> => {
-    cacheContext.tokenCache.deserialize(localCache.cache)
+    if (localCache) cacheContext.tokenCache.deserialize(localCache.cache)
   },
   afterCacheAccess: async (cacheContext: msal.TokenCacheContext): Promise<void> => {
-    if (cacheContext.cacheHasChanged) {
+    if (localCache && cacheContext.cacheHasChanged) {
       localCache.cache = cacheContext.tokenCache.serialize();
       localCache.save();
     }
@@ -169,10 +169,9 @@ export class AzureAuthService {
       throw new Error("No TokenCache entry found in database");
     }
 
+    // May be null: the row is deleted by signing out of a connection that shares it. Only
+    // SSO reads the cache, so the other auth types carry on and SSO reports it in accessToken.
     localCache = await TokenCache.findOneBy({ id: authId });
-    if (!localCache) {
-      throw new Error("No TokenCache entry found in database");
-    }
 
     const clientConfig = {
      auth: {
@@ -278,6 +277,9 @@ export class AzureAuthService {
   }
 
   private async accessToken(): Promise<AuthConfig> {
+    if (!localCache) {
+      throw new Error("Azure sign-in is no longer valid for this connection. Disconnect and connect again to sign in.");
+    }
     const refreshToken = await this.tryRefresh();
     if (refreshToken) {
       return refreshToken;

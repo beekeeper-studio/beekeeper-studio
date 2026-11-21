@@ -512,7 +512,7 @@ export class SqlServerConnector extends DatabaseConnector<
         // trust = !reject
         // mssql driver reverses this setting for no obvious reason
         // other drivers simply pass through to the SSL library.
-        options.trustServerCertificate = !server.config.sslRejectUnauthorized
+        options.trustServerCertificate = server.config.sslRejectUnauthorized === false
       } else {
         // No files: Reject Unauthorized does not apply, so the Trust Server Certificate
         // checkbox still decides -- as it does with SSL off, where the driver encrypts anyway.
