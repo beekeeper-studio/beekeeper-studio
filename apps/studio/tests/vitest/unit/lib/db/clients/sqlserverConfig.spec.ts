@@ -190,7 +190,7 @@ describe('configDatabase - Entra ID', () => {
     const config = await buildConfig({
       host: 'tcp:myserver.database.windows.net,3342',
       authId: 1,
-      azureAuthOptions: { azureAuthEnabled: true, azureAuthType: AzureAuthType.ServicePrincipalSecret, tenantId: 't', clientId: 'c', clientSecret: 's' },
+      azureAuthOptions: { azureAuthEnabled: true, azureAuthType: AzureAuthType.ServicePrincipalSecret, tenantId: 't', clientId: 'c', clientSecret: 's' } as any,
     })
     expect(config.server).toBe('myserver.database.windows.net')
     expect(config.port).toBe(3342)
