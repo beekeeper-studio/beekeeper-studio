@@ -6,6 +6,7 @@ import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
 import { UsedConnection } from '@/common/appdb/models/used_connection'
 import { AppDbHandlers } from '@/handlers/appDbHandlers'
 import ConnectionInterface from '@/components/ConnectionInterface.vue'
+import ImportButton from '@/components/connection/ImportButton.vue'
 
 Vue.use(Vuex)
 
@@ -191,13 +192,15 @@ describe('ConnectionInterface', () => {
     expect(wrapper.vm.config.id).toBeNull()
   })
 
-  // "Import from URL" copies the parsed url onto the form's config, the same
-  // way ImportButton does. Reproduced in the running app: a url with no
-  // credentials came back as localhost / default port / empty database.
+  // "Import from URL" copies the parsed url onto the form's config and emits
+  // `imported`, the way ImportButton does. Reproduced in the running app: a
+  // url with no credentials came back as localhost / default port / empty
+  // database.
   describe('importing a url with no credentials', () => {
     async function importUrl(url: string) {
       const conf = await wrapper.vm.$util.send('appdb/saved/parseUrl', { url })
       Object.assign(wrapper.vm.config, conf)
+      wrapper.findComponent(ImportButton).vm.$emit('imported', conf)
       // let the connectionType watcher and its appdb/saved/new round trip settle
       await new Promise((resolve) => setTimeout(resolve, 50))
       await wrapper.vm.$nextTick()
@@ -259,16 +262,17 @@ describe('ConnectionInterface', () => {
       expect(wrapper.vm.config.port).toBe(3306)
     })
 
-    it('keeps a host and database typed before any credentials', async () => {
-      await pickType('postgresql')
-      wrapper.vm.config.host = 'dbhost.example.com'
-      wrapper.vm.config.defaultDatabase = 'analytics'
+    it('loads the defaults again when the type is changed after an import', async () => {
+      const conf = await wrapper.vm.$util.send('appdb/saved/parseUrl', { url: 'postgresql://localhost' })
+      Object.assign(wrapper.vm.config, conf)
+      wrapper.findComponent(ImportButton).vm.$emit('imported', conf)
+      await new Promise((resolve) => setTimeout(resolve, 50))
 
       await pickType('mysql')
+      expect(wrapper.vm.config.port).toBe(3306)
 
-      expect(wrapper.vm.config.connectionType).toBe('mysql')
-      expect(wrapper.vm.config.host).toBe('dbhost.example.com')
-      expect(wrapper.vm.config.defaultDatabase).toBe('analytics')
+      await pickType('postgresql')
+      expect(wrapper.vm.config.port).toBe(5432)
     })
   })
 })

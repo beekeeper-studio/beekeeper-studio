@@ -1467,8 +1467,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const isCockroach = version.toLowerCase().includes('cockroachdb')
     const isRedshift = version.toLowerCase().includes('redshift')
     const isPostgres = !isCockroach && !isRedshift
+    const rawNumber: string = version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '')
+    // Keep only the leading major.minor.patch. Pre-releases have a suffix
+    // straight after the major version (18beta1, 17rc1, 19devel), and some
+    // forks report a fourth part (EnterpriseDB 9.6.2.7).
+    const numericPart = /^\d+(?:\.\d+){0,2}/.exec(rawNumber)?.[0] ?? rawNumber
     const number = parseInt(
-      version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
+      numericPart.split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
       10
     );
     return {

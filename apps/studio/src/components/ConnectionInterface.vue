@@ -29,7 +29,7 @@
                 <i class="material-icons">add</i>
                 New Connection
               </button>
-              <ImportButton :config="config" variant="flat">
+              <ImportButton :config="config" variant="flat" @imported="handleUrlImported">
                 Import from URL
               </ImportButton>
             </div>
@@ -48,7 +48,7 @@
                 <i class="material-icons">share</i>
                 Share
               </button>
-              <ImportButton :config="config" :disabled="editingDisabled">
+              <ImportButton :config="config" :disabled="editingDisabled" @imported="handleUrlImported">
                 Import from URL
               </ImportButton>
             </div>
@@ -351,6 +351,7 @@ export default Vue.extend({
       split: null,
       url: null,
       importError: null,
+      importedConnectionType: null,
       sidebarShown: true,
       loadingSSOModalOpened: false,
       version: this.$config.appVersion,
@@ -433,11 +434,14 @@ export default Vue.extend({
       }
     },
     'config.connectionType'(newConnectionType) {
+      // a url import arrives with the defaults of its type already applied
+      const imported = this.importedConnectionType === newConnectionType
+      this.importedConnectionType = null
       if (newConnectionType == null) return
       const connectionFolderId = this.config.connectionFolderId
       this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType, connectionFolderId }}).then((conn) => {
         // only replace it if it's a blank, unused connection
-        if (!this.config.id && !this.config.password && !this.config.username) {
+        if (!imported && !this.config.id && !this.config.password && !this.config.username) {
           this.config = conn;
         }
         if (!findClient(newConnectionType)?.supportsSocketPath) {
@@ -514,6 +518,12 @@ export default Vue.extend({
         ? `<strong>SSH config</strong><br>${escaped[0]}`
         : `<strong>SSH config warnings</strong><ul class="noty-warning-list">${escaped.map((w) => `<li>${w}</li>`).join('')}</ul>`
       this.$noty.warning(body, { timeout: 8000, allowRawHtml: true })
+    },
+    // ImportButton has just copied a parsed url onto the form. A url without
+    // credentials looks like a blank connection, so tell the connectionType
+    // watcher not to swap it for the defaults.
+    handleUrlImported(conf) {
+      this.importedConnectionType = conf?.connectionType ?? null
     },
     async maybeLoadSqlite({ files }) {
       // cast to an array

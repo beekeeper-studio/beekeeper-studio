@@ -175,7 +175,7 @@ export class MySqlConnector extends DatabaseConnector<mysql.PoolConnection> {
       iamToken = await refreshTokenIfNeeded(
         server.config?.iamAuthOptions,
         server,
-        server.config.port || 5432
+        server.config.port || 3306
       );
     }
 

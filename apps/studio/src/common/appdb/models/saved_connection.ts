@@ -414,24 +414,38 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         }
       }
 
-      let cleanedUrl = url
+      // Split off the query string first, so an @ inside a parameter isn't
+      // mistaken for the end of the credentials. Passwords may contain an
+      // unencoded ?, so only a ? that starts a key=value pair counts.
+      const queryStart = url.search(/\?[^=&@/?#]+=/)
+      const base = queryStart === -1 ? url : url.substring(0, queryStart)
+      const query = queryStart === -1 ? '' : url.substring(queryStart)
+
+      let cleanedBase = base
       let extractedUser = undefined
       let extractedPassword = undefined
 
-      if (url.includes('@')) {
-        const lastAtIndex = url.lastIndexOf('@')
-        let firstDoubleSlash = url.indexOf('//') + 2
+      if (base.includes('@')) {
+        const lastAtIndex = base.lastIndexOf('@')
+        let firstDoubleSlash = base.indexOf('//') + 2
         if (firstDoubleSlash === 1) firstDoubleSlash = 0
-        const credentials = url.substring(firstDoubleSlash, lastAtIndex)
+        const credentials = base.substring(firstDoubleSlash, lastAtIndex)
 
         const [user, ...passwordParts] = credentials.split(':')
         extractedUser = decodeURIComponent(user)
         extractedPassword = decodeURIComponent(passwordParts.join(':'))
 
-        cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
+        cleanedBase = base.substring(0, firstDoubleSlash) + base.substring(lastAtIndex + 1)
       }
 
+      const cleanedUrl = cleanedBase + query.replace(/@/g, '%40')
+
+      // encodeURI escapes what the parser can't take (spaces etc), but it also
+      // escapes the % of existing escapes and the brackets of an IPv6 host.
       const encodedUrl = encodeURI(cleanedUrl)
+        .replace(/%25([0-9A-Fa-f]{2})/g, '%$1')
+        .replace(/%5B/gi, '[')
+        .replace(/%5D/gi, ']')
       const parsed = new ConnectionString(encodedUrl)
       const parsedUncoded = new ConnectionString(url)
 
@@ -472,7 +486,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         this.trustServerCertificate = true
       }
 
-      this.host = parsed.hostname || this.host
+      // IPv6 hosts come back in their url form, [::1]
+      this.host = parsed.hostname?.replace(/^\[(.*)\]$/, '$1') || this.host
       this.port = parsed.port || this.port
       this.username = extractedUser ?? parsed.user
       this.password = extractedPassword ?? parsed.password
