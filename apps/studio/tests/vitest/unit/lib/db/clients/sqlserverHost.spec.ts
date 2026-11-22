@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSqlServerHost, sqlServerTunnelTarget } from '@/lib/db/clients/sqlserverHost'
+import { parseSqlServerHost, splitSqlServerHostPort, applySqlServerHostPaste, sqlServerHostPortHint } from '@/lib/db/clients/sqlserverHost'
 
 // Verifies how the SQL Server Host field is normalised before it reaches the driver, without
 // needing a live server. The integration suite (sqlserver.spec.ts) proves the end-to-end
@@ -71,54 +71,74 @@ describe('parseSqlServerHost', () => {
     expect(parseSqlServerHost(undefined as unknown as string)).toEqual({ host: '', instanceName: undefined })
   })
 
-  // SSMS, sqlcmd and the Azure portal all hand out `host,port` and `tcp:host,port`. Passed
-  // through as-is they die at DNS resolution (getaddrinfo ENOTFOUND localhost,1433).
-  it('splits a trailing ,port off the host', () => {
-    expect(parseSqlServerHost('localhost,14330')).toEqual({ host: 'localhost', instanceName: undefined, port: 14330 })
-    expect(parseSqlServerHost(' db.example.com , 1433 ')).toEqual({ host: 'db.example.com', instanceName: undefined, port: 1433 })
-  })
-
   it('strips the tcp: protocol prefix', () => {
     expect(parseSqlServerHost('tcp:db.example.com')).toEqual({ host: 'db.example.com', instanceName: undefined })
-    expect(parseSqlServerHost('TCP:myserver.database.windows.net,1433')).toEqual({
-      host: 'myserver.database.windows.net',
-      instanceName: undefined,
-      port: 1433,
-    })
+    expect(parseSqlServerHost('TCP:.\\SQL2019')).toEqual({ host: 'localhost', instanceName: 'SQL2019' })
   })
 
-  it('reads the port after an instance name', () => {
-    expect(parseSqlServerHost('localhost\\SQL2019,14330')).toEqual({
-      host: 'localhost',
-      instanceName: 'SQL2019',
-      port: 14330,
-    })
-    expect(parseSqlServerHost('tcp:.\\SQL2019,14330')).toEqual({ host: 'localhost', instanceName: 'SQL2019', port: 14330 })
-  })
-
-  it('leaves a comma that is not followed by a port number alone', () => {
-    expect(parseSqlServerHost('localhost,abc').host).toBe('localhost,abc')
-    expect(parseSqlServerHost('localhost,abc').port).toBeUndefined()
-  })
-
-  it('only treats a valid TCP port as a port', () => {
-    for (const bad of ['localhost,0', 'localhost,99999', 'localhost,123456789012345678901234567890']) {
-      expect(parseSqlServerHost(bad).port).toBeUndefined()
-      expect(parseSqlServerHost(bad).host).toBe(bad)
-    }
-    expect(parseSqlServerHost('localhost,65535').port).toBe(65535)
+  // The port belongs in the Port field. It is not read out of the Host field when connecting.
+  it('does not read a port out of the host', () => {
+    expect(parseSqlServerHost('localhost,14330')).toEqual({ host: 'localhost,14330', instanceName: undefined })
+    expect(parseSqlServerHost('localhost\\SQL2019,14330')).toEqual({ host: 'localhost', instanceName: 'SQL2019,14330' })
   })
 })
 
-// The SSH tunnel is opened before the driver config is built, from the raw Host field.
-describe('sqlServerTunnelTarget', () => {
-  it('forwards to the parsed host and the port typed into the Host field', () => {
-    expect(sqlServerTunnelTarget('tcp:db.internal,14330', 1433)).toEqual({ host: 'db.internal', port: 14330 })
-    expect(sqlServerTunnelTarget('db.internal\\SQL2019,14330', 1433)).toEqual({ host: 'db.internal', port: 14330 })
+describe('splitSqlServerHostPort', () => {
+  it('separates a trailing ,port', () => {
+    expect(splitSqlServerHostPort('localhost,14330')).toEqual({ host: 'localhost', port: 14330 })
+    expect(splitSqlServerHostPort(' db.example.com , 1433 ')).toEqual({ host: 'db.example.com', port: 1433 })
   })
 
-  it('falls back to the Port field', () => {
-    expect(sqlServerTunnelTarget('tcp:db.internal', 14331)).toEqual({ host: 'db.internal', port: 14331 })
-    expect(sqlServerTunnelTarget('db.internal\\SQL2019', 14331)).toEqual({ host: 'db.internal', port: 14331 })
+  it('drops the tcp: prefix and keeps the instance', () => {
+    expect(splitSqlServerHostPort('TCP:myserver.database.windows.net,1433')).toEqual({ host: 'myserver.database.windows.net', port: 1433 })
+    expect(splitSqlServerHostPort('db\\SQL2019,14330')).toEqual({ host: 'db\\SQL2019', port: 14330 })
+  })
+
+  it('returns no port when there is none or it is not a valid TCP port', () => {
+    expect(splitSqlServerHostPort('db.example.com')).toEqual({ host: 'db.example.com' })
+    expect(splitSqlServerHostPort('tcp:db.example.com')).toEqual({ host: 'db.example.com' })
+    for (const bad of ['localhost,abc', 'localhost,0', 'localhost,99999', 'localhost,123456789012345678901234567890']) {
+      expect(splitSqlServerHostPort(bad)).toEqual({ host: bad })
+    }
+    expect(splitSqlServerHostPort(undefined as unknown as string)).toEqual({ host: '' })
+  })
+})
+
+describe('applySqlServerHostPaste', () => {
+  it('splits a value pasted into an empty field', () => {
+    expect(applySqlServerHostPaste('', 0, 0, 'tcp:myserver.database.windows.net,1433')).toEqual({
+      host: 'myserver.database.windows.net', port: 1433,
+    })
+  })
+
+  it('splits a value pasted over the whole existing host', () => {
+    expect(applySqlServerHostPaste('localhost', 0, 9, 'db.example.com,14330')).toEqual({ host: 'db.example.com', port: 14330 })
+  })
+
+  it('works on the value the paste would produce, not the clipboard alone', () => {
+    // caret at the end of "db.example.com", pasting just the port part
+    expect(applySqlServerHostPaste('db.example.com', 14, 14, ',14330')).toEqual({ host: 'db.example.com', port: 14330 })
+    // replacing only "old" in "old.example.com"
+    expect(applySqlServerHostPaste('old.example.com', 0, 3, 'new')).toBeNull()
+  })
+
+  it('leaves a paste without a port alone', () => {
+    expect(applySqlServerHostPaste('', 0, 0, 'db.example.com')).toBeNull()
+    expect(applySqlServerHostPaste('', 0, 0, 'db\\SQL2019')).toBeNull()
+  })
+})
+
+describe('sqlServerHostPortHint', () => {
+  it('names the host and port to enter', () => {
+    expect(sqlServerHostPortHint(' tcp:db.example.com,14330 ')).toBe(
+      'The Host field contains a port ("tcp:db.example.com,14330"). Enter db.example.com as the Host and 14330 in the Port field.'
+    )
+    expect(sqlServerHostPortHint('db\\SQL2019,14330')).toContain('Enter db\\SQL2019 as the Host and 14330 in the Port field.')
+  })
+
+  it('is null when the host holds no port', () => {
+    expect(sqlServerHostPortHint('db.example.com')).toBeNull()
+    expect(sqlServerHostPortHint('db\\SQL2019')).toBeNull()
+    expect(sqlServerHostPortHint('')).toBeNull()
   })
 })

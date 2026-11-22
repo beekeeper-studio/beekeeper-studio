@@ -56,6 +56,7 @@
         <masked-input
           :value="config.host"
           @input="val => config.host = val"
+          @paste.native="onHostPaste"
           :disabled="disabled"
         />
       </div>
@@ -115,6 +116,7 @@
 <script>
 import { findClient } from '@/lib/db/clients'
 import MaskedInput from '@/components/MaskedInput.vue'
+import { handleSqlServerHostPaste } from './sqlServerHostPaste'
 import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
 
@@ -167,6 +169,9 @@ export default {
     }
   },
   methods: {
+    onHostPaste(event) {
+      handleSqlServerHostPaste(event, this.config)
+    },
     async onPaste(event) {
       const data = event.clipboardData.getData('text')
       try {

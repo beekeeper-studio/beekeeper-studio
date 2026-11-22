@@ -38,7 +38,12 @@
             }"
           >help_outlined</i>
         </label>
-        <masked-input :value="config.host" @input="val => config.host = val" :disabled="disabled" />
+        <masked-input
+          :value="config.host"
+          @input="val => config.host = val"
+          @paste.native="onHostPaste"
+          :disabled="disabled"
+        />
       </div>
       <div class="form-group">
         <label for="port">Port</label>
@@ -123,6 +128,7 @@ import { AzureAuthType } from "@/lib/db/types";
 import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
 import MaskedInput from '@/components/MaskedInput.vue'
+import { handleSqlServerHostPaste } from './sqlServerHostPaste'
 import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
 import { mapState, mapGetters } from 'vuex'
@@ -189,6 +195,9 @@ export default {
     },
   },
   methods: {
+    onHostPaste(event) {
+      handleSqlServerHostPaste(event, this.config)
+    },
     toggleIAMAuthentication() {
       this.azureAuthEnabled = !this.azureAuthEnabled;
       this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled;

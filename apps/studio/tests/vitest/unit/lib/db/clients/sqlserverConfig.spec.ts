@@ -1,8 +1,9 @@
-import { describe, it, expect, onTestFinished } from 'vitest'
+import { describe, it, expect, onTestFinished, vi } from 'vitest'
 import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
 import { mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { withSqlServerHostPortHint } from '@/lib/db/clients/sqlserver/SqlServerConnector'
 import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints, sqlServerLoginMessage } from '@/lib/db/clients/sqlserver'
 import { AzureAuthType, IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
@@ -153,48 +154,44 @@ describe('configDatabase - certificate trust with SSL enabled', () => {
   })
 })
 
-describe('configDatabase - port typed into the Host field', () => {
-  it('uses host,port over the Port field', async () => {
+// The port belongs in the Port field. A pasted `host,port` is split by the form; a typed one
+// is passed through untouched, fails, and the error says where the port goes.
+describe('a port left in the Host field', () => {
+  it('is not read when building the driver config', async () => {
     const config = await buildConfig({ host: 'localhost,14330', port: 1433 })
-    expect(config.server).toBe('localhost')
-    expect(config.port).toBe(14330)
-  })
-
-  it('accepts the tcp:host,port form the Azure portal hands out', async () => {
-    const config = await buildConfig({ host: 'tcp:myserver.database.windows.net,1433', port: 1433 })
-    expect(config.server).toBe('myserver.database.windows.net')
+    expect(config.server).toBe('localhost,14330')
     expect(config.port).toBe(1433)
   })
 
-  it('connects straight to the port and skips the browser lookup for host\\instance,port', async () => {
-    // Even 1433: typed next to the instance it is explicit, not the client default.
-    const config = await buildConfig({ host: 'localhost\\SQL2019,1433', port: 1433 })
-    expect(config.server).toBe('localhost')
-    expect(config.port).toBe(1433)
-    expect(config.options.instanceName).toBeUndefined()
+  it('is named in the error when the connection fails', async () => {
+    const server = buildServer({ host: 'tcp:localhost,14330', port: 1433 })
+    const client = new SQLServerClient(server, DATABASE)
+    vi.spyOn(client.connector as any, 'doConnect').mockRejectedValue(
+      new Error('Failed to connect to localhost,14330:1433 - getaddrinfo ENOTFOUND localhost,14330')
+    )
+    await expect(client.connector.connect()).rejects.toThrow(
+      'Failed to connect to localhost,14330:1433 - getaddrinfo ENOTFOUND localhost,14330. ' +
+      'The Host field contains a port ("tcp:localhost,14330"). Enter localhost as the Host and 14330 in the Port field.'
+    )
   })
 
-  it('applies to integrated authentication', async () => {
-    const config = await buildConfig({ host: 'localhost\\SQL2019,14330', port: 1433, windowsAuthEnabled: true })
-    expect(config.server).toBe('localhost')
-    expect(config.port).toBe(14330)
-    // mssql/msnodesqlv8 drops the port whenever an instance name is set.
-    expect(config.options.instanceName).toBeUndefined()
-  })
-})
+  it('replaces the SQL Server Browser hint, which would send the user after the wrong problem', () => {
+    const driverError = new Error('Failed to connect to localhost\\SQL2019,14330 in 15000ms')
+    const browserHinted: any = new Error(`${driverError.message}. ${sqlServerConnectHints.browserUnreachable('localhost', 'SQL2019,14330')}`)
+    browserHinted.originalError = driverError
+    browserHinted.connectHint = true
 
-describe('configDatabase - Entra ID', () => {
-  it('uses a port typed into the Host field', async () => {
-    await TestOrmConnection.connect()
-    onTestFinished(() => TestOrmConnection.disconnect())
-    const config = await buildConfig({
-      host: 'tcp:myserver.database.windows.net,3342',
-      authId: 1,
-      azureAuthOptions: { azureAuthEnabled: true, azureAuthType: AzureAuthType.ServicePrincipalSecret, tenantId: 't', clientId: 'c', clientSecret: 's' } as any,
-    })
-    expect(config.server).toBe('myserver.database.windows.net')
-    expect(config.port).toBe(3342)
-    expect(config.authentication.type).toBe('azure-active-directory-service-principal-secret')
+    const err = withSqlServerHostPortHint(browserHinted, 'localhost\\SQL2019,14330')
+    expect(err.message).toBe(
+      'Failed to connect to localhost\\SQL2019,14330 in 15000ms. ' +
+      'The Host field contains a port ("localhost\\SQL2019,14330"). Enter localhost\\SQL2019 as the Host and 14330 in the Port field.'
+    )
+    expect(err.message).not.toMatch(/browser/i)
+  })
+
+  it('leaves errors alone when the host holds no port', () => {
+    const err = new Error('Login failed for user sa.')
+    expect(withSqlServerHostPortHint(err, 'localhost\\SQL2019')).toBe(err)
   })
 })
 
@@ -222,9 +219,10 @@ describe('configDatabase - Entra ID port', () => {
     expect(config.port).toBe(1433)
   })
 
-  it('prefers a port typed into the Host field', async () => {
+  it('does not read a port out of the Host field', async () => {
     const config = await buildEntraConfig({ host: 'myserver.database.windows.net,3342', port: 1433 })
-    expect(config.port).toBe(3342)
+    expect(config.server).toBe('myserver.database.windows.net,3342')
+    expect(config.port).toBe(1433)
   })
 })
 
