@@ -57,7 +57,6 @@
           :value="config.host"
           @input="val => config.host = val"
           @change.native="$emit('host-change')"
-          @paste.native="onHostPaste"
           :disabled="disabled"
         />
       </div>
@@ -169,11 +168,6 @@ export default {
     }
   },
   methods: {
-    // The paste event fires before the input holds the pasted text, so report the change
-    // once the value has landed in config.host.
-    onHostPaste() {
-      setTimeout(() => this.$emit('host-change'), 0)
-    },
     async onPaste(event) {
       const data = event.clipboardData.getData('text')
       try {
