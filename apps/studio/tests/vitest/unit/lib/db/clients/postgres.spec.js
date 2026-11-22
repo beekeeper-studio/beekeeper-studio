@@ -289,6 +289,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
       expect((await versionOf("PostgreSQL 9.4.26 on x86_64-pc-linux-gnu (Debian 9.4.26-1.pgdg90+1), compiled by gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516, 64-bit")).number).toBe(90426);
       expect((await versionOf("PostgreSQL 12.3 (Debian 12.3-1.pgdg100+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit")).number).toBe(120300);
       expect((await versionOf("PostgreSQL 15.4, compiled by Visual C++ build 1914, 64-bit")).number).toBe(150400);
+      expect((await versionOf("PostgreSQL 9.6beta1 on x86_64-pc-linux-gnu, compiled by gcc (Debian 4.9.2-10) 4.9.2, 64-bit")).number).toBe(90600);
       const cockroach = await versionOf("CockroachDB CCL v20.1.1 (x86_64-unknown-linux-gnu, built 2020/05/19 14:46:06, go1.13.9)");
       expect(cockroach.number).toBe(200101);
       expect(cockroach.hasPartitions).toBe(false);
@@ -309,7 +310,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
     Object.entries(preReleases).forEach(([version, expected]) => {
       it(`treats pre-release '${version.split(" (")[0].split(" on ")[0]}' as its major version`, async () => {
         const v = await versionOf(version);
-        expect(v.number).toBeGreaterThanOrEqual(expected);
+        expect(v.number).toBe(expected);
         expect(v.hasPartitions).toBe(true);
       })
     })

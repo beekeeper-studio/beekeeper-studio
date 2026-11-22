@@ -416,8 +416,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
       // Split off the query string first, so an @ inside a parameter isn't
       // mistaken for the end of the credentials. Passwords may contain an
-      // unencoded ?, so only a ? that starts a key=value pair counts.
-      const queryStart = url.search(/\?[^=&@/?#]+=/)
+      // unencoded ? (even ?key=), so only a ? that directly follows the
+      // /path after the host, and starts a parameter, counts.
+      const queryStart = url.search(/(?<=[^/:]\/[^/?#@]*)\?(?=[^=&@/?#]+(?:[=&]|$))/)
       const base = queryStart === -1 ? url : url.substring(0, queryStart)
       const query = queryStart === -1 ? '' : url.substring(queryStart)
 
@@ -438,14 +439,14 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         cleanedBase = base.substring(0, firstDoubleSlash) + base.substring(lastAtIndex + 1)
       }
 
-      const cleanedUrl = cleanedBase + query.replace(/@/g, '%40')
+      // the parser trips over a raw @ or / in a parameter value
+      const cleanedUrl = cleanedBase + query.replace(/@/g, '%40').replace(/\//g, '%2F')
 
-      // encodeURI escapes what the parser can't take (spaces etc), but it also
-      // escapes the % of existing escapes and the brackets of an IPv6 host.
+      // encodeURI also escapes the % of existing escapes and the brackets of
+      // an IPv6 host. Undo both, the brackets only where the host starts.
       const encodedUrl = encodeURI(cleanedUrl)
         .replace(/%25([0-9A-Fa-f]{2})/g, '%$1')
-        .replace(/%5B/gi, '[')
-        .replace(/%5D/gi, ']')
+        .replace(/^([A-Za-z][A-Za-z0-9+.-]*:\/\/)?%5B([^/?#]*?)%5D/i, '$1[$2]')
       const parsed = new ConnectionString(encodedUrl)
       const parsedUncoded = new ConnectionString(url)
 
@@ -486,8 +487,10 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         this.trustServerCertificate = true
       }
 
-      // IPv6 hosts come back in their url form, [::1]
-      this.host = parsed.hostname?.replace(/^\[(.*)\]$/, '$1') || this.host
+      // IPv6 hosts come back in their url form: [::1], or [fe80::1%25eth0]
+      // with a zone id
+      const ipv6 = /^\[(.*)\]$/.exec(parsed.hostname ?? '')
+      this.host = (ipv6 ? ipv6[1].replace(/%25/g, '%') : parsed.hostname) || this.host
       this.port = parsed.port || this.port
       this.username = extractedUser ?? parsed.user
       this.password = extractedPassword ?? parsed.password

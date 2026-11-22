@@ -132,6 +132,47 @@ describe("Saved Connection", () => {
       expect(c.defaultDatabase).toBe("mydatabase")
     })
 
+    // an unencoded ?key= in a password, ahead of the real query string
+    const passwordCases = {
+      "mysql://user:?a=b@localhost:3307/mydatabase": { host: "localhost", port: 3307, username: "user", password: "?a=b" },
+      "postgresql://user:pass@word?key=val@host/db?sslmode=require": { host: "host", username: "user", password: "pass@word?key=val", defaultDatabase: "db", ssl: true },
+      "mysql://sa:P@ss?w0rd=1@h:1433/db?charset=utf8": { host: "h", port: 1433, username: "sa", password: "P@ss?w0rd=1", defaultDatabase: "db" },
+    }
+    Object.entries(passwordCases).forEach(([url, expected]) => {
+      it(`keeps the password of '${url}' intact`, () => {
+        expect(parse(url)).toMatchObject(expected)
+      })
+    })
+
+    it("handles an @ in a later query parameter when the first has no value", () => {
+      const c = parse("postgresql://u:p@dbhost/db?x&y=a@b")
+      expect(c.host).toBe("dbhost")
+      expect(c.password).toBe("p")
+      expect(c.defaultDatabase).toBe("db")
+    })
+
+    it("does not leak a path in a query parameter into the database name", () => {
+      const c = parse("postgresql://u:p@dbhost/db?sslmode=require&sslrootcert=/path/to/ca@prod.pem")
+      expect(c.host).toBe("dbhost")
+      expect(c.defaultDatabase).toBe("db")
+      expect(c.ssl).toBe(true)
+    })
+
+    it("keeps square brackets in a database name", () => {
+      expect(parse("postgresql://u:p@h:5432/db[x]").defaultDatabase).toBe("db[x]")
+      expect(parse("postgresql://u:p@h/[db]").defaultDatabase).toBe("[db]")
+      expect(parse("mysql://u:p@h/db%5Bx%5D").defaultDatabase).toBe("db[x]")
+      const v6 = parse("postgresql://u:p@[::1]:5432/db[x]")
+      expect(v6.host).toBe("::1")
+      expect(v6.defaultDatabase).toBe("db[x]")
+    })
+
+    it("decodes the zone id of a link-local IPv6 host", () => {
+      const c = parse("postgresql://u:p@[fe80::1%25eth0]:5432/db")
+      expect(c.host).toBe("fe80::1%eth0")
+      expect(c.port).toBe(5432)
+    })
+
     it("decodes percent-encoded credentials exactly once", () => {
       const c = parse("postgresql://us%40er:p%2540ss@localhost:5433/db")
       expect(c.username).toBe("us@er")
