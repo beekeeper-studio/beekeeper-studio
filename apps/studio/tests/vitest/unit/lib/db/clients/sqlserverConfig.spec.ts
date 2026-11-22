@@ -198,6 +198,36 @@ describe('configDatabase - Entra ID', () => {
   })
 })
 
+describe('configDatabase - Entra ID port', () => {
+  const entra = {
+    authId: 1,
+    azureAuthOptions: { azureAuthEnabled: true, azureAuthType: AzureAuthType.ServicePrincipalSecret, tenantId: 't', clientId: 'c', clientSecret: 's' } as any,
+  }
+
+  async function buildEntraConfig(config: Partial<IDbConnectionServerConfig>) {
+    await TestOrmConnection.connect()
+    onTestFinished(() => TestOrmConnection.disconnect())
+    return await buildConfig({ ...entra, ...config })
+  }
+
+  // A Managed Instance public endpoint listens on 3342; the branch used to leave the port
+  // off entirely, so the driver always dialled 1433.
+  it('uses the Port field', async () => {
+    const config = await buildEntraConfig({ host: 'mi.public.abc.database.windows.net', port: 3342 })
+    expect(config.port).toBe(3342)
+  })
+
+  it('falls back to 1433 when the Port field is blank', async () => {
+    const config = await buildEntraConfig({ host: 'myserver.database.windows.net', port: null })
+    expect(config.port).toBe(1433)
+  })
+
+  it('prefers a port typed into the Host field', async () => {
+    const config = await buildEntraConfig({ host: 'myserver.database.windows.net,3342', port: 1433 })
+    expect(config.port).toBe(3342)
+  })
+})
+
 describe('sqlServerConnectHint', () => {
   it('names the certificate checkbox for a self-signed certificate failure', () => {
     const hint = sqlServerConnectHint(new Error('Failed to connect to localhost:1433 - self-signed certificate'), {})

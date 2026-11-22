@@ -419,7 +419,9 @@ export class SqlServerConnector extends DatabaseConnector<
         encrypt: true
       };
 
-      if (hostPort) config.port = hostPort;
+      // 1433 for Azure SQL; a Managed Instance public endpoint listens on 3342.
+      const entraPort = hostPort ?? Number(server.config.port);
+      config.port = Number.isFinite(entraPort) && entraPort > 0 ? entraPort : 1433;
 
       return config;
     }

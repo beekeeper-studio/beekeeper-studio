@@ -41,6 +41,15 @@
         <masked-input :value="config.host" @input="val => config.host = val" :disabled="disabled" />
       </div>
       <div class="form-group">
+        <label for="port">Port</label>
+        <masked-input
+          :value="config.port"
+          :type="'number'"
+          @input="val => config.port = val"
+          :disabled="disabled"
+        />
+      </div>
+      <div class="form-group">
         <label for="database">Database</label>
         <input
           name="database"
