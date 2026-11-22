@@ -29,6 +29,7 @@
       :config="config"
       :hide-credentials="windowsAuthEnabled"
       :hide-ssl="windowsAuthEnabled"
+      @host-change="splitHostPort"
     >
       <div v-show="!windowsAuthEnabled" class="advanced-connection-settings">
         <h4 class="advanced-heading">
@@ -144,6 +145,7 @@
   import CommonAdvanced from './CommonAdvanced.vue'
   import FilePicker from '@/components/common/form/FilePicker.vue'
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
+  import { sqlServerHostFieldSplit } from '@/lib/db/clients/sqlserverHost'
   import { AppEvent } from '@/common/AppEvent'
   import _ from 'lodash'
   import { mapState, mapGetters } from 'vuex'
@@ -227,6 +229,14 @@
       },
     },
     methods: {
+      // SSMS users type the port into the server name (`host,1444`). Once the Host field is
+      // committed (blur, Enter, paste then blur), move the port into the Port field.
+      splitHostPort() {
+        const split = sqlServerHostFieldSplit(this.config.host)
+        if (!split) return
+        this.config.host = split.host
+        this.config.port = split.port
+      },
       // Assign a fresh object with the keys pre-declared so Vue 2 tracks them reactively
       // (the model default is an empty {}, whose later-added keys wouldn't be reactive),
       // defaulting encryption to 'on' for a new integrated-auth connection.

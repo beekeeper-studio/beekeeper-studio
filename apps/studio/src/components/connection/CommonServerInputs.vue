@@ -56,6 +56,7 @@
         <masked-input
           :value="config.host"
           @input="val => config.host = val"
+          @change.native="$emit('host-change')"
           :disabled="disabled"
         />
       </div>

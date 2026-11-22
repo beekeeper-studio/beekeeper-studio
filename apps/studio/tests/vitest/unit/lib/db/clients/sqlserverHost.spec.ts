@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSqlServerHost } from '@/lib/db/clients/sqlserverHost'
+import { parseSqlServerHost, sqlServerHostFieldSplit } from '@/lib/db/clients/sqlserverHost'
 
 // Verifies how the SQL Server Host field is normalised before it reaches the driver, without
 // needing a live server. The integration suite (sqlserver.spec.ts) proves the end-to-end
@@ -99,5 +99,26 @@ describe('parseSqlServerHost', () => {
   it('handles an empty or missing value without throwing', () => {
     expect(parseSqlServerHost('')).toEqual({ host: '', instanceName: undefined })
     expect(parseSqlServerHost(undefined as unknown as string)).toEqual({ host: '', instanceName: undefined })
+  })
+})
+
+describe('sqlServerHostFieldSplit', () => {
+  it('moves a port out of the host, keeping the instance name', () => {
+    expect(sqlServerHostFieldSplit('db.example.com,1444')).toEqual({ host: 'db.example.com', port: 1444 })
+    expect(sqlServerHostFieldSplit(' tcp:db.example.com\\SQL2019, 1444 ')).toEqual({
+      host: 'db.example.com\\SQL2019',
+      port: 1444,
+    })
+    expect(sqlServerHostFieldSplit('db.example.com,1433')).toEqual({ host: 'db.example.com', port: 1433 })
+  })
+
+  it('returns null when there is no port to move', () => {
+    expect(sqlServerHostFieldSplit('db.example.com')).toBeNull()
+    expect(sqlServerHostFieldSplit('db.example.com,abc')).toBeNull()
+    expect(sqlServerHostFieldSplit('')).toBeNull()
+  })
+
+  it('leaves an instance on port 1433 as typed, since the Port field reads 1433 as unspecified', () => {
+    expect(sqlServerHostFieldSplit('db.example.com\\SQL2019,1433')).toBeNull()
   })
 })

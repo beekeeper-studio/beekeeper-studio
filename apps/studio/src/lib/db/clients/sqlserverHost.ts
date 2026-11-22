@@ -33,18 +33,33 @@ export const SQL_SERVER_LOCALDB_UNSUPPORTED =
   'LocalDB instances are not supported: they accept named pipe connections only. ' +
   'Connect to a SQL Server instance that has TCP/IP enabled, such as localhost\\SQLEXPRESS.'
 
-export function parseSqlServerHost(raw: string): ParsedSqlServerHost {
-  let value = (raw || '').trim().replace(TCP_PREFIX, '').trim()
-
-  let port: number | undefined = undefined
-  const portMatch = value.match(TRAILING_PORT)
-  if (portMatch) {
-    const parsed = Number(portMatch[2])
-    if (parsed > 0 && parsed <= 65535) {
-      value = portMatch[1]
-      port = parsed
-    }
+// Separates an SSMS-style `,port` suffix (and the `tcp:` prefix) from the rest of the value,
+// which keeps its `\instance` part.
+function splitPort(raw: string): { value: string, port?: number } {
+  const value = (raw || '').trim().replace(TCP_PREFIX, '').trim()
+  const match = value.match(TRAILING_PORT)
+  if (match) {
+    const port = Number(match[2])
+    if (port > 0 && port <= 65535) return { value: match[1].trim(), port }
   }
+  return { value }
+}
+
+// For the connection form: when the Host field holds `host,port`, returns the host and port
+// to put in their own fields. Null when there is nothing to move.
+export function sqlServerHostFieldSplit(raw: string): { host: string, port: number } | null {
+  const { value, port } = splitPort(raw)
+  if (port === undefined) return null
+  // The Port field treats 1433 as "look the instance up", so `host\instance,1433` cannot be
+  // expressed across the two fields. Left as typed; parseSqlServerHost honours it on connect.
+  if (port === 1433 && value.includes('\\')) return null
+  return { host: value, port }
+}
+
+export function parseSqlServerHost(raw: string): ParsedSqlServerHost {
+  const split = splitPort(raw)
+  const value = split.value
+  const port = split.port
 
   // Split on the FIRST backslash: `host\a\b` has no valid reading other than instance
   // `a\b`, and letting it through unchanged produces a worse error than the driver's.
