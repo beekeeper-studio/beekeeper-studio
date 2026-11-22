@@ -63,6 +63,23 @@ describe("SqlServerForm host with a port", () => {
     wrapper.destroy();
   });
 
+  it("moves the port straight away on paste", async () => {
+    const { wrapper, config } = mountForm();
+
+    const host = wrapper
+      .findAll(".host-port-user-password input")
+      .filter((i) => (i.element as HTMLInputElement).value === "localhost")
+      .at(0);
+    // A real paste fires `paste` first, then `input` with the new value.
+    await host.trigger("paste");
+    await host.setValue("db.example.com,1444");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(config.host).toBe("db.example.com");
+    expect(config.port).toBe(1444);
+    wrapper.destroy();
+  });
+
   it("leaves a host without a port alone", async () => {
     const { wrapper, config } = mountForm();
 

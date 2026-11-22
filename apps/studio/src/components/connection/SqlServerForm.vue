@@ -230,7 +230,7 @@
     },
     methods: {
       // SSMS users type the port into the server name (`host,1444`). Once the Host field is
-      // committed (blur, Enter, paste then blur), move the port into the Port field.
+      // committed (blur, Enter) or pasted into, move the port into the Port field.
       splitHostPort() {
         const split = sqlServerHostFieldSplit(this.config.host)
         if (!split) return
