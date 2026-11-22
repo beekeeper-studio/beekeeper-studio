@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
+import { EventEmitter } from "events"
 import type * as cassandra from "cassandra-driver"
 import { CassandraChangeBuilder } from "@shared/lib/sql/change_builder/CassandraChangeBuilder"
 import { CassandraClient } from "@commercial/backend/lib/db/clients/cassandra"
+import { CassandraCursor } from "@commercial/backend/lib/db/clients/cassandra/CassandraCursor"
 import type { IDbConnectionServer } from "@/lib/db/backendTypes"
 import type { IDbConnectionDatabase } from "@/lib/db/types"
 
@@ -89,3 +91,72 @@ describe("CassandraClient.alterTable", () => {
     expect(execute).toHaveBeenCalledTimes(1)
   })
 })
+
+class MockStream extends EventEmitter {
+  private rows: any[]
+  public destroyed = false
+
+  constructor(rows: any[]) {
+    super()
+    this.rows = rows.slice()
+  }
+
+  read() {
+    return this.rows.shift() || null
+  }
+
+  pause() {}
+  resume() {}
+  destroy() {
+    this.destroyed = true
+  }
+}
+
+function createRow(data: Record<string, any>) {
+  return {
+    ...data,
+    keys: () => Object.keys(data),
+  }
+}
+
+describe("CassandraCursor", () => {
+  it("does not include an empty leading record in read results", async () => {
+    const stream = new MockStream([
+      createRow({ userid: "1234", item_count: 55 }),
+      createRow({ userid: "9876", item_count: 2 }),
+    ])
+    const mockConnection = {
+      stream: vi.fn().mockReturnValue(stream),
+    }
+
+    const cursor = new CassandraCursor(mockConnection, "SELECT * FROM store.shopping_cart", [], 100)
+    await cursor.start()
+
+    stream.emit("readable")
+    stream.emit("end")
+
+    const rows = await cursor.read()
+    expect(rows).toEqual([
+      ["1234", 55],
+      ["9876", 2],
+    ])
+    expect(rows[0]).not.toEqual([])
+  })
+
+  it("returns an empty array when query returns no rows", async () => {
+    const stream = new MockStream([])
+    const mockConnection = {
+      stream: vi.fn().mockReturnValue(stream),
+    }
+
+    const cursor = new CassandraCursor(mockConnection, "SELECT * FROM store.empty_table", [], 100)
+    await cursor.start()
+
+    stream.emit("readable")
+    stream.emit("end")
+
+    const rows = await cursor.read()
+    expect(rows).toEqual([])
+  })
+})
+
