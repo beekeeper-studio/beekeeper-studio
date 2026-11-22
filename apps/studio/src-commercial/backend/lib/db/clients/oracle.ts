@@ -6,6 +6,7 @@ import { ForeignKeyRow } from '@shared/lib/dialects/models';
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
 import BksConfig from '@/common/bksConfig';
+import { buildOracleConnectString } from './oracle/connectString';
 import {
   CancelableQuery,
   DatabaseEntity,
@@ -664,6 +665,20 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   async connect() {
     await super.connect();
 
+    const connectionMethod = this.server.config.options?.connectionMethod || 'manual'
+
+    // Built first so a missing Service Name or SID fails before the Oracle client is
+    // initialized, which can only ever happen once per process.
+    const manualConnectString = connectionMethod === 'manual'
+      ? buildOracleConnectString({
+        host: this.server.sshTunnel ? this.server.config.localHost : this.server.config.host,
+        port: this.server.sshTunnel ? this.server.config.localPort : this.server.config.port,
+        ssl: this.server.config.ssl,
+        identifier: this.server.config.serviceName,
+        identifierType: this.server.config.options?.oracleIdentifierType,
+      })
+      : null
+
     // A location saved by an x64 install still points at an x64 Instant Client,
     // which an ARM64 process can't load. Ignore it and connect in thin mode.
     if (this.server.config.instantClientLocation && !platformInfo.oracleInstantClientSupported) {
@@ -715,8 +730,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       }
     }
 
-    const connectionMethod = this.server.config.options?.connectionMethod || 'manual'
-
     let poolConfig: any = {
       poolIncrement: 1,
       poolMin: 1,
@@ -732,16 +745,11 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       if (user) poolConfig['user'] = user
       if (password) poolConfig['password'] = password
     } else {
-      const { serviceName, ssl } = this.server.config
-      const host = this.server.sshTunnel ? this.server.config.localHost : this.server.config.host
-      const port = this.server.sshTunnel ? this.server.config.localPort : this.server.config.port
-      const scheme = ssl ? 'tcps://' : ''
-      const str = `${scheme}${host}:${port}/${serviceName}`
       poolConfig = {
         ...poolConfig,
         user: this.server.config.user,
         password: this.server.config.password,
-        connectString: str,
+        connectString: manualConnectString,
       }
     }
     // In thin mode (no instant client), also pass configDir directly to the pool

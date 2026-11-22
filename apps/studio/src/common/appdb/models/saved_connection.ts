@@ -26,6 +26,8 @@ export interface ConnectionOptions {
   connectionString?: string,
   // Oracle: connect with an administrative privilege, eg to log in as SYS
   privilege?: 'SYSDBA' | 'SYSOPER' | null
+  // Oracle: whether the serviceName column holds a service name (default) or a SID
+  oracleIdentifierType?: 'serviceName' | 'sid'
   enableClearText?: boolean
   // SQLite: create the database file on the next connect instead of refusing a
   // missing one. Set by the Create button, cleared once a connect succeeds.
@@ -284,7 +286,7 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'simple-json', nullable: false })
   sqlServerOptions: SqlServerOptions = {}
 
-  // oracle only.
+  // oracle only. Holds the SID instead when options.oracleIdentifierType is 'sid'.
   @Column({type: 'varchar', nullable: true})
   serviceName: Nullable<string> = null
 }

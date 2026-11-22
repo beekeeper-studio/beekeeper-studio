@@ -8,7 +8,7 @@ import logRaw from "@bksLogger";
 import { AzureAuthService, AzureCliTokenCredential } from "../../authentication/azure";
 import { getEntraOptions } from "../utils";
 import { buildWindowsAuthConnStr } from "../sqlserverWinAuth";
-import { parseSqlServerHost } from "../sqlserverHost";
+import { parseSqlServerHost, SQL_SERVER_LOCALDB_UNSUPPORTED } from "../sqlserverHost";
 import { bindDriver } from "../sqlserverDriver";
 
 const log = logRaw.scope("SqlServerConnector");
@@ -391,7 +391,11 @@ export class SqlServerConnector extends DatabaseConnector<
   async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
     // `.`/`(local)` and stray whitespace never reach the driver, and the instance name is
     // split off here so config.server holds a bare host -- see parseSqlServerHost.
-    const { host, instanceName } = parseSqlServerHost(server.config.host)
+    const { host, instanceName, port: hostPort, localDb } = parseSqlServerHost(server.config.host)
+
+    if (localDb) {
+      throw new Error(SQL_SERVER_LOCALDB_UNSUPPORTED)
+    }
 
     const config: any = {
       server: host,
@@ -418,15 +422,18 @@ export class SqlServerConnector extends DatabaseConnector<
         encrypt: true
       };
 
+      if (hostPort) config.port = hostPort;
+
       return config;
     }
 
     if (server.config.windowsAuthEnabled) {
-      config.port = Number(server.config.port);
+      config.port = hostPort ?? Number(server.config.port);
 
       // msnodesqlv8 rebuilds Server=host\instance from server + options.instanceName and the
       // ODBC driver runs its own browser lookup, so the instance is passed straight through.
-      let winAuthInstance = instanceName;
+      // A port typed into the Host field (`host\instance,1444`) replaces that lookup.
+      let winAuthInstance = hostPort ? undefined : instanceName;
 
       if (server.sshTunnel) {
         config.server = server.config.localHost;
@@ -453,7 +460,8 @@ export class SqlServerConnector extends DatabaseConnector<
     config.user = server.config.user;
     config.password = server.config.password;
 
-    const port = Number(server.config.port);
+    // A port typed into the Host field SSMS-style (`host,1444`) wins over the Port field.
+    const port = hostPort ?? Number(server.config.port);
     // mssql drops the port whenever an instance name is set, forcing a SQL Browser lookup.
     // Treat the client default of 1433 as "unspecified" so a user who knows the instance's
     // static port can bypass the browser, which is often stopped or firewalled. The Port
@@ -461,7 +469,7 @@ export class SqlServerConnector extends DatabaseConnector<
     let browserLookupInstance: string | undefined = undefined;
 
     if (instanceName) {
-      if (Number.isFinite(port) && port > 0 && port !== 1433) {
+      if (hostPort || (Number.isFinite(port) && port > 0 && port !== 1433)) {
         config.port = port;
       } else {
         browserLookupInstance = instanceName;

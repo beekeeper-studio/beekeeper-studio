@@ -55,6 +55,12 @@ so a pasted value with a stray space still works.
 | `.` | Shorthand for `localhost`. |
 | `(local)` | Shorthand for `localhost`. |
 | `db.example.com\SQLEXPRESS` | The named instance `SQLEXPRESS`. |
+| `db.example.com,1444` | Port `1444`. A port in the host overrides the **Port** field. |
+| `db.example.com\SQLEXPRESS,1444` | The named instance on port `1444`, with no SQL Server Browser lookup. |
+| `tcp:db.example.com,1444` | Same as `db.example.com,1444`. The `tcp:` prefix is ignored. |
+
+LocalDB instances such as `(localdb)\MSSQLLocalDB` are not supported. They accept named
+pipe connections only.
 
 ### Named instances and the SQL Server Browser
 

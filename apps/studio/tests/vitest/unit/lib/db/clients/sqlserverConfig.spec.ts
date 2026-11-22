@@ -61,6 +61,24 @@ describe('configDatabase - host and instance', () => {
     expect(config.options.instanceName).toBeUndefined()
   })
 
+  it('takes a port typed into the host SSMS-style over the Port field', async () => {
+    const config = await buildConfig({ host: 'db.example.com,1444', port: 1433 })
+    expect(config.server).toBe('db.example.com')
+    expect(config.port).toBe(1444)
+    expect(config.options.instanceName).toBeUndefined()
+  })
+
+  it('skips the browser lookup when an instance comes with a port in the host', async () => {
+    const config = await buildConfig({ host: 'tcp:db.example.com\\SQL2019,1433', port: 1433 })
+    expect(config.server).toBe('db.example.com')
+    expect(config.port).toBe(1433)
+    expect(config.options.instanceName).toBeUndefined()
+  })
+
+  it('rejects a LocalDB instance with an explanation', async () => {
+    await expect(buildConfig({ host: '(localdb)\\MSSQLLocalDB' })).rejects.toThrow(/LocalDB instances are not supported/)
+  })
+
   it('never leaves a backslash in config.server, so mssql does not re-split it', async () => {
     const config = await buildConfig({ host: '  .\\SQL2019 ', port: 1433 })
     expect(config.server).toBe('localhost')

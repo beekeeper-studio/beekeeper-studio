@@ -17,7 +17,6 @@ describe('parseSqlServerHost', () => {
   it("maps the SSMS local-machine shorthands '.' and '(local)' to localhost", () => {
     expect(parseSqlServerHost('.\\SQL2019')).toEqual({ host: 'localhost', instanceName: 'SQL2019' })
     expect(parseSqlServerHost('(local)\\SQL2019')).toEqual({ host: 'localhost', instanceName: 'SQL2019' })
-    expect(parseSqlServerHost('(localdb)\\SQL2019')).toEqual({ host: 'localhost', instanceName: 'SQL2019' })
   })
 
   it('matches the local-machine shorthands case-insensitively', () => {
@@ -64,6 +63,37 @@ describe('parseSqlServerHost', () => {
       host: 'localhost',
       instanceName: 'SQL2019\\extra',
     })
+  })
+
+  it('reads an SSMS-style port after a comma', () => {
+    expect(parseSqlServerHost('db.example.com,1444')).toEqual({ host: 'db.example.com', port: 1444 })
+    expect(parseSqlServerHost('db.example.com, 1444 ')).toEqual({ host: 'db.example.com', port: 1444 })
+    expect(parseSqlServerHost('.\\SQL2019,1444')).toEqual({
+      host: 'localhost',
+      instanceName: 'SQL2019',
+      port: 1444,
+    })
+  })
+
+  it('leaves a comma that is not followed by a valid port in place', () => {
+    expect(parseSqlServerHost('db.example.com,abc')).toEqual({ host: 'db.example.com,abc' })
+    expect(parseSqlServerHost('db.example.com,99999')).toEqual({ host: 'db.example.com,99999' })
+    expect(parseSqlServerHost('db.example.com').port).toBeUndefined()
+  })
+
+  it('drops the tcp: protocol prefix', () => {
+    expect(parseSqlServerHost('tcp:db.example.com,1444')).toEqual({ host: 'db.example.com', port: 1444 })
+    expect(parseSqlServerHost('TCP:db.example.com')).toEqual({ host: 'db.example.com' })
+  })
+
+  it('flags LocalDB instead of treating it as this machine', () => {
+    expect(parseSqlServerHost('(localdb)\\MSSQLLocalDB')).toEqual({
+      host: '(localdb)',
+      instanceName: 'MSSQLLocalDB',
+      localDb: true,
+    })
+    expect(parseSqlServerHost('(LocalDB)\\v11.0').localDb).toBe(true)
+    expect(parseSqlServerHost('(local)\\SQL2019').localDb).toBeUndefined()
   })
 
   it('handles an empty or missing value without throwing', () => {

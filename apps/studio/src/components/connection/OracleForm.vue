@@ -49,9 +49,25 @@
           ssl-help="Requires your wallet to be already set up in TNS_ADMIN" :config="config"
           :disabled="disabled"
         />
-        <div class="form-group">
-          <label for="serviceName">Service Name</label>
-          <input type="text" class="form-control" v-model="config.serviceName" :disabled="disabled">
+        <div class="row gutter">
+          <div class="col s4 form-group">
+            <label for="oracleIdentifierType">Connect Using</label>
+            <select id="oracleIdentifierType" v-model="identifierType" :disabled="disabled">
+              <option value="serviceName">
+                Service Name
+              </option>
+              <option value="sid">
+                SID
+              </option>
+            </select>
+          </div>
+          <div class="col s8 form-group">
+            <label for="serviceName">{{ identifierType === 'sid' ? 'SID' : 'Service Name' }}</label>
+            <input
+              id="serviceName" type="text" class="form-control" v-model="config.serviceName"
+              :placeholder="identifierType === 'sid' ? 'e.g. XE' : 'e.g. XEPDB1'" :disabled="disabled"
+            >
+          </div>
         </div>
         <div class="form-group">
           <label for="oracleRole">Role</label>
@@ -145,6 +161,14 @@ export default Vue.extend({
       },
       get() {
         return this.config.options.connectionMethod
+      }
+    },
+    identifierType: {
+      set(value: string) {
+        this.config.options = {...this.config.options, oracleIdentifierType: value}
+      },
+      get() {
+        return this.config.options.oracleIdentifierType ?? 'serviceName'
       }
     },
     privilege: {
