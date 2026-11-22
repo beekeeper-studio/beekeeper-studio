@@ -5,7 +5,7 @@ import os from "os";
 import tmp from "tmp";
 
 // Lazily read via a getter so the value is resolved at call time (after this
-// initializes), not when jest evaluates the mock factory.
+// initializes), not when vitest evaluates the mock factory.
 let mockDisableSshConfigMatchExec = false;
 vi.mock("@/common/bksConfig", () => ({
   __esModule: true,

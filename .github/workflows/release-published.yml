@@ -183,6 +183,7 @@ jobs:
           R2_ENDPOINT: ${{ secrets.cloudflare_endpoint }}
           AWS_ACCESS_KEY_ID: "${{ secrets.cloudflare_key_id }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.cloudflare_secret_access_key }}"
+          AWS_DEFAULT_REGION: "us-east-1"
           # 2025-01-15: AWS made changes to their clis that broke compatibility
           # for third party services.
           # This works around that.

@@ -48,11 +48,15 @@ function initUserDirectory(d: string) {
 }
 
 let utilityProcess: Electron.UtilityProcess
+// Resolves once the current utility process has reported 'ready'. Anything
+// that talks to the utility process awaits this, so the process can boot in
+// the background while the window loads.
+let utilityReady: Promise<void> | null = null
 let newWindows: number[] = [];
 
-async function createUtilityProcess() {
-  if (utilityProcess) {
-    return;
+function createUtilityProcess(): Promise<void> {
+  if (utilityReady) {
+    return utilityReady;
   }
 
   const args = {
@@ -60,7 +64,7 @@ async function createUtilityProcess() {
     bksConfigSource: JSON.stringify(bksConfig.source),
   }
 
-  utilityProcess = electron.utilityProcess.fork(
+  const proc = electron.utilityProcess.fork(
     path.join(__dirname, 'utility.js'),
     [],
     {
@@ -69,20 +73,24 @@ async function createUtilityProcess() {
       serviceName: 'BeekeeperUtility'
     }
   );
+  utilityProcess = proc;
 
-
-  utilityProcess.on('exit', async (code) => {
+  proc.on('exit', async (code) => {
     // if non zero exit code
     log.log("UTILITY DEAD", code)
+    // a later requestPorts must start a new process rather than wait on this one
+    if (utilityProcess === proc) {
+      utilityProcess = null;
+      utilityReady = null;
+    }
     if (code) {
       log.info('Utility process died, restarting')
-      utilityProcess = null;
       await createUtilityProcess();
       createAndSendPorts(false, true);
     }
   })
 
-  utilityProcess.on("message", (msg: UtilProcMessage) => {
+  proc.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       safeOpenExternal(msg.url)
     } else if (msg.type === 'configChanged') {
@@ -93,14 +101,15 @@ async function createUtilityProcess() {
     }
   })
 
-  utilityProcess.postMessage({ type: 'init' });
-  return new Promise<void>((resolve, _reject) => {
-    utilityProcess.on('message', (msg: UtilProcMessage) => {
+  proc.postMessage({ type: 'init' });
+  utilityReady = new Promise<void>((resolve, _reject) => {
+    proc.on('message', (msg: UtilProcMessage) => {
       if (msg.type === 'ready') {
         resolve()
       }
     })
   })
+  return utilityReady
 }
 
 
@@ -246,7 +255,9 @@ app.on('ready', async () => {
       const settings = await initBasics()
       initializeSecurity(app);
       initializeFileHelpers();
-      await createUtilityProcess()
+      // Not awaited: the utility process takes a while to boot, so it boots
+      // while the window loads. The renderer's requestPorts call waits for it.
+      createUtilityProcess().catch((e) => log.error('Utility process failed to start', e))
 
       await buildWindow(settings)
     }
@@ -275,11 +286,8 @@ function createAndSendPorts(filter: boolean, utilDied = false) {
 
 ipcMain.handle('requestPorts', async () => {
   log.info('Client requested ports');
-  if (!utilityProcess || !utilityProcess.pid) {
-    log.info('NO UTIL PROCESS')
-    utilityProcess = null;
-    await createUtilityProcess();
-  }
+  // starts the utility process if there isn't one, and waits until it is ready
+  await createUtilityProcess();
 
   if (newWindows.length > 0) {
     createAndSendPorts(true);

@@ -166,15 +166,7 @@ export class ClickhouseKnexClient extends Knex.Client {
 
         });
 
-
-        const result = escapeBinding(value);
-
-
-        if (typeof result === 'string') {
-            return result.replace(/\\/g, '\\\\');
-        }
-
-        return result;
+        return escapeBinding(value);
     }
 
     /**
@@ -248,12 +240,16 @@ export class ClickhouseKnexClient extends Knex.Client {
                 }
                 break;
             default:
+                // command() discards the response body. exec() hands back a
+                // stream that nothing here reads, which keeps the socket
+                // checked out of the driver's pool; once all 10 are held,
+                // every statement waits ~10s for the server to drop one.
                 response = await (this.#retryOptions
                     ? retry(
-                          () => connection.exec(queryParams),
+                          () => connection.command(queryParams),
                           this.#retryOptions
                       )
-                    : connection.exec(queryParams));
+                    : connection.command(queryParams));
         }
 
 
