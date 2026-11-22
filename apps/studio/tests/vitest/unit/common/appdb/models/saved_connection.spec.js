@@ -99,6 +99,46 @@ describe("Saved Connection", () => {
       expect(c.defaultDatabase).toBe("postgres")
     })
 
+    it("parses an IPv6 host with no credentials or port", () => {
+      const c = parse("mysql://[2001:db8::1]/shop")
+      expect(c.connectionType).toBe("mysql")
+      expect(c.host).toBe("2001:db8::1")
+      expect(c.port).toBe(3306)
+      expect(c.defaultDatabase).toBe("shop")
+    })
+
+    it("handles an @ in a query parameter when the url has no credentials", () => {
+      const c = parse("postgresql://dbhost.example.com:15432/postgres?application_name=me@work")
+      expect(c.host).toBe("dbhost.example.com")
+      expect(c.port).toBe(15432)
+      expect(c.username).toBeFalsy()
+      expect(c.password).toBeFalsy()
+      expect(c.defaultDatabase).toBe("postgres")
+    })
+
+    it("still reads sslmode when another query parameter contains an @", () => {
+      const c = parse("postgresql://app:secret@dbhost.example.com/postgres?application_name=me@work&sslmode=require")
+      expect(c.host).toBe("dbhost.example.com")
+      expect(c.password).toBe("secret")
+      expect(c.ssl).toBe(true)
+    })
+
+    it("still supports unencoded @, ? and / in a password", () => {
+      const c = parse("mysql://user:p@ss?w/rd@localhost:3307/mydatabase")
+      expect(c.username).toBe("user")
+      expect(c.password).toBe("p@ss?w/rd")
+      expect(c.host).toBe("localhost")
+      expect(c.port).toBe(3307)
+      expect(c.defaultDatabase).toBe("mydatabase")
+    })
+
+    it("decodes percent-encoded credentials exactly once", () => {
+      const c = parse("postgresql://us%40er:p%2540ss@localhost:5433/db")
+      expect(c.username).toBe("us@er")
+      expect(c.password).toBe("p%40ss")
+      expect(c.port).toBe(5433)
+    })
+
     it("decodes a percent-encoded database name", () => {
       const pg = parse("postgresql://postgres:example@localhost:15432/my%20db")
       expect(pg.defaultDatabase).toBe("my db")

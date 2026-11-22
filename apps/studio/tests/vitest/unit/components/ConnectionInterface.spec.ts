@@ -221,11 +221,53 @@ describe('ConnectionInterface', () => {
       expect(wrapper.vm.config.defaultDatabase).toBe('shop')
     })
 
+    it('keeps ssl from a url that only differs from the defaults by sslmode', async () => {
+      await importUrl('postgresql://localhost/?sslmode=require')
+
+      expect(wrapper.vm.config.connectionType).toBe('postgresql')
+      expect(wrapper.vm.config.ssl).toBe(true)
+    })
+
     it('still keeps everything when the url has credentials', async () => {
       await importUrl('postgresql://app:secret@dbhost.example.com:15432/analytics')
 
       expect(wrapper.vm.config.host).toBe('dbhost.example.com')
       expect(wrapper.vm.config.port).toBe(15432)
+      expect(wrapper.vm.config.defaultDatabase).toBe('analytics')
+    })
+  })
+
+  describe('changing the connection type', () => {
+    async function pickType(connectionType: string) {
+      wrapper.vm.config.connectionType = connectionType
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      await wrapper.vm.$nextTick()
+    }
+
+    beforeEach(async () => {
+      // the form starts from a blank connection with no type, as on mount
+      wrapper.vm.config = await AppDbHandlers['appdb/saved/new']({} as any)
+      await wrapper.vm.$nextTick()
+    })
+
+    it('loads the defaults of each type on an untouched form', async () => {
+      await pickType('postgresql')
+      expect(wrapper.vm.config.port).toBe(5432)
+
+      await pickType('mysql')
+      expect(wrapper.vm.config.connectionType).toBe('mysql')
+      expect(wrapper.vm.config.port).toBe(3306)
+    })
+
+    it('keeps a host and database typed before any credentials', async () => {
+      await pickType('postgresql')
+      wrapper.vm.config.host = 'dbhost.example.com'
+      wrapper.vm.config.defaultDatabase = 'analytics'
+
+      await pickType('mysql')
+
+      expect(wrapper.vm.config.connectionType).toBe('mysql')
+      expect(wrapper.vm.config.host).toBe('dbhost.example.com')
       expect(wrapper.vm.config.defaultDatabase).toBe('analytics')
     })
   })

@@ -285,6 +285,21 @@ describe("Postgres UNIT tests (no connection required)", () => {
       expect(v.hasPartitions).toBe(true);
     })
 
+    it("parses the other documented version strings", async () => {
+      expect((await versionOf("PostgreSQL 9.4.26 on x86_64-pc-linux-gnu (Debian 9.4.26-1.pgdg90+1), compiled by gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516, 64-bit")).number).toBe(90426);
+      expect((await versionOf("PostgreSQL 12.3 (Debian 12.3-1.pgdg100+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit")).number).toBe(120300);
+      expect((await versionOf("PostgreSQL 15.4, compiled by Visual C++ build 1914, 64-bit")).number).toBe(150400);
+      const cockroach = await versionOf("CockroachDB CCL v20.1.1 (x86_64-unknown-linux-gnu, built 2020/05/19 14:46:06, go1.13.9)");
+      expect(cockroach.number).toBe(200101);
+      expect(cockroach.hasPartitions).toBe(false);
+    })
+
+    it("does not read a four part version as a newer server", async () => {
+      const v = await versionOf("EnterpriseDB 9.6.2.7 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 4.1.2 20080704 (Red Hat 4.1.2-55), 64-bit");
+      expect(v.number).toBe(90602);
+      expect(v.hasPartitions).toBe(false);
+    })
+
     const preReleases = {
       "PostgreSQL 18beta1 (Debian 18~beta1-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit": 180000,
       "PostgreSQL 17rc1 (Debian 17~rc1-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit": 170000,
