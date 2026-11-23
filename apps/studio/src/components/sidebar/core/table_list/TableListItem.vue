@@ -140,6 +140,7 @@ import _ from 'lodash'
 import { AppEvent } from '../../../../common/AppEvent'
 import { uuidv4 } from '../../../../lib/uuid'
 import TableIcon from '@/components/common/TableIcon.vue'
+import { isTableActiveInTab } from '@/common/utils'
 export default {
   props: ["table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned", "draggable"],
   components: { TableIcon },
@@ -201,11 +202,7 @@ export default {
       return this.selectedSidebarItem === this.id
     },
     active() {
-      const tableSelected = this.activeTab && this.activeTab.table &&
-        this.activeTab.table.name === this.table.name &&
-        this.activeTab.table.schema === this.table.schema
-
-      return tableSelected
+      return isTableActiveInTab(this.table, this.activeTab)
     },
     ...mapGetters(['selectedSidebarItem']),
     ...mapState(['activeTab', 'database', 'config', 'columnsLoading'])
