@@ -19,7 +19,7 @@
 | Quick filters | ✅ | ✅ | ✅ | ✅ |
 | Single Table Export | ✅ | ✅ | ✅ | ✅ |
 | <span title="Organize saved connections and queries into nested folders">Folders for connections & queries</span> | ✅ | ✅ | ✅ | ✅ |
-| 3+ Table filters | ❌ | ✅ | ✅ | ✅ |
+| 3+ Table filters | ✅ | ✅ | ✅ | ✅ |
 | View Rows As JSON | ❌ | ✅ | ✅ | ✅ |
 | AI Integration | ❌ | ✅ | ✅ | ✅ |
 | CSV To Table Import | ❌ | ❌ | ✅ | ✅ |

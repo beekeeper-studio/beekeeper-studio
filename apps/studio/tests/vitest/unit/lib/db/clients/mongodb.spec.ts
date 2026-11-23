@@ -88,3 +88,81 @@ describe("MongoDBClient.executeQuery read-only", () => {
     expect(execute).toHaveBeenCalledTimes(1)
   })
 })
+
+describe("MongoDBClient streaming", () => {
+  function fakeCursor(docs: any[]) {
+    let index = 0
+    return {
+      on: vi.fn(),
+      close: vi.fn(),
+      hasNext: async () => index < docs.length,
+      next: async () => docs[index++],
+      readBufferedDocuments: () => {
+        const rest = docs.slice(index)
+        index = docs.length
+        return rest
+      },
+    }
+  }
+
+  it("returns row values in the same order as the columns", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docs = [
+      { _id: "1", zebra: "Z1", apple: "A1", mango: "M1" },
+      { _id: "2", mango: "M2", zebra: "Z2" },
+    ]
+    vi.spyOn(client as any, "buildSelectTopCursor").mockReturnValue(fakeCursor(docs))
+    vi.spyOn(client, "listTableColumns").mockResolvedValue(
+      ["_id", "apple", "mango", "zebra"].map((columnName) => ({ tableName: "qa_order", columnName, dataType: "string" })) as any
+    )
+
+    const { columns, cursor } = await client.selectTopStream("qa_order", [], [], 100)
+    await cursor.start()
+    const rows = await cursor.read()
+
+    expect(columns.map((c) => c.columnName)).toEqual(["_id", "apple", "mango", "zebra"])
+    expect(rows).toEqual([
+      ["1", "A1", "M1", "Z1"],
+      ["2", undefined, "M2", "Z2"],
+    ])
+  })
+
+  it("falls back to the document fields when the table columns come back empty", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docs = [
+      { _id: "1", name: "a" },
+      { _id: "2", name: "b" },
+    ]
+    vi.spyOn(client as any, "buildSelectTopCursor").mockReturnValue(fakeCursor(docs))
+    vi.spyOn(client, "listTableColumns").mockResolvedValue([])
+
+    const { cursor } = await client.selectTopStream("qa_empty_sample", [], [], 100)
+    await cursor.start()
+    const rows = await cursor.read()
+
+    expect(cursor.columns.map((c) => c.columnName)).toEqual(["_id", "name"])
+    expect(rows).toEqual([
+      ["1", "a"],
+      ["2", "b"],
+    ])
+  })
+
+  it("lines up query results with the columns when documents differ in field order", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docs = [
+      { title: "ACADEMY DINOSAUR", year: 2006 },
+      { year: 2007, title: "ACE GOLDFINGER", rating: "G" },
+    ]
+    client.queryLeaf = { executeCursor: async () => fakeCursor(docs) } as any
+
+    const { cursor } = await client.queryStream("SELECT * FROM films", 100)
+    await cursor.start()
+    const rows = await cursor.read()
+
+    expect(cursor.columns.map((c) => c.columnName)).toEqual(["title", "year", "rating"])
+    expect(rows).toEqual([
+      ["ACADEMY DINOSAUR", 2006, undefined],
+      ["ACE GOLDFINGER", 2007, "G"],
+    ])
+  })
+})

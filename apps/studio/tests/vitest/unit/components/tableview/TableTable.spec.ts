@@ -218,3 +218,65 @@ describe("TableTable.vue — loadPersistence filters by tableId", () => {
     expect(vm.persistenceReader(vm.tableId, "columns")).toBe(false);
   });
 });
+
+describe("TableTable.vue — issue #4843 UX fixes", () => {
+  it("updates tab.unsavedChanges when pending changes exist and clears on reset", () => {
+    const vm = mountTableTable("test");
+    expect(vm.tab.unsavedChanges).toBe(false);
+
+    vm.pendingChanges.inserts.push({ row: {} });
+    expect(vm.pendingChangesCount).toBe(1);
+    (vm as any).$options.watch.pendingChangesCount.call(vm);
+    expect(vm.tab.unsavedChanges).toBe(true);
+
+    vm.resetPendingChanges();
+    expect(vm.tab.unsavedChanges).toBe(false);
+    expect(vm.pendingChangesCount).toBe(0);
+  });
+
+  it("clears stale selectedRowData and notifies sidebar when selected row is marked deleted", () => {
+    const vm = mountTableTable("test");
+    const fakeRow = {
+      delete: vi.fn(),
+      getElement: () => ({ classList: { add: vi.fn(), remove: vi.fn(), contains: (c: string) => c === "deleted" } }),
+      getCell: () => ({ getColumn: () => ({ getDefinition: () => ({ dataType: "int" }) }), getValue: () => 1, getField: () => "id" }),
+    };
+
+    vm.primaryKeys = ["id"];
+    vm.selectedRow = fakeRow;
+    vm.selectedRowData = { id: 1, name: "Alice" };
+    vm.selectedRowIndex = "1";
+    vm.tabulator = { modules: { history: { action: vi.fn() } } };
+
+    const updateSidebarSpy = vi.spyOn(vm, "updateJsonViewerSidebar");
+
+    vm.addRowsToPendingDeletes([fakeRow]);
+
+    expect(vm.selectedRow).toBeNull();
+    expect(vm.selectedRowData).toEqual({});
+    expect(vm.selectedRowIndex).toBeNull();
+    expect(updateSidebarSpy).toHaveBeenCalled();
+  });
+
+  it("updateJsonViewer clears selection and updates sidebar if row is deleted or null", () => {
+    const vm = mountTableTable("test");
+    const fakeDeletedRow = {
+      getElement: () => ({ classList: { contains: (c: string) => c === "deleted" } }),
+    };
+
+    vm.selectedRow = fakeDeletedRow;
+    vm.selectedRowData = { id: 1 };
+    const updateSidebarSpy = vi.spyOn(vm, "updateJsonViewerSidebar");
+
+    vm.updateJsonViewer({
+      range: {
+        getRows: () => [fakeDeletedRow],
+      } as any,
+    });
+
+    expect(vm.selectedRow).toBeNull();
+    expect(vm.selectedRowData).toEqual({});
+    expect(updateSidebarSpy).toHaveBeenCalled();
+  });
+});
+

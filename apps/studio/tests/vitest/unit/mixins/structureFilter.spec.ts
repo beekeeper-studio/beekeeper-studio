@@ -9,7 +9,7 @@ const COLUMNS = [
 ];
 
 /**
- * Stands in for a tabulator instance. The real one can't be built under jest,
+ * Stands in for a tabulator instance. The real one can't be built in a unit test,
  * and everything the mixin touches is on this surface.
  */
 function fakeTabulator(initialColumns: any[] = COLUMNS) {

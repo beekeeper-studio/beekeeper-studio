@@ -56,6 +56,7 @@ export default defineConfig({
           "lib/components/merge-text-editor/define.ts"
         ),
         tree: resolve(__dirname, "lib/components/tree/define.ts"),
+        "tree/helpers": resolve(__dirname, "lib/components/tree/tree.ts"),
         "context-menu": resolve(
           __dirname,
           "lib/components/context-menu/define.ts"

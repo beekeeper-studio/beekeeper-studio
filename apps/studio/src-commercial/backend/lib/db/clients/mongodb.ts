@@ -979,6 +979,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
     const cursorOpts = {
       cursor,
+      columns: columns.map((c) => c.columnName),
       chunkSize
     };
 

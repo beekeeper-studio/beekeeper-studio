@@ -5,13 +5,15 @@ import { CancelableQuery } from "@/lib/db/models";
 import { IDbConnectionPublicServer } from "@/lib/db/serverTypes";
 import { Export } from "@/lib/export";
 import ImportClass from "@/lib/import"
-import { PluginManager } from "@/services/plugin";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import { MessagePortMain } from "electron";
 import { FSWatcher } from "fs";
 import fs from "fs";
 import tmp from 'tmp';
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("handlerState");
 
 export interface TempFile {
   fileObject: tmp.FileResult,
@@ -51,21 +53,23 @@ class State {
   tempFiles: Map<string, TempFile> = new Map();
 }
 
+/** State per renderer session, keyed by `sId` */
 const states = new Map<string, State>();
-
-let pluginManager: PluginManager = null;
-
-export function getPluginManager(): PluginManager {
-  return pluginManager;
-}
-
-export function setPluginManager(manager: PluginManager) {
-  pluginManager = manager;
-}
 
 // I kinda hate this tbh. modifying could be scary
 export function state(id: string): State {
   return states.get(id);
+}
+
+/** Send a message to every renderer session. */
+export function broadcast(message: unknown): void {
+  for (const state of states.values()) {
+    try {
+      state.port.postMessage(message);
+    } catch (e) {
+      log.debug("Failed to broadcast message", e);
+    }
+  }
 }
 
 export function newState(id: string): void {

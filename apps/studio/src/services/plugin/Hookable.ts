@@ -1,41 +1,56 @@
-import type PluginManager from "./PluginManager";
-import { type Module, type ModuleClass, type ModuleHookMap } from "./Module";
+export type AnyHandler = (...args: any[]) => any;
 
-export abstract class Hookable {
-  private modules: Module[] = [];
+type HookableModule<Hooks> = {
+  hooks: { name: keyof Hooks; handler: AnyHandler }[];
+};
 
-  registerModule(this: PluginManager, moduleCls: ModuleClass) {
+type HookableModuleClass<Manager, Hooks> =
+  new (options: { manager: Manager }) => HookableModule<Hooks>;
+
+type Args<Handler> = Handler extends AnyHandler ? Parameters<Handler> : never;
+type Result<Handler> = Handler extends AnyHandler ? ReturnType<Handler> : never;
+
+export abstract class Hookable<Manager, Hooks> {
+  private modules: HookableModule<Hooks>[] = [];
+
+  registerModule(this: Manager & Hookable<Manager, Hooks>, moduleCls: HookableModuleClass<Manager, Hooks>) {
     this.modules.push(new moduleCls({ manager: this }));
   }
 
+  registerModules(this: Manager & Hookable<Manager, Hooks>, moduleClasses: HookableModuleClass<Manager, Hooks>[]) {
+    for (const moduleCls of moduleClasses) {
+      this.registerModule(moduleCls);
+    }
+  }
+
   /** Run all handlers for a side-effect hook (no return value). */
-  protected async callHook<K extends keyof ModuleHookMap>(
+  protected async callHook<K extends keyof Hooks>(
     name: K,
-    ...args: Parameters<ModuleHookMap[K]>
+    ...args: Args<Hooks[K]>
   ) {
     for (const module of this.modules) {
       for (const hook of module.hooks) {
         if (hook.name === name) {
-          await (hook.handler as Function)(...args);
+          await hook.handler(...args);
         }
       }
     }
   }
 
   /** Run all handlers for a waterfall hook, piping data through each handler. */
-  protected async applyHook<K extends keyof ModuleHookMap>(
+  protected async applyHook<K extends keyof Hooks>(
     name: K,
-    ...args: Parameters<ModuleHookMap[K]>
+    ...args: Args<Hooks[K]>
   ) {
     let value = args[0];
     const rest = args.slice(1);
     for (const module of this.modules) {
       for (const hook of module.hooks) {
         if (hook.name === name) {
-          value = await (hook.handler as Function)(value, ...rest);
+          value = await hook.handler(value, ...rest);
         }
       }
     }
-    return value as ReturnType<ModuleHookMap[K]>;
+    return value as Result<Hooks[K]>;
   }
 }

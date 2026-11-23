@@ -1,17 +1,18 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import PluginFileManager from "@/services/plugin/PluginFileManager";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
+import { Manifest } from "@/services/plugin/types";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
 import {
   createFileManager,
   cleanFileManager,
-} from "@tests/vitest/integration/plugins/utils/fileManager";
+} from "@tests/vitest/integration/plugins/utils/extensionFileManager";
 import { MockPluginRepositoryService } from "@tests/vitest/integration/plugins/utils/registry";
-import PluginRegistry from "@/services/plugin/PluginRegistry";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";
-import { ConfigurationModule } from "@commercial/backend/plugin-system/modules";
+import { ConfigurationModule } from "@/services/plugin/modules";
 import { PluginSystemError } from "@/lib/errors";
 import { createConfig } from "@tests/vitest/integration/utils/config";
 import globals from "@/common/globals";
@@ -46,8 +47,8 @@ describe("Plugin Configuration Module", () => {
     },
   ];
 
-  let registry: PluginRegistry;
-  let fileManager: PluginFileManager;
+  let registry: ExtensionRegistry;
+  let fileManager: ExtensionFileManager<Manifest>;
 
   function createPluginManager() {
     return new PluginManager({ fileManager, registry, appVersion: "9.9.9" });
@@ -68,7 +69,10 @@ describe("Plugin Configuration Module", () => {
     const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
     setting.userValue = "{}";
     await setting.save();
-    registry = new PluginRegistry(repositoryService);
+    registry = new ExtensionRegistry({
+      repositoryService,
+      registries: globals.plugins.registries
+    });
     fileManager = createFileManager();
   });
 
