@@ -33,5 +33,5 @@
     "pinst": "^3.0.0",
     "beekeeper-studio": "workspace:*"
   },
-  "packageManager": "pnpm@12.18.0"
+  "packageManager": "pnpm@12.22.0"
 }
