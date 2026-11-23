@@ -1,6 +1,6 @@
-import { ConnectionsResult } from "@/cli/protocol";
-import { CliReply } from "@/cli/replies/CliReply";
-import { table, yesNo } from "@/cli/markdown";
+import { ConnectionsResult } from "../protocol";
+import { CliReply } from "./CliReply";
+import { table, yesNo } from "../markdown";
 
 export class ConnectionsReply extends CliReply<ConnectionsResult> {
   markdown(): string {

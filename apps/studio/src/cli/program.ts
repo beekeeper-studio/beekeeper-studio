@@ -14,17 +14,18 @@ import {
   schemaOption,
   send,
   tableTarget,
-} from "./common";
-import {
-  CliClient,
   ENTITY_TYPE_ALIASES,
   EntityTypeAlias,
+  resolveEntityTypes,
   formatErrorPayload,
-  isConnectError,
+  defaultCliSocketPath,
   notRunningMessage,
-} from "./CliClient";
-import { isCliError } from "./protocol";
-import { defaultCliSocketPath } from "./socketPath";
+} from "./helpers";
+import {
+  CliClient,
+  isConnectError,
+  isCliError,
+} from "@beekeeperstudio/cli-client";
 
 /**
  * The `bks` program. Each command sends its request to the running app and
@@ -105,8 +106,6 @@ Examples:
     program.configureOutput(options.output);
   }
 
-  const writeOut = program.configureOutput().writeOut;
-
   // =========== Commands ============
 
   program
@@ -165,7 +164,7 @@ Examples:
         const reply = await client.entities({
           connection: opts.connection,
           schema: opts.schema,
-          entityTypes: opts.type,
+          entityTypes: resolveEntityTypes(opts.type),
         });
         return opts.format === "md" ? reply.markdown() : reply.raw();
       });

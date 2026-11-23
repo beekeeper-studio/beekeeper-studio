@@ -1,8 +1,7 @@
 import fs from 'fs'
 import net from 'net'
 import { CliRequestEvent } from './auditLog'
-import { CliError, CliRequest, CliResponse, isCliError } from '@/cli/protocol'
-import { isWindowsPipePath } from '@/cli/socketPath'
+import { CliError, CliRequest, CliResponse, isCliError, isWindowsPipePath } from '@beekeeperstudio/cli-client'
 import { EventEmitter } from '@/common/EventEmitter'
 import { serializeBigInt } from '@/services/plugin/utils'
 import rawLog from '@bksLogger';

@@ -1,6 +1,6 @@
-import { QueryResult } from "@/cli/protocol";
-import { CliReply } from "@/cli/replies/CliReply";
-import { connectionLine, table } from "@/cli/markdown";
+import { QueryResult } from "../protocol";
+import { CliReply } from "./CliReply";
+import { connectionLine, table } from "../markdown";
 
 export class QueryReply extends CliReply<QueryResult> {
   markdown(): string {

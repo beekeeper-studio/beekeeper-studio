@@ -3,8 +3,6 @@ import net from 'net'
 import {
   CliError,
   ConnectionsParams,
-  CliErrorPayload,
-  CliEntityType,
   CliResponse,
   CliResultResponse,
   EntitiesParams,
@@ -23,60 +21,15 @@ import { QueryReply } from './replies/QueryReply'
 import { StructureReply } from './replies/StructureReply'
 import { CliReply } from './replies/CliReply'
 
-export const ENTITY_TYPE_ALIASES = {
-  table: 'table',
-  tables: 'table',
-  view: 'view',
-  views: 'view',
-  'materialized-view': 'materialized-view',
-  'materialized-views': 'materialized-view',
-  materialized_view: 'materialized-view',
-  matview: 'materialized-view',
-  matviews: 'materialized-view',
-  routine: 'routine',
-  routines: 'routine',
-  function: 'routine',
-  functions: 'routine',
-  procedure: 'routine',
-  procedures: 'routine',
-} as const satisfies Record<string, CliEntityType>
-
-export type EntityTypeAlias = keyof typeof ENTITY_TYPE_ALIASES
-
 export const CLI_EXIT_OK = 0
 export const CLI_EXIT_ERROR = 1
 export const CLI_EXIT_USAGE = 2
 
 const CONNECT_ERROR_CODES = new Set(['ENOENT', 'ECONNREFUSED', 'EACCES', 'ENOTSOCK', 'EPIPE', 'ECONNRESET'])
 
+/** Whether the socket could not be reached, i.e. the app is not running or not listening there. */
 export function isConnectError(error: any): boolean {
   return !!error && CONNECT_ERROR_CODES.has(error.code)
-}
-
-export function notRunningMessage(socketPath: string): string {
-  return [
-    'Beekeeper Studio is not running (or is still starting up).',
-    `The CLI talks to the running desktop app through ${socketPath}, and nothing is listening there.`,
-    'Start Beekeeper Studio, connect to a database, then run the command again.',
-    'If the app is running, it may use another data directory: run `beekeeper-studio cli` to see',
-    'the socket it listens on and pass it with --socket or the BKS_CLI_SOCKET environment variable.',
-  ].join('\n')
-}
-
-export function formatErrorPayload(error: CliErrorPayload): string {
-  const lines = [`Error (${error.code}): ${error.message}`]
-  if (error.hint) lines.push(error.hint)
-  const connections = (error.details as any)?.connections
-  if (Array.isArray(connections) && connections.length > 0) {
-    lines.push('Open connections:')
-    for (const c of connections) {
-      const flags = [c.cliEnabled ? 'CLI enabled' : 'CLI disabled', c.readOnlyMode ? 'read only' : null]
-        .filter(Boolean)
-        .join(', ')
-      lines.push(`  - ${c.name} [${c.connectionType}] id=${c.id} (${flags})`)
-    }
-  }
-  return lines.join('\n')
 }
 
 export interface CliClientOptions {
@@ -101,14 +54,8 @@ export class CliClient extends EventEmitter<{ error: [unknown] }> {
     return new SchemasReply(response)
   }
 
-  async entities(
-    params: Omit<EntitiesParams, 'entityTypes'> & { entityTypes?: EntityTypeAlias[] }
-  ): Promise<EntitiesReply> {
-    let entityTypes: CliEntityType[] | undefined
-    if (params.entityTypes) {
-      entityTypes = [...new Set(params.entityTypes.map((alias) => ENTITY_TYPE_ALIASES[alias]))]
-    }
-    const response = await this.request('entities', { ...params, entityTypes })
+  async entities(params: EntitiesParams): Promise<EntitiesReply> {
+    const response = await this.request('entities', params)
     return new EntitiesReply(response)
   }
 

@@ -1,4 +1,4 @@
-import { CliResultResponse } from "@/cli/protocol";
+import { CliResultResponse } from "../protocol";
 
 /** A successful reply from the app. Each command's reply adds its own markdown(). */
 export class CliReply<Result> {

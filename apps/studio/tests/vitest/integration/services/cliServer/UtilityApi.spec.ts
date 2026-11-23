@@ -5,7 +5,13 @@ import { SqliteClient } from '@/lib/db/clients/sqlite'
 import { CliOpenConnection, connectionDisplayName, formatQueryResult, uniqueColumnNames } from '@/services/cliServer/commands'
 import { UtilityApi } from '@/services/UtilityApi'
 import { BksConfig } from '@/common/bksConfig/BksConfigProvider'
-import { CLI_MAX_QUERY_ROWS, CLI_METHODS, CliError, CliCreateTabRequest, CliTabSummary } from '@/cli/protocol'
+import {
+  CLI_MAX_QUERY_ROWS,
+  CLI_METHODS,
+  CliError,
+  CliCreateTabRequest,
+  CliTabSummary,
+} from '@beekeeperstudio/cli-client'
 import { serializeBigInt } from '@/services/plugin/utils'
 
 async function createSqliteClient(): Promise<SqliteClient> {

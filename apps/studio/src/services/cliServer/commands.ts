@@ -16,7 +16,7 @@ import {
   CliEntity,
   CliEntityType,
   CliQueryResult,
-} from '@/cli/protocol'
+} from '@beekeeperstudio/cli-client'
 
 /** A live connection the app holds, as the CLI sees it. One per connected renderer. */
 export interface CliOpenConnection {

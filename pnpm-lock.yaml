@@ -183,6 +183,22 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
 
+  apps/cli-client:
+    dependencies:
+      markdown-table:
+        specifier: ^3.0.2
+        version: 3.0.4
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.4
+        version: 22.19.11
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+      vitest:
+        specifier: ~4.1.11
+        version: 4.1.11(@types/node@22.19.11)(happy-dom@21.0.4)(jsdom@27.4.0(@noble/hashes@2.2.0)(supports-color@8.1.1))(vite@8.3.5(@types/node@22.19.11)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2))
+
   apps/studio:
     dependencies:
       '@aws-sdk/client-dynamodb':
@@ -218,6 +234,9 @@ importers:
       '@beekeeperstudio/bks-er-diagram':
         specifier: ^1.1.2
         version: 1.1.2
+      '@beekeeperstudio/cli-client':
+        specifier: workspace:*
+        version: link:../cli-client
       '@beekeeperstudio/knex-snowflake-dialect':
         specifier: ^0.5.1
         version: 0.5.1(knex@2.5.1(better-sqlite3@13.0.3)(mysql2@3.23.1(@types/node@22.19.11))(pg@8.18.0)(supports-color@8.1.1)(tedious@19.2.1(@azure/core-client@1.10.1(supports-color@8.1.1))(supports-color@8.1.1)))(snowflake-sdk@3.4.1(asn1.js@5.4.1)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))
@@ -13430,6 +13449,14 @@ snapshots:
     optionalDependencies:
       vite: 8.1.6(@types/node@22.19.11)(esbuild@0.25.12)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2)
 
+  '@vitest/mocker@4.1.11(vite@8.3.5(@types/node@22.19.11)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2))':
+    dependencies:
+      '@vitest/spy': 4.1.11
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 8.3.5(@types/node@22.19.11)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2)
+
   '@vitest/mocker@4.1.11(vite@8.3.5(@types/node@25.2.0)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@vitest/spy': 4.1.11
@@ -19247,6 +19274,23 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.8.2
 
+  vite@8.3.5(@types/node@22.19.11)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.7
+      postcss: 8.5.32
+      rolldown: 1.2.15
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 22.19.11
+      esbuild: 0.27.2
+      fsevents: 2.3.3
+      jiti: 2.6.1
+      sass: 1.77.8
+      sass-embedded: 1.97.3
+      tsx: 4.21.0
+      yaml: 2.8.2
+
   vite@8.3.5(@types/node@25.2.0)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       lightningcss: 1.33.0
@@ -19285,6 +19329,35 @@ snapshots:
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
       vite: 8.1.6(@types/node@22.19.11)(esbuild@0.25.12)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@types/node': 22.19.11
+      happy-dom: 21.0.4
+      jsdom: 27.4.0(@noble/hashes@2.2.0)(supports-color@8.1.1)
+    transitivePeerDependencies:
+      - msw
+
+  vitest@4.1.11(@types/node@22.19.11)(happy-dom@21.0.4)(jsdom@27.4.0(@noble/hashes@2.2.0)(supports-color@8.1.1))(vite@8.3.5(@types/node@22.19.11)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2)):
+    dependencies:
+      '@vitest/expect': 4.1.11
+      '@vitest/mocker': 4.1.11(vite@8.3.5(@types/node@22.19.11)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2))
+      '@vitest/pretty-format': 4.1.11
+      '@vitest/runner': 4.1.11
+      '@vitest/snapshot': 4.1.11
+      '@vitest/spy': 4.1.11
+      '@vitest/utils': 4.1.11
+      es-module-lexer: 2.1.0
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      obug: 2.1.2
+      pathe: 2.0.3
+      picomatch: 4.0.7
+      std-env: 4.1.0
+      tinybench: 2.9.0
+      tinyexec: 1.2.4
+      tinyglobby: 0.2.17
+      tinyrainbow: 3.1.0
+      vite: 8.3.5(@types/node@22.19.11)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.77.8)(tsx@4.21.0)(yaml@2.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.19.11

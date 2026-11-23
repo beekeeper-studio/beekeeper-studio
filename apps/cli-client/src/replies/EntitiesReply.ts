@@ -1,6 +1,6 @@
-import { EntitiesResult } from "@/cli/protocol";
-import { CliReply } from "@/cli/replies/CliReply";
-import { connectionLine, table, warningsBlock } from "@/cli/markdown";
+import { EntitiesResult } from "../protocol";
+import { CliReply } from "./CliReply";
+import { connectionLine, table, warningsBlock } from "../markdown";
 
 export class EntitiesReply extends CliReply<EntitiesResult> {
   markdown(): string {

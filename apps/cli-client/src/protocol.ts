@@ -190,6 +190,7 @@ export class CliError extends Error {
   }
 }
 
+/** Whether `value` is a CliError. */
 export function isCliError(value: unknown): value is CliError {
   return value instanceof CliError || (value as any)?.name === 'CliError'
 }

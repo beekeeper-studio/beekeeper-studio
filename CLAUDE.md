@@ -11,6 +11,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 ### Monorepo Structure
 - **`apps/studio/`** - Main Electron application
 - **`apps/ui-kit/`** - Reusable UI components library (`@beekeeperstudio/ui-kit`), a `workspace:*` dependency of studio
+- **`apps/cli-client/`** - Client for the CLI socket (`@beekeeperstudio/cli-client`): `CliClient`, the wire protocol, socket path and reply formatting. Ships as TypeScript source and must not import electron or app code. The `bks` commands (commander) live in studio's `src/cli/`, with the entrypoint at `src-commercial/entrypoints/cli.ts`
 
 ### Technology Stack
 - **Frontend**: Vue.js 2.7, TypeScript, Vuex for state management

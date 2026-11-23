@@ -1,6 +1,6 @@
-import { SchemasResult } from "@/cli/protocol";
-import { CliReply } from "@/cli/replies/CliReply";
-import { connectionLine } from "@/cli/markdown";
+import { SchemasResult } from "../protocol";
+import { CliReply } from "./CliReply";
+import { connectionLine } from "../markdown";
 
 export class SchemasReply extends CliReply<SchemasResult> {
   markdown(): string {

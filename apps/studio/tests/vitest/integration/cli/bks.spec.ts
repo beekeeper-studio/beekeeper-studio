@@ -17,7 +17,7 @@ import { CliOpenConnection } from "@/services/cliServer/commands";
 import { UtilityApi } from "@/services/UtilityApi";
 import { createProgram } from "@/cli/program";
 import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
-import { CliError, CliCreateTabRequest, CliTabSummary } from "@/cli/protocol";
+import { CliError, CliCreateTabRequest, CliTabSummary } from "@beekeeperstudio/cli-client";
 
 const socketPath =
   process.platform === "win32"

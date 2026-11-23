@@ -1,4 +1,4 @@
-import { CliError, CliErrorCode } from '@/cli/protocol'
+import { CliError, CliErrorCode } from '@beekeeperstudio/cli-client'
 
 export interface RendererResponse {
   requestId: string

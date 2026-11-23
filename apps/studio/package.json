@@ -46,6 +46,7 @@
     "@babel/plugin-transform-class-static-block": "^7.26.0",
     "@beekeeperstudio/bks-ai-shell": "^3.4.1",
     "@beekeeperstudio/bks-er-diagram": "^1.1.2",
+    "@beekeeperstudio/cli-client": "workspace:*",
     "@beekeeperstudio/knex-snowflake-dialect": "^0.5.1",
     "@beekeeperstudio/plugin": "^1.8.0",
     "@beekeeperstudio/ui-kit": "workspace:*",

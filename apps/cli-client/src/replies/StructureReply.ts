@@ -1,6 +1,6 @@
-import { StructureResult } from "@/cli/protocol";
-import { CliReply } from "@/cli/replies/CliReply";
-import { connectionLine, table, warningsBlock, yesNo } from "@/cli/markdown";
+import { StructureResult } from "../protocol";
+import { CliReply } from "./CliReply";
+import { connectionLine, table, warningsBlock, yesNo } from "../markdown";
 
 export class StructureReply extends CliReply<StructureResult> {
   markdown(): string {

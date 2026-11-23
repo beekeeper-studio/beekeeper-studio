@@ -113,18 +113,17 @@ const utilityArgs = {
 
 // The bks command. It runs under plain node (or the app binary with
 // ELECTRON_RUN_AS_NODE), so it is a self-contained bundle with no externals,
-// and it must never pull in electron or the rest of the app: src/cli talks to
-// the running app over its socket and nothing else.
+// and it must never pull in electron or the rest of the app: src/cli and cli-client
+// talks to the running app over its socket and nothing else.
 function cliBoundaryPlugin() {
   return {
     name: 'cli-boundary-plugin',
     setup(build) {
       build.onResolve({ filter: /^(electron|@\/|@commercial\/|@shared\/|@bksLogger|assets\/)/ }, (args) => {
-        if (args.path.startsWith('@/cli/')) return null
         return {
           errors: [{
             text: `dist/cli.js must not import "${args.path}" (from ${path.relative('.', args.importer)}). ` +
-              'src/cli has to stay free of electron and app code.',
+              'The CLI has to stay free of electron and app code.',
           }],
         }
       })
@@ -134,7 +133,7 @@ function cliBoundaryPlugin() {
 
 const cliArgs = {
   platform: 'node',
-  entryPoints: ['src/cli/index.ts'],
+  entryPoints: ['src-commercial/entrypoints/cli.ts'],
   outfile: 'dist/cli.js',
   bundle: true,
   external: [],
