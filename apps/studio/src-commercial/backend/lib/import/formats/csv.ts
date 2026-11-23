@@ -60,7 +60,7 @@ export default class extends Import {
             }
           }
 
-          const importSQL = await this.connection.getImportSQL(importData, this.table.name, this.table.schema || null, updatedImportScriptOptions.storeValues.runAsUpsert);
+          const importSQL = await this.connection.getImportSQL(importData, this.table.name, this.table.schema || null, updatedImportScriptOptions.storeValues.runAsUpsert, updatedImportScriptOptions);
           await this.connection.importLineReadCommand(this.table, importSQL, updatedImportScriptOptions)
         } catch (err) {
           this.error = err;

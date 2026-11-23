@@ -467,6 +467,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return null
   }
 
+  async importCreateTableCommand (_table: TableOrView, createTableSql: string, _importOptions?: ImportFuncOptions): Promise<any> {
+    return await this.rawExecuteQuery(createTableSql, {})
+  }
+
   async importTruncateCommand (_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     return null
   }
@@ -509,7 +513,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         importScriptOptions.clientExtras = await this.importStepZero(table, { connection })
         await this.importBeginCommand(table, importScriptOptions)
         if (storeValues.createNewTable) {
-          await this.rawExecuteQuery(createTableSql, {}) as RawResultType[]
+          await this.importCreateTableCommand(table, createTableSql, importScriptOptions)
         }
         if (storeValues.truncateTable) {
           await this.importTruncateCommand(table, importScriptOptions)
@@ -534,7 +538,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     })
   }
 
-  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false, _importOptions?: ImportFuncOptions): Promise<string | string[]> {
     const queries = []
     const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
     const primaryKeys = primaryKeysPromise.map(v => v.columnName)
