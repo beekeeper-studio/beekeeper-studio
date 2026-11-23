@@ -63,6 +63,25 @@ describe("SqlServerForm host with a port", () => {
     wrapper.destroy();
   });
 
+  it("splits an SSMS host,port straight away on paste, keeping the user", async () => {
+    const { wrapper, config } = mountForm();
+    config.username = "sa";
+
+    const host = wrapper
+      .findAll(".host-port-user-password input")
+      .filter((i) => (i.element as HTMLInputElement).value === "localhost")
+      .at(0);
+    const event = new Event("paste", { bubbles: true, cancelable: true });
+    (event as any).clipboardData = { getData: () => "tcp:db.example.com,1444" };
+    host.element.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(config.host).toBe("db.example.com");
+    expect(config.port).toBe(1444);
+    expect(config.username).toBe("sa");
+    wrapper.destroy();
+  });
+
   it("leaves a host without a port alone", async () => {
     const { wrapper, config } = mountForm();
 

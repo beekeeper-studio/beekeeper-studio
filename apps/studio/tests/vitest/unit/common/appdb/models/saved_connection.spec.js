@@ -180,3 +180,80 @@ describe("Saved Connection", () => {
 
   })
 })
+
+// parse() applies what the text states and nothing else. The form relies on this when a
+// URL or host:port is pasted over a connection that already has credentials filled in.
+describe("SavedConnection.parse keeps fields the text does not mention", () => {
+  function existing() {
+    const c = new SavedConnection()
+    c.connectionType = "postgresql"
+    c.host = "old.example.com"
+    c.port = 6543
+    c.username = "existing_user"
+    c.password = "existing_password"
+    c.defaultDatabase = "existing_db"
+    return c
+  }
+
+  const keepsCredentials = [
+    "db.example.com",
+    "db.example.com:5433",
+    "10.0.0.4:3307",
+    "[::1]:5432",
+    "postgres://db.example.com",
+    "postgres://db.example.com:5433",
+    "postgres://db.example.com:5433/app",
+    "postgres://db.example.com/app?sslmode=require",
+  ]
+
+  keepsCredentials.forEach((text) => {
+    it(`keeps the user and password for '${text}'`, () => {
+      const c = existing()
+      expect(c.parse(text)).toBe(true)
+      expect(c.username).toBe("existing_user")
+      expect(c.password).toBe("existing_password")
+    })
+  })
+
+  it("replaces only the host for a bare host", () => {
+    const c = existing()
+    c.parse("db.example.com")
+    expect(c.host).toBe("db.example.com")
+    expect(c.port).toBe(6543)
+    expect(c.defaultDatabase).toBe("existing_db")
+  })
+
+  it("replaces the host and port for host:port, keeping the database", () => {
+    const c = existing()
+    c.parse("db.example.com:5433")
+    expect(c.host).toBe("db.example.com")
+    expect(c.port).toBe(5433)
+    expect(c.defaultDatabase).toBe("existing_db")
+    expect(c.connectionType).toBe("postgresql")
+  })
+
+  it("replaces the user and keeps the password when only a user is given", () => {
+    const c = existing()
+    c.parse("postgres://bob@db.example.com")
+    expect(c.username).toBe("bob")
+    expect(c.password).toBe("existing_password")
+  })
+
+  it("replaces both when the text has both", () => {
+    const c = existing()
+    c.parse("postgres://bob:pw@db.example.com:5433/app")
+    expect(c.username).toBe("bob")
+    expect(c.password).toBe("pw")
+    expect(c.host).toBe("db.example.com")
+    expect(c.port).toBe(5433)
+    expect(c.defaultDatabase).toBe("app")
+  })
+
+  it("leaves everything alone when the text cannot be parsed", () => {
+    const c = existing()
+    expect(c.parse("myserver\\SQL2019")).toBe(false)
+    expect(c.host).toBe("old.example.com")
+    expect(c.username).toBe("existing_user")
+    expect(c.password).toBe("existing_password")
+  })
+})

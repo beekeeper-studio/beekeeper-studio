@@ -57,6 +57,7 @@
           :value="config.host"
           @input="val => config.host = val"
           @change.native="$emit('host-change')"
+          @paste.native="onHostPaste"
           :disabled="disabled"
         />
       </div>
@@ -118,6 +119,9 @@ import { findClient } from '@/lib/db/clients'
 import MaskedInput from '@/components/MaskedInput.vue'
 import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
+import { mapGetters } from 'vuex'
+import { looksLikeConnectionPaste, HOST_PASTE_FIELDS } from '@/common/hostPaste'
+import { sqlServerHostFieldSplit } from '@/lib/db/clients/sqlserverHost'
 
 export default {
   props: {
@@ -157,6 +161,7 @@ export default {
     CommonSsl
   },
   computed: {
+    ...mapGetters('settings', ['privacyMode']),
     supportsSocketPath() {
       return findClient(this.config.connectionType).supportsSocketPath
     },
@@ -168,14 +173,46 @@ export default {
     }
   },
   methods: {
-    async onPaste(event) {
-      const data = event.clipboardData.getData('text')
-      try {
-        await this.$util.send('appdb/saved/parseUrl', { url: data });
-        event.preventDefault();
-      } catch {
-        return;
+    // Pasting a connection URL or `host:port` into Host fills the fields it names. A plain
+    // hostname is left to paste as ordinary text. The decision has to be synchronous: once
+    // the handler awaits, the paste can no longer be cancelled.
+    onHostPaste(event) {
+      if (this.disabled || this.privacyMode) return
+      const text = (event.clipboardData?.getData('text') || '').trim()
+
+      // SSMS writes the port after a comma, which the URL parser reads as a second host.
+      if (this.config.connectionType === 'sqlserver') {
+        const split = sqlServerHostFieldSplit(text)
+        if (split) {
+          event.preventDefault()
+          this.config.host = split.host
+          this.config.port = split.port
+          return
+        }
       }
+
+      if (!looksLikeConnectionPaste(text)) return
+      event.preventDefault()
+      this.applyPastedConnection(text)
+    },
+    async applyPastedConnection(text) {
+      let fields = null
+      try {
+        fields = await this.$util.send('appdb/saved/parseUrlFields', { url: text })
+      } catch {
+        fields = null
+      }
+      // Nothing usable came back, and the paste is already cancelled: keep the text.
+      if (!fields || !fields.host) {
+        this.config.host = text
+        return
+      }
+      // Only what the text states. A paste with no user in it keeps the User field.
+      for (const key of HOST_PASTE_FIELDS) {
+        if (fields[key] !== undefined && fields[key] !== null) this.config[key] = fields[key]
+      }
+      if (fields.ssl) this.config.ssl = true
+      if (fields.trustServerCertificate) this.config.trustServerCertificate = true
     },
   }
 }

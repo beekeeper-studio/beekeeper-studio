@@ -1,3 +1,4 @@
+import { parseConnectionUrl } from "@/common/connectionUrl";
 import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
@@ -230,6 +231,10 @@ export const AppDbHandlers = {
       throw `Unable to parse ${url}`;
     }
     return defaultTransform(conn, SavedConnection);
+  },
+  // Only the fields the text states, for filling a form without touching the rest of it.
+  'appdb/saved/parseUrlFields': async function({ url }: { url: string }) {
+    return parseConnectionUrl(url);
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
     let existing = await UserSetting.findOneBy({ key });

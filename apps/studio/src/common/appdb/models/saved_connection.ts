@@ -2,7 +2,7 @@ import { IsNotEmpty, IsString } from "class-validator"
 import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
-import { ConnectionString } from 'connection-string'
+import { parseConnectionUrl } from '@/common/connectionUrl'
 import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer, SnowflakeOptionsTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
@@ -392,93 +392,25 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     return this._sshMode
   }
 
-  private smellsLikeUrl(url: string): boolean {
-    return url.includes("://")
-  }
-
+  // Applies what the URL states and leaves every other field as it was. In particular a URL
+  // (or bare `host:port`) with no user in it keeps the existing user and password.
   parse(url: string): boolean {
     try {
-      const endings = [
-        { connectionType: 'sqlite', options: ['.db', '.sqlite', '.sqlite3']},
-        { connectionType: 'duckdb', options: ['.duckdb', '.ddb']}
-      ]
-      // const goodEndings = ['.db', '.sqlite', '.sqlite3']
-      // const duckDbEndings = ['.duckdb', '.ddb']
-      if (!this.smellsLikeUrl(url)) {
-        // it's a sqlite file
-        for (let i = 0; i < endings.length; i++) {
-          const { connectionType, options } = endings[i];
-          if(options.find((e) => url.endsWith(e))) {
-            this.connectionType = connectionType as any
-            this.defaultDatabase = url
-            return true;
-          }
-        }
+      const fields = parseConnectionUrl(url)
+
+      this.connectionType = fields.connectionType as ConnectionType || this.connectionType || 'postgresql'
+
+      if (fields.cockroach) {
+        this.options = { ...this.options, ...fields.cockroach }
       }
+      if (fields.ssl) this.ssl = true
+      if (fields.trustServerCertificate) this.trustServerCertificate = true
 
-      let cleanedUrl = url
-      let extractedUser = undefined
-      let extractedPassword = undefined
-
-      if (url.includes('@')) {
-        const lastAtIndex = url.lastIndexOf('@')
-        let firstDoubleSlash = url.indexOf('//') + 2
-        if (firstDoubleSlash === 1) firstDoubleSlash = 0
-        const credentials = url.substring(firstDoubleSlash, lastAtIndex)
-
-        const [user, ...passwordParts] = credentials.split(':')
-        extractedUser = decodeURIComponent(user)
-        extractedPassword = decodeURIComponent(passwordParts.join(':'))
-
-        cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
-      }
-
-      const encodedUrl = encodeURI(cleanedUrl)
-      const parsed = new ConnectionString(encodedUrl)
-      const parsedUncoded = new ConnectionString(url)
-
-      this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
-      if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
-        this.connectionType = 'redshift'
-      }
-
-      const cockroachOptions = parsedUncoded.params?.options || ''
-      const hasCockroachJwtOption =
-        /--crdb:jwt_auth_enabled=true/.test(cockroachOptions) ||
-        /--crdb(?::|%3A)jwt_auth_enabled(?:=|%3D)true/i.test(url)
-      const hasCockroachClusterOption =
-        /--cluster=([A-Za-z0-9\-_]+)/.test(cockroachOptions) ||
-        /--cluster(?:=|%3D)[A-Za-z0-9\-_]+/i.test(url)
-      const hasCockroachProtocol =
-        ['cockroach', 'cockroachdb'].includes(parsed.protocol as string)
-
-      if ((parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) || hasCockroachJwtOption || hasCockroachClusterOption || hasCockroachProtocol) {
-        this.connectionType = 'cockroachdb'
-        const clusterMatch = cockroachOptions.match(/--cluster=([A-Za-z0-9\-_]+)/)
-        this.options = {
-          ...this.options,
-          cluster: clusterMatch ? clusterMatch[1] : undefined,
-          jwtAuthEnabled: hasCockroachJwtOption,
-        }
-      }
-
-      if (parsed.params?.sslmode && parsed.params.sslmode !== 'disable') {
-        this.ssl = true
-      }
-
-      if (cleanedUrl.startsWith('https://')) {
-        this.ssl = true
-      }
-
-      if (parsed.params?.TrustServerCertificate && parsed.params.TrustServerCertificate === 'true') {
-        this.trustServerCertificate = true
-      }
-
-      this.host = parsed.hostname || this.host
-      this.port = parsed.port || this.port
-      this.username = extractedUser ?? parsed.user
-      this.password = extractedPassword ?? parsed.password
-      this.defaultDatabase = parsed.path?.join('/') ?? this.defaultDatabase
+      if (fields.host !== undefined) this.host = fields.host
+      if (fields.port !== undefined) this.port = fields.port
+      if (fields.username !== undefined) this.username = fields.username
+      if (fields.password !== undefined) this.password = fields.password
+      if (fields.defaultDatabase !== undefined) this.defaultDatabase = fields.defaultDatabase
       return true
     } catch (ex) {
       log.error('unable to parse connection string, assuming sqlite file', ex)
