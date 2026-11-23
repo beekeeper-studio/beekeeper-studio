@@ -1,6 +1,7 @@
 // Pure helpers for normalising what a user types into the SQL Server Host field.
-// Extracted so the exact values handed to the driver can be unit-tested without a live
-// server -- see tests/vitest/unit, and sqlserverWinAuth.ts for the same pattern.
+// Lives in shared because both sides use it: the connection form (to move a typed port into
+// the Port field) and the SQL Server connector (to build the driver config). Pure, so the
+// exact values handed to the driver can be unit-tested without a live server.
 //
 // mssql splits `host\instance` itself and then throws the port away
 // (lib/tedious/connection-pool.js), which forces a SQL Browser lookup. Parsing here keeps

@@ -145,7 +145,7 @@
   import CommonAdvanced from './CommonAdvanced.vue'
   import FilePicker from '@/components/common/form/FilePicker.vue'
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
-  import { sqlServerHostFieldSplit } from '@/lib/db/clients/sqlserverHost'
+  import { sqlServerHostFieldSplit } from '@shared/lib/dialects/sqlserverHost'
   import { AppEvent } from '@/common/AppEvent'
   import _ from 'lodash'
   import { mapState, mapGetters } from 'vuex'

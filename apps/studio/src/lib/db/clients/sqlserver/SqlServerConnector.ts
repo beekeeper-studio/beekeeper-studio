@@ -8,7 +8,7 @@ import logRaw from "@bksLogger";
 import { AzureAuthService, AzureCliTokenCredential } from "../../authentication/azure";
 import { getEntraOptions } from "../utils";
 import { buildWindowsAuthConnStr } from "../sqlserverWinAuth";
-import { parseSqlServerHost, SQL_SERVER_LOCALDB_UNSUPPORTED } from "../sqlserverHost";
+import { parseSqlServerHost, SQL_SERVER_LOCALDB_UNSUPPORTED } from "@shared/lib/dialects/sqlserverHost";
 import { bindDriver } from "../sqlserverDriver";
 
 const log = logRaw.scope("SqlServerConnector");

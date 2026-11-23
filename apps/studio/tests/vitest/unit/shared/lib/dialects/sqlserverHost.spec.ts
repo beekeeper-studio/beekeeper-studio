@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSqlServerHost, sqlServerHostFieldSplit } from '@/lib/db/clients/sqlserverHost'
+import { parseSqlServerHost, sqlServerHostFieldSplit } from '@shared/lib/dialects/sqlserverHost'
 
 // Verifies how the SQL Server Host field is normalised before it reaches the driver, without
 // needing a live server. The integration suite (sqlserver.spec.ts) proves the end-to-end

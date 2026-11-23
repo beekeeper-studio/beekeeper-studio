@@ -121,7 +121,7 @@ import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
 import { mapGetters } from 'vuex'
 import { looksLikeConnectionPaste, HOST_PASTE_FIELDS } from '@/common/hostPaste'
-import { sqlServerHostFieldSplit } from '@/lib/db/clients/sqlserverHost'
+import { sqlServerHostFieldSplit } from '@shared/lib/dialects/sqlserverHost'
 
 export default {
   props: {
