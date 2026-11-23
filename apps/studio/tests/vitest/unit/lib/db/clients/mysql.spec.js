@@ -191,5 +191,62 @@ describe("MysqlChangeBuilder", () => {
       expect(result).not.toContain('COLLATE')
     })
   })
-})
 
+  describe("addColumn() DEFAULT values (issue #5059)", () => {
+    const column = (dataType, defaultValue) => ({
+      columnName: 'my_column', dataType, nullable: true, defaultValue
+    })
+
+    it("quotes an unquoted ENUM default", () => {
+      expect(builder.addColumn(column("enum('a', 'b', 'c')", 'a')))
+        .toEqual("ADD COLUMN `my_column` enum('a', 'b', 'c') DEFAULT 'a' NULL")
+    })
+
+    it("quotes an unquoted VARCHAR default", () => {
+      expect(builder.addColumn(column('VARCHAR(255)', 'a')))
+        .toEqual("ADD COLUMN `my_column` VARCHAR(255) DEFAULT 'a' NULL")
+    })
+
+    it("escapes an apostrophe in an unquoted default", () => {
+      expect(builder.addColumn(column('VARCHAR(255)', "it's")))
+        .toEqual("ADD COLUMN `my_column` VARCHAR(255) DEFAULT 'it''s' NULL")
+    })
+
+    it("keeps spaces and semicolons inside a quoted default", () => {
+      expect(builder.addColumn(column('VARCHAR(255)', 'hello world; bye')))
+        .toEqual("ADD COLUMN `my_column` VARCHAR(255) DEFAULT 'hello world; bye' NULL")
+    })
+
+    it.each([
+      ["'a'"],
+      ["'it''s'"],
+      ['"a"'],
+      ["b'101'"],
+      ["x'ff'"],
+      ["_utf8mb4'a'"],
+      ['0x1F'],
+      ['NULL'],
+      ['null'],
+      ['TRUE'],
+      ['FALSE'],
+      ['0'],
+      ['-1.5'],
+      ['1e3'],
+      ['CURRENT_TIMESTAMP'],
+      ['current_timestamp'],
+      ['CURRENT_TIMESTAMP(6)'],
+      ['NOW()'],
+      ['CURRENT_DATE'],
+      ['(UUID())'],
+      ["(CONCAT('a', 'b'))"],
+    ])("keeps the default %s as it is", (defaultValue) => {
+      expect(builder.addColumn(column('VARCHAR(255)', defaultValue)))
+        .toEqual("ADD COLUMN `my_column` VARCHAR(255) DEFAULT " + defaultValue + " NULL")
+    })
+
+    it("leaves out DEFAULT when there is no default", () => {
+      expect(builder.addColumn(column('VARCHAR(255)', null)))
+        .toEqual("ADD COLUMN `my_column` VARCHAR(255) NULL")
+    })
+  })
+})

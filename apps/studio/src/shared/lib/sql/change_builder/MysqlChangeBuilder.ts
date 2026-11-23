@@ -32,6 +32,45 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     return this.escapeString(defaultValue.toString(), true);
   }
 
+  // Default value typed by the user for a new column. SQL keywords, numbers,
+  // function calls, (expressions) and values the user already quoted are kept
+  // as they are. Anything else is a plain string, eg the value of an ENUM, so
+  // it is quoted and escaped.
+  newColumnDefault(defaultValue: string): string {
+    const value = defaultValue.toString().trim()
+    const keepAsIs = [
+      /^(null|true|false|current_timestamp|current_date|current_time|localtime|localtimestamp)$/i,
+      /^[+-]?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$/i,
+      /^0x[0-9a-f]+$/i,
+      /^0b[01]+$/i,
+      // 'string', "string", b'0101', x'ff', N'string', _utf8mb4'string'
+      /^([bnx]|_[a-z0-9]+)?['"]/i,
+      // (expression), now(), current_timestamp(6), uuid()
+      /^\(/,
+      /^[a-z_][a-z0-9_]*\s*\(.*\)$/i,
+    ]
+    if (keepAsIs.some((regex) => regex.test(value))) {
+      return this.wrapLiteral(value)
+    }
+    return this.escapeString(value, true)
+  }
+
+  addColumn(item: SchemaItem): string {
+    if (!item.columnName || !item.dataType) {
+      throw new Error("can't add a column without name or data type")
+    }
+
+    return [
+      'ADD COLUMN',
+      this.wrapIdentifier(item.columnName),
+      this.wrapLiteral(item.dataType),
+      item.defaultValue ? `DEFAULT ${this.newColumnDefault(item.defaultValue)}` : null,
+      item.nullable ? 'NULL' : 'NOT NULL',
+      item.extra,
+      item.comment ? `COMMENT ${this.escapeString(item.comment, true)}` : null
+    ].filter((i) => !!i).join(" ")
+  }
+
   singleIndex(spec: CreateIndexSpec): string {
     const unique = spec.unique ? 'UNIQUE' : ''
     const name = spec.name ? this.dialectData.wrapIdentifier(spec.name) : ''

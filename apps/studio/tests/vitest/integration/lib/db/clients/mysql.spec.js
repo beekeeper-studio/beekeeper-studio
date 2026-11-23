@@ -2331,6 +2331,34 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
         }
         await expect(insertDuplicate()).rejects.toThrow()
       })
+
+      // Regression test for #5059 -> string defaults on new columns were not quoted
+      it("Should add columns with string, numeric and expression defaults", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`CREATE TABLE column_alter_test (id INT PRIMARY KEY)`)
+
+        await util.connection.alterTable({
+          table: "column_alter_test",
+          adds: [
+            { columnName: "status", dataType: "enum('a', 'b', 'c')", nullable: true, defaultValue: "a" },
+            { columnName: "label", dataType: "varchar(255)", nullable: true, defaultValue: "it's" },
+            { columnName: "quoted", dataType: "varchar(255)", nullable: true, defaultValue: "'already quoted'" },
+            { columnName: "amount", dataType: "int", nullable: true, defaultValue: "5" },
+            { columnName: "note", dataType: "varchar(255)", nullable: true, defaultValue: "NULL" },
+            { columnName: "created_at", dataType: "timestamp", nullable: true, defaultValue: "CURRENT_TIMESTAMP" },
+          ],
+        })
+
+        await util.knex("column_alter_test").insert({ id: 1 })
+        const row = await util.knex("column_alter_test").where({ id: 1 }).first()
+        expect(row.status).toBe("a")
+        expect(row.label).toBe("it's")
+        expect(row.quoted).toBe("already quoted")
+        expect(row.amount).toBe(5)
+        expect(row.note).toBeNull()
+        expect(row.created_at).toBeTruthy()
+      })
     })
 
     describe("Param tests", () => {
