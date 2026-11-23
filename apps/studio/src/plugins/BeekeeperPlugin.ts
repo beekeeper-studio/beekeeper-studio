@@ -221,6 +221,25 @@ export const BeekeeperPlugin = {
       });
     })
   },
+  async promptConnectionPassword(connectionName?: string, message?: string): Promise<{ password?: string; cancelled: boolean }> {
+    return new Promise((resolve) => {
+      const title = "Password / Token";
+      const description = message || (connectionName
+        ? `Authentication failed for ${connectionName}. Enter a new password or token to reconnect.`
+        : 'Authentication failed. Enter a new password or token to reconnect.');
+
+      Vue.prototype.$modal.show('input-ephemeral-modal', {
+        title,
+        modalTitle: 'Update Password',
+        description,
+        inputType: 'password',
+        placeholder: 'Enter new password or token',
+        buttonLabel: 'Reconnect',
+        onSubmit: (password: string) => resolve({ password, cancelled: false }),
+        onCancel: () => resolve({ cancelled: true }),
+      });
+    });
+  },
   pluralize(word: string, count: number, inclusive?: boolean): string {
     return pluralize(word, count, inclusive);
   },

@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
+import Noty from 'noty'
 
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
@@ -36,6 +37,7 @@ import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
 import { recordConnectionFeatureUse } from '@/lib/paidFeatures'
 import { SidebarModule, State as SidebarState } from './modules/SidebarModule'
+import { isAuthError } from '@/common/utils'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
@@ -713,6 +715,14 @@ const store = new Vuex.Store<State>({
         return true;
       } catch (err) {
         noty?.close()
+
+        if (isAuthError(err)) {
+          const prompted = await context.dispatch('promptUpdatePasswordAndReconnect');
+          if (prompted) {
+            return true;
+          }
+        }
+
         if (!options?.silent) {
           Vue.prototype.$noty.error('Reconnection failed. Would you like to try again?', {
             timeout: false,
@@ -721,6 +731,10 @@ const store = new Vuex.Store<State>({
             queue: 'reconnecting',
             buttons: [
               Noty.button('Close', 'btn btn-flat', (noty) => noty.close()),
+              Noty.button('Update Password', 'btn btn-secondary', async (noty) => {
+                noty.close()
+                await context.dispatch('promptUpdatePasswordAndReconnect')
+              }),
               Noty.button('Reconnect', 'btn btn-primary', (noty) => {
                 noty.close()
                 context.dispatch('reconnect')
@@ -729,6 +743,40 @@ const store = new Vuex.Store<State>({
           })
         }
         throw err
+      }
+    },
+    async promptUpdatePasswordAndReconnect(context): Promise<boolean> {
+      const config = context.state.usedConfig;
+      const connectionName = config ? BeekeeperPlugin.buildConnectionName(config) : undefined;
+      const { password, cancelled } = await BeekeeperPlugin.promptConnectionPassword(connectionName);
+      if (cancelled || !password) {
+        return false;
+      }
+
+      await context.dispatch('updateConnectionPassword', password);
+
+      try {
+        return await context.dispatch('reconnect');
+      } catch (e) {
+        log.error('Reconnection attempt with new password failed', e);
+        return false;
+      }
+    },
+    async updateConnectionPassword(context, password: string) {
+      await Vue.prototype.$util.send('conn/updatePassword', { password });
+
+      const config = context.state.usedConfig;
+      if (config) {
+        config.password = password;
+        if (config.id) {
+          const saved: IConnection = context.state['data/connections']?.items?.find((c: IConnection) => c.id === config.id);
+          if (saved) {
+            await context.dispatch('data/connections/save', {
+              ...saved,
+              password,
+            });
+          }
+        }
       }
     },
     async disconnect(context) {

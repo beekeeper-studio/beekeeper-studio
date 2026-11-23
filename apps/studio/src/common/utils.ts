@@ -429,3 +429,28 @@ export function isNumericDataType (dataType) {
 
   return numericStarts.some(t => base.startsWith(t))
 }
+
+export function isAuthError(err: any): boolean {
+  if (!err) return false
+  const msg = (err.message || String(err)).toLowerCase()
+  const authPatterns = [
+    'password authentication failed',
+    'authentication failed',
+    'access denied',
+    'login failed',
+    'ora-01017',
+    '28p01',
+    '28000',
+    'token has expired',
+    'token expired',
+    'jwt expired',
+    'expired token',
+    'invalid password',
+    'invalid credentials',
+    'incorrect username or password',
+    'auth failed',
+    'pam authentication failed',
+    'oauth authentication failed',
+  ]
+  return authPatterns.some(pattern => msg.includes(pattern))
+}
