@@ -275,6 +275,13 @@ $cell-padding:           $gutter-w;
         flex-grow: 1;
       }
     }
+
+    &.text-right {
+      .cell-link-wrapper {
+        justify-content: flex-end;
+        text-align: right;
+      }
+    }
   }
 
   &.copied {
