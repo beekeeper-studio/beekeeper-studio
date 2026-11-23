@@ -16,7 +16,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 - **Frontend**: Vue.js 2.7, TypeScript, Vuex for state management
 - **Desktop**: Electron 44.9.1
 - **Build**: ESBuild (main process), Vite (renderer process)
-- **Testing**: Vitest for unit and integration tests (see `apps/studio/tests/VITEST_MIGRATION.md`); Playwright for e2e. **All new tests must be Vitest specs in `apps/studio/tests/vitest/`.**
+- **Testing**: Vitest for unit and integration tests (specs live in `apps/studio/tests/vitest/`); Playwright for e2e.
 - **Styling**: SCSS with multiple themes
 
 ### Key Entry Points
@@ -52,6 +52,7 @@ pnpm lib:dev              # Start UI kit in development/watch mode
 
 # Testing
 pnpm test:unit            # Unit tests (Vitest, tests/vitest/unit) + ui-kit tests
+pnpm test:integration:setup # One-time: download the Oracle instant client (needed for oracle specs and full runs)
 pnpm test:integration     # Integration tests
 pnpm test:e2e             # End-to-end tests with Playwright
 pnpm test:ci              # Non-DB integration tests (alias for vitest:ci)
@@ -146,8 +147,8 @@ Always run tests from the appropriate directory:
 Studio's tests resolve `@beekeeperstudio/ui-kit/vue/*` imports from ui-kit's built output, so run `pnpm lib:build` first if ui-kit hasn't been built.
 
 Test files are organized in `apps/studio/tests/`:
-- `vitest/unit/` - Unit tests (Vitest — put new unit tests here)
-- `vitest/integration/` - Integration tests (Vitest — put new integration tests here)
+- `vitest/unit/` - Unit tests
+- `vitest/integration/` - Integration tests
 - `e2e/` - End-to-end tests with Playwright
 
 ## Development Workflow

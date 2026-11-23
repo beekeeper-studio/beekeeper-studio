@@ -210,14 +210,10 @@ export class SshEnvironment {
         SUDO_ACCESS: "true",
       })
       .withExposedPorts({ container: 2222, host: this.sshHostPort })
-      .withHealthCheck({
-        test: ["CMD-SHELL", "nc -z localhost 2222 || exit 1"],
-        interval: 2000,
-        timeout: 3000,
-        retries: 10,
-        startPeriod: 5000,
-      })
-      .withWaitStrategy(Wait.forHealthCheck());
+      // Not a docker health check: its first probe only runs ~5s after every
+      // start, and restart() waits on this strategy again each time. Polling
+      // the port is ready in well under a second.
+      .withWaitStrategy(Wait.forListeningPorts());
 
     [this.dbContainer, this.sshContainer] = await Promise.all([
       dbBuilder.start(),

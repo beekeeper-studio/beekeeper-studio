@@ -233,6 +233,9 @@ export default Vue.extend({
         {
           title:'Name',
           field: 'name',
+          minWidth: 200,
+          widthGrow: 2,
+          resizable: true,
           editable: editableName,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
@@ -420,7 +423,7 @@ export default Vue.extend({
         height: 'auto',
         columnDefaults: {
           title: '',
-          resizable: false,
+          resizable: 'header',
           headerSort: false,
         },
       })

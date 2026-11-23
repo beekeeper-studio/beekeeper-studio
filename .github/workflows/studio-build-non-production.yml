@@ -22,7 +22,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-15, ubuntu-22.04, windows-2022, ubuntu-22.04-arm, windows-11-arm]
+        # Pull requests only build Linux x64; pushes to master build every platform.
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-22.04"]' || '["macos-15", "ubuntu-22.04", "windows-2022", "ubuntu-22.04-arm", "windows-11-arm"]') }}
 
     env:
       # node-gyp uses Python to build native modules from source.

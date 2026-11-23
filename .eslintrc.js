@@ -105,9 +105,6 @@ module.exports = {
       "files": [
         "apps/**/tests/**/*.{j,t}s?(x)"
       ],
-      "env": {
-        "jest": true
-      },
       "rules": {
         // Test fixtures embed shell scripts and config templates that
         // legitimately contain `${...}` substitution syntax.

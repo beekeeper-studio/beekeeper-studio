@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs the SQL Server Kerberos integration test end-to-end with nothing but Docker on the
-# host. Builds the stack, runs the dockerized Jest client (which brings up the Samba AD DC
+# host. Builds the stack, runs the dockerized Vitest client (which brings up the Samba AD DC
 # + SQL Server via depends_on), prints diagnostics on failure, and tears everything down.
 #
 # Usage: dev/docker_sqlserver_kerberos/run.sh

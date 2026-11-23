@@ -7,6 +7,10 @@ services:
       kernel.sem: "500 1024000 200 4096"
     ports:
       - 6000
+    environment:
+      # Tests don't need segment mirrors or a standby coordinator; skipping
+      # them shortens cluster init.
+      WITH_MIRRORS: "false"
     volumes:
       - ../../../../dev/docker_greengage/init-and-run.sh:/init-and-run.sh:ro
     command: ["bash", "/init-and-run.sh"]
