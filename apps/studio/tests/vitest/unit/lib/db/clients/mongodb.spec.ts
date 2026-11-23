@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { ObjectId } from "mongodb"
+import { BSON, Binary, Code, DBRef, Decimal128, Long, MaxKey, MinKey, ObjectId, Timestamp, UUID } from "mongodb"
 import { MongoDBClient, urlUsesGssapi } from "@commercial/backend/lib/db/clients/mongodb"
 import { CsvExporter } from "@/lib/export/formats/csv"
 import { JsonExporter } from "@/lib/export/formats/json"
@@ -250,5 +250,78 @@ describe("MongoDBClient ObjectIds", () => {
       col_4: [FILM_ID],
       col_5: "2006-01-01T00:00:00.000Z",
     })
+  })
+})
+
+describe("MongoDBClient other BSON types", () => {
+  const ID = "64a1b1c2e4b0a1b2c3d4e5f1"
+  const UUID_TEXT = "6ba7b810-9dad-41d1-80b4-00c04fd430c8"
+
+  // what the driver hands back with its default options: small Longs, Int32 and
+  // Double become numbers, the rest stay class instances
+  function readDoc() {
+    return BSON.deserialize(BSON.serialize({
+      _id: new ObjectId(ID),
+      price: Decimal128.fromString("12.345"),
+      views: Long.fromString("9007199254740993"),
+      likes: Long.fromNumber(42),
+      avatar: new Binary(Buffer.from([1, 2, 3])),
+      uuid: new UUID(UUID_TEXT),
+      updated: new Timestamp({ t: 1700000000, i: 1 }),
+      owner: new DBRef("users", new ObjectId(ID)),
+      low: new MinKey(),
+      high: new MaxKey(),
+      check: new Code("function () { return 1 }"),
+      scoped: new Code("function () { return x }", { x: Decimal128.fromString("2") }),
+      badUuid: new Binary(Buffer.from([1, 2, 3]), Binary.SUBTYPE_UUID),
+      pattern: /a+b/i,
+      ref: new DBRef("users", "u1", "app", { note: Decimal128.fromString("3") }),
+      history: [{ price: Decimal128.fromString("1.50") }],
+    }))
+  }
+
+  const expected = {
+    _id: ID,
+    price: "12.345",
+    views: "9007199254740993",
+    likes: 42,
+    avatar: "AQID",
+    uuid: UUID_TEXT,
+    updated: { t: 1700000000, i: 1 },
+    owner: { $ref: "users", $id: ID },
+    low: "MinKey",
+    high: "MaxKey",
+    check: "function () { return 1 }",
+    scoped: { code: "function () { return x }", scope: { x: "2" } },
+    badUuid: "AQID",
+    pattern: "/a+b/i",
+    ref: { $ref: "users", $id: "u1", $db: "app", note: "3" },
+    history: [{ price: "1.50" }],
+  }
+
+  it("returns them as plain values in query results", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    client.queryLeaf = { execute: vi.fn().mockResolvedValue([readDoc()]) } as any
+
+    const [result] = await client.executeQuery("SELECT * FROM posts")
+
+    expect(result.rows).toEqual([expected])
+  })
+
+  it("writes them as plain values in CSV and JSON exports", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    client.queryLeaf = { executeCursor: async () => fakeCursor([readDoc()]) } as any
+    const { cursor } = await client.queryStream("SELECT * FROM posts", 100)
+    await cursor.start()
+    const [row] = await cursor.read()
+    const options = { chunkSize: 100, deleteOnAbort: false }
+    const csv = new CsvExporter("posts.csv", client, null, "SELECT * FROM posts", "posts", [], options, { header: true, delimiter: "," }, false)
+    const json = new JsonExporter("posts.json", client, null, "SELECT * FROM posts", "posts", [], options, { prettyprint: false }, false)
+
+    const csvLine = csv.formatRow(Mutators.mutateRow(row, [], csv.preserveComplex))
+    const jsonRow = JSON.parse(json.formatRow(Mutators.mutateRow(row, [], json.preserveComplex)))
+
+    expect(csvLine).toContain(`${ID},12.345,9007199254740993,42,AQID,${UUID_TEXT},`)
+    expect(Object.values(jsonRow)).toEqual(Object.values(expected))
   })
 })

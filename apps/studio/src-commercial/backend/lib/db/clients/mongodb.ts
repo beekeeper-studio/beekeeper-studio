@@ -17,7 +17,7 @@ import { QueryLeaf } from '@queryleaf/lib'
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from "@/common/platform_info";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
-import { objectIdsToHex } from './mongodb/utils';
+import { bsonValuesToPlain } from './mongodb/utils';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
 import { errorMessages } from "@/lib/db/clients/utils";
@@ -819,7 +819,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         returnResult = false;
       }
 
-      let result = (_.isArray(r) ? r : [r]).map(objectIdsToHex);
+      let result = (_.isArray(r) ? r : [r]).map(bsonValuesToPlain);
       if (!returnResult) result = [];
 
       results.push({
