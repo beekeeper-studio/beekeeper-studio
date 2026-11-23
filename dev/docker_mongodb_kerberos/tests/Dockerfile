@@ -1,4 +1,4 @@
-# Self-contained Jest runner for the MongoDB Kerberos integration test. Carries the MIT
+# Self-contained Vitest runner for the MongoDB Kerberos integration test. Carries the MIT
 # Kerberos client (kinit/klist/kdestroy the spec shells out to), the GSSAPI SASL plugin the
 # mongodb driver's native `kerberos` module needs, mongosh (for a GSSAPI pre-flight), and
 # Electron's runtime shared libraries (the harness launches `electron` with

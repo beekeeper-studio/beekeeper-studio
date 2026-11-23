@@ -105,9 +105,6 @@ module.exports = {
       "files": [
         "apps/**/tests/**/*.{j,t}s?(x)"
       ],
-      "env": {
-        "jest": true
-      },
       "rules": {
         // Test fixtures embed shell scripts and config templates that
         // legitimately contain `${...}` substitution syntax.
@@ -135,10 +132,11 @@ module.exports = {
     {
       // The bks command line client. It is bundled on its own (dist/cli.js)
       // and runs under plain node, so it may only use node builtins, its own
-      // folder and its two small dependencies. Anything from the app or from
+      // folder, @beekeeperstudio/cli-client and commander. Anything from the app or from
       // electron would drag Chromium or native modules into the CLI.
       "files": [
-        "apps/studio/src/cli/**/*.ts"
+        "apps/studio/src/cli/**/*.ts",
+        "apps/studio/src-commercial/entrypoints/cli.ts"
       ],
       "rules": {
         "no-restricted-imports": ["error", {

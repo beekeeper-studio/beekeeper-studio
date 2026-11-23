@@ -120,6 +120,9 @@ function cliBoundaryPlugin() {
     name: 'cli-boundary-plugin',
     setup(build) {
       build.onResolve({ filter: /^(electron|@\/|@commercial\/|@shared\/|@bksLogger|assets\/)/ }, (args) => {
+        if (args.path.startsWith('@/cli/')) {
+          return null
+        }
         return {
           errors: [{
             text: `dist/cli.js must not import "${args.path}" (from ${path.relative('.', args.importer)}). ` +

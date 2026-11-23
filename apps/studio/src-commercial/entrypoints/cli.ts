@@ -7,7 +7,7 @@
  * src/cli and @beekeeperstudio/cli-client, never electron or the rest of the app; the esbuild
  * target enforces it.
  */
-import { createProgram } from "../../src/cli/program";
+import { createProgram } from "@/cli/program";
 import { version } from "../../package.json";
 
 const program = createProgram({ version });

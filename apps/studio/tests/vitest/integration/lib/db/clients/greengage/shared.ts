@@ -1,12 +1,11 @@
 import { describe, vi, beforeAll, afterAll } from "vitest"
 import { DockerComposeEnvironment, Wait } from 'testcontainers'
 import { DBTestUtil } from '@tests/lib/db'
-import { runCommonTests } from './all'
+import { runCommonTests } from '../all'
 
 const greengageTimeout = 600_000
 
-const GREENGAGE_VERSIONS = ['6', '7'] as const
-type GreengageVersion = typeof GREENGAGE_VERSIONS[number]
+export type GreengageVersion = '6' | '7'
 
 const VERSION_CONFIG: Record<GreengageVersion, { composeFile: string; serviceName: string; port: number }> = {
   '6': { composeFile: 'greengage6.yml', serviceName: 'test_greengage6', port: 6000 },
@@ -22,7 +21,10 @@ const pgHbaCmd = [
   "su - gpadmin -c 'source /usr/local/greengage-db-devel/greengage_path.sh 2>/dev/null; cd /gpdb_src/gpAux/gpdemo 2>/dev/null && source gpdemo-env.sh 2>/dev/null && gpstop -u'",
 ]
 
-function testWith(version: GreengageVersion) {
+// Each version has its own spec file (greengage6.spec.ts, greengage7.spec.ts)
+// so CI runs them as separate, parallel jobs: every version has to pull a ~1GB
+// image and initialise a cluster before its first test.
+export function runGreengageTests(version: GreengageVersion) {
   const { composeFile, serviceName, port } = VERSION_CONFIG[version]
 
   describe(`Greengage client v${version} (PostgreSQL-compatible)`, () => {
@@ -88,5 +90,3 @@ function testWith(version: GreengageVersion) {
     })
   })
 }
-
-GREENGAGE_VERSIONS.forEach((v) => testWith(v))

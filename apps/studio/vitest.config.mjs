@@ -8,7 +8,7 @@ export default defineConfig({
   test: {
     ...baseTest,
     environment: 'jsdom',
-    // jest ran jsdom at http://localhost; vitest's default differs
+    // specs expect jsdom at http://localhost; vitest's default differs
     environmentOptions: { jsdom: { url: 'http://localhost' } },
     include: ['tests/vitest/unit/**/*.spec.?([mc])[jt]s?(x)'],
     setupFiles: ['./tests/init/vitest-env-setup.mjs', './tests/init/setup.js'],
