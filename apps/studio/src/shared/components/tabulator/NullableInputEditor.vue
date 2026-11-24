@@ -71,6 +71,11 @@ export default Vue.extend({
         this.submit(e)
       } else if (e.key === 'Escape') {
         this.$emit('cancel', e)
+      } else if (e.key === 'Home' || e.key === 'End') {
+        // Move the caret in the input. Tabulator's scrollToStart and
+        // scrollToEnd keybindings would otherwise call preventDefault on the
+        // table. Tabulator's own input editor does the same.
+        e.stopPropagation()
       } else {
         this.everEdited = true
       }
