@@ -355,6 +355,9 @@ $cell-padding:           $gutter-w;
     font-size: 14px;
   }
   &:hover {
+    .tabulator-cell.text-right > .cell-link-wrapper:has(i.fk-link) {
+      padding-right: 16px;
+    }
     i.fk-link {
       display: inline-block;
       &:hover {
