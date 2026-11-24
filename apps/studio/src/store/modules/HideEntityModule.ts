@@ -22,6 +22,7 @@ export const HideEntityModule: Module<State, RootState> = {
       return state.entities
         .filter((e) => e.databaseName === database)
         .map((e) => dbEntities.find((dbEntity) => matches(e, dbEntity)))
+        .filter((e): e is DatabaseEntity => !!e)
     },
     databaseSchemas(state, _, { database }) {
       return state.schemas
@@ -73,7 +74,7 @@ export const HideEntityModule: Module<State, RootState> = {
           options: findOptions
         });
 
-        context.commit('set', { entities, schemas })
+        context.commit('set', { entities: entities || [], schemas: schemas || [] })
       }
     },
     async unload(context) {
@@ -81,17 +82,24 @@ export const HideEntityModule: Module<State, RootState> = {
     },
     async maybeSave(context) {
       const { usedConfig } = context.rootState
-      const unsavedEntities = context.state.entities.filter((e)=> !e.id)
-      const unsavedSchemas = context.state.schemas.filter((s)=> !s.id)
+      if (!usedConfig || !usedConfig.id) return
 
-      await Promise.all([...unsavedEntities, ...unsavedSchemas].map((u) => {
-        if(u.connectionId === usedConfig.id && u.workspaceId === usedConfig.workspaceId) {
-          let scope = 'hiddenSchema';
-          if ("entityType" in u) scope = 'hiddenEntity';
-          return Vue.prototype.$util.send(`appdb/${scope}/save`, { obj: u });
+      const saveItem = async <T extends TransportHiddenEntity | TransportHiddenSchema>(
+        item: T,
+        scope: 'hiddenEntity' | 'hiddenSchema'
+      ): Promise<T> => {
+        if (!item.id && item.connectionId === usedConfig.id && item.workspaceId === usedConfig.workspaceId) {
+          return await Vue.prototype.$util.send(`appdb/${scope}/save`, { obj: item })
         }
-        return undefined;
-      }))
+        return item
+      }
+
+      const [entities, schemas] = await Promise.all([
+        Promise.all(context.state.entities.map((e) => saveItem(e, 'hiddenEntity'))),
+        Promise.all(context.state.schemas.map((s) => saveItem(s, 'hiddenSchema'))),
+      ])
+
+      context.commit('set', { entities, schemas })
     },
     async addEntity(context, item: DatabaseEntity) {
       const { database, usedConfig } = context.rootState
@@ -99,10 +107,12 @@ export const HideEntityModule: Module<State, RootState> = {
       if (existing) return
 
       if (database && usedConfig) {
-        const entity = await Vue.prototype.$util.send('appdb/hiddenEntity/new', {
+        let entity = await Vue.prototype.$util.send('appdb/hiddenEntity/new', {
           init: { table: item, db: database, saved: usedConfig}
         })
-        if(usedConfig.id) await Vue.prototype.$util.send('appdb/hiddenEntity/save', { obj: entity })
+        if (usedConfig.id) {
+          entity = await Vue.prototype.$util.send('appdb/hiddenEntity/save', { obj: entity })
+        }
         context.commit('addEntity', entity)
       }
     },
@@ -112,10 +122,12 @@ export const HideEntityModule: Module<State, RootState> = {
       if (existing) return
 
       if (database && usedConfig) {
-        const schema = await Vue.prototype.$util.send('appdb/hiddenSchema/new', {
+        let schema = await Vue.prototype.$util.send('appdb/hiddenSchema/new', {
           init: { name: item, db: database, saved: usedConfig}
         })
-        if(usedConfig.id) await Vue.prototype.$util.send('appdb/hiddenSchema/save', { obj: schema });
+        if (usedConfig.id) {
+          schema = await Vue.prototype.$util.send('appdb/hiddenSchema/save', { obj: schema });
+        }
         context.commit('addSchema', schema)
       }
     },
