@@ -164,4 +164,57 @@ describe("ImportExportDatabase.vue", () => {
     // Verify fail modal is shown when exports fail
     expect(wrapper.vm.$modal.show).toHaveBeenCalledWith(`fail-modal-1`);
   });
+
+  it("shows the export wizard when the dialect can export tables", () => {
+    expect(wrapper.vm.isSupported).toBe(true);
+    expect(wrapper.text()).not.toContain("does not currently support");
+  });
+});
+
+describe("ImportExportDatabase.vue with a dialect that can't export tables", () => {
+  it("explains that Data Export isn't supported instead of showing the wizard", () => {
+    const store = new Vuex.Store({
+      modules: {
+        multiTableExports: {
+          namespaced: true,
+          state: { tablesToExport: [], tableOptions: {} },
+          getters: {
+            isSelectTableComplete: () => false,
+            isOptionsComplete: () => false,
+          },
+        },
+        exports: {
+          namespaced: true,
+          state: { exports: [] },
+          getters: { hasRunningExports: () => false },
+        },
+      },
+      state: { connection: {} },
+      getters: {
+        isCommunity: () => false,
+        dialect: () => "redis",
+        dialectData: () => ({ disabledFeatures: { exportTable: true } }),
+      },
+      actions: {
+        "multiTableExports/reset": vi.fn(),
+        "exports/removeInactive": vi.fn(),
+      },
+    });
+
+    const wrapper = mount(ImportExportDatabase, {
+      store,
+      mocks: {
+        $modal: { hide: vi.fn(), show: vi.fn() },
+        $native: { files: { open: vi.fn() } },
+        $util: { send: vi.fn(), addListener: vi.fn(), removeListener: vi.fn() },
+      },
+      propsData: { tab: { id: "1", isRunning: false }, schema: {} },
+    });
+
+    expect(wrapper.vm.isSupported).toBe(false);
+    expect(wrapper.text()).toContain(
+      "Beekeeper does not currently support Data Export for Redis"
+    );
+    expect(wrapper.find(".import-export__wrapper").exists()).toBe(false);
+  });
 });
