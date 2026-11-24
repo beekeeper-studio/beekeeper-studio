@@ -2206,6 +2206,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         };
       },
       maybePollOriginalText() {
+        if (this._isDestroyed || this._isBeingDestroyed) return
         if (this.active && this.tab.queryId && this.isCloud && _.isNil(this.pollInterval)) {
           this.pollInterval = setInterval(async () => {
             let query: ISavedQuery;
@@ -2279,6 +2280,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (this.tab.queryId) {
           this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
 
+          if (this._isDestroyed || this._isBeingDestroyed) return
           this.maybePollOriginalText();
         } else if (this.tab.usedQueryId) {
           this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
