@@ -22,7 +22,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-15, ubuntu-22.04, windows-2022, ubuntu-22.04-arm, windows-11-arm]
+        # Pull requests only build Linux x64; pushes to master build every platform.
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-22.04"]' || '["macos-15", "ubuntu-22.04", "windows-2022", "ubuntu-22.04-arm", "windows-11-arm"]') }}
 
     env:
       # node-gyp uses Python to build native modules from source.
@@ -31,12 +32,6 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v5
-
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v3
-        if: "contains(matrix.os, 'ubuntu')"
-        with:
-          channel: '8.x/stable'
 
       - name: Install Node.js, NPM, PNPM, and Python
         uses: jdx/mise-action@v5

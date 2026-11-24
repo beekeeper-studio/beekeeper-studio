@@ -16,6 +16,7 @@
     "test:e2e": "pnpm -F beekeeper-studio test:e2e",
     "test:e2e:ci": "pnpm -F beekeeper-studio test:e2e:ci",
     "test:integration": "pnpm -F beekeeper-studio test:integration",
+    "test:integration:setup": "pnpm -F beekeeper-studio test:integration:setup",
     "test:unit": "pnpm -F beekeeper-studio test:unit && pnpm -F ui-kit test",
     "vitest:unit": "pnpm -F beekeeper-studio vitest:unit",
     "vitest:integration": "pnpm -F beekeeper-studio vitest:integration",
@@ -32,5 +33,5 @@
     "pinst": "^3.0.0",
     "beekeeper-studio": "workspace:*"
   },
-  "packageManager": "pnpm@12.16.1"
+  "packageManager": "pnpm@12.22.0"
 }

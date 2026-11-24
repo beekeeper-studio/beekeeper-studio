@@ -173,7 +173,7 @@ x-buttons > x-button[menu].btn {
   @include btn-small;
 }
 x-buttons {
-  border-radius: 6px;
+  border-radius: var(--btn-border-radius);
   overflow: hidden;
   > x-button.btn-small {
     border-radius: 0;
@@ -395,7 +395,7 @@ input[type="checkbox"] {
   border: 0;
   margin-top: -1px;
   margin-right: ($gutter-w * 0.8);
-	border-radius: 5px;
+	border-radius: var(--checkbox-border-radius);
   transition: background 0.2s ease-in-out;
   cursor: pointer;
   &:active,
@@ -640,6 +640,24 @@ input[type=file] {
     position: absolute;
     z-index: 10;
   }
+  &.gutter-horizontal:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background-color: var(--gutter-border);
+  }
+  &.gutter-vertical:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--gutter-border);
+  }
 }
 
 
@@ -665,6 +683,8 @@ input[type=file] {
 .card {
   background: var(--panel-bg);
   color: var(--text);
+  border: var(--panel-border);
+  border-radius: var(--panel-border-radius);
   box-shadow: var(--panel-shadow);
 }
 .card-flat {
@@ -708,7 +728,7 @@ input[type=file] {
   display: inline-block;
   padding: 0 0.35rem;
   border-radius: 1rem;
-  font-size: 90%;
+  font-size: 0.75rem;
   font-weight: normal;
   line-height: 1.4;
   text-align: center;
@@ -780,7 +800,7 @@ input[type=file] {
 .alert {
   display: flex;
   align-items: flex-start;
-  border-radius: 6px;
+  border-radius: var(--alert-border-radius);
   padding: 0.75rem 1rem;
   background: var(--alert-bg);
   color: var(--alert-fg);
@@ -816,6 +836,7 @@ input[type=file] {
     justify-content: flex-start;
     flex-grow: 1;
     line-height: 1.2rem;
+    padding-right: 0.5rem;
   }
   .alert-footer {
     display: flex;

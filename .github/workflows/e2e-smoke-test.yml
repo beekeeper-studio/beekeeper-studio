@@ -7,6 +7,11 @@ on:
   pull_request:
     paths-ignore:
       - docs/**
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - docs/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,7 +24,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm]
+        # Pull requests only run on Linux; pushes to master run every platform.
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-24.04"]' || '["ubuntu-24.04", "macos-latest", "windows-latest"]') }}
 
     steps:
       - name: Check out Git repository

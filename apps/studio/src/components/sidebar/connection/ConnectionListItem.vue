@@ -8,9 +8,19 @@
       href=""
       class="list-item-btn"
       :class="classList"
-      @click.prevent="click(config)"
+      @click.prevent="handleClick($event)"
       @dblclick.prevent="doubleClick(config)"
     >
+      <input
+        v-if="!isRecentList"
+        draggable="false"
+        @mousedown.stop.prevent
+        @click.stop="$emit('select', config, $event)"
+        type="checkbox"
+        class="form-control delete-checkbox"
+        :class="{ shown: bulkSelectionActive }"
+        :checked="selected"
+      >
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">
@@ -75,11 +85,11 @@
   </div>
 </template>
 <script>
-import TimeAgo from 'javascript-time-ago'
-import { mapGetters, mapState } from 'vuex'
-import { isUltimateType } from '@/common/interfaces/IConnection'
-import EditableText from '@/components/common/EditableText.vue'
 import { AppEvent } from '@/common/AppEvent';
+import { isUltimateType } from '@/common/interfaces/IConnection';
+import EditableText from '@/components/common/EditableText.vue';
+import TimeAgo from 'javascript-time-ago';
+import { mapGetters, mapState } from 'vuex';
 
 export default {
   components: { EditableText },
@@ -91,7 +101,10 @@ export default {
     'selectedConfig',
     'showDuplicate',
     'pinned',
-    'privacyMode'
+    'privacyMode',
+    'bulkSelectionActive',
+    'selected',
+    'selectedCount',
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
@@ -107,7 +120,9 @@ export default {
         // the connection screen edits a copy, so compare by key, not identity
         'active': !!this.savedConnection && !!this.selectedConfig &&
           this.savedConnection.id === this.selectedConfig.id &&
-          this.savedConnection.workspaceId === this.selectedConfig.workspaceId
+          this.savedConnection.workspaceId === this.selectedConfig.workspaceId,
+        'selected': this.selected,
+        'bulk-selection-active': this.bulkSelectionActive,
       }
     },
     labelColor() {
@@ -194,6 +209,25 @@ export default {
 
       event.stopPropagation();
 
+      let effectiveCount = this.selectedCount ?? 0
+      if (this.bulkSelectionActive && !this.selected) {
+        this.$emit('add-to-selection', this.config)
+        effectiveCount += 1
+      }
+      if (effectiveCount >= 2) {
+        this.$bks.openMenu({
+          event,
+          item: this.config,
+          options: [
+            {
+              name: 'Delete',
+              handler: () => this.$emit('remove-selected'),
+            },
+          ],
+        })
+        return
+      }
+
       const canConnect = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
@@ -221,17 +255,17 @@ export default {
         {
           name: "Share",
           slug: 'share',
-          handler: this.share,
+          handler: () => this.share(),
           hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id || this.isPersonal,
         },
         {
           name: "Duplicate",
           slug: 'duplicate',
-          handler: this.duplicate
+          handler: () => this.duplicate(),
         },
         {
           name: `Copy ${this.connectionType}`,
-          handler: this.copyUrl
+          handler: () => this.copyUrl(),
         },
         { type: "divider" },
         {
@@ -254,7 +288,7 @@ export default {
         },
         {
           name: "Delete",
-          handler: this.remove
+          handler: () => this.remove(),
         },
       ].filter(({ hideIf }) => !hideIf)
 
@@ -270,6 +304,14 @@ export default {
       } else {
         this.$emit('edit', this.config)
       }
+    },
+    handleClick(event) {
+      if (event.metaKey || event.ctrlKey || event.shiftKey) {
+        this.$emit('select', this.config, event)
+        return
+      }
+      this.$emit('select', this.config, event)
+      this.click()
     },
     async doubleClick() {
       if (this.savedConnection) {

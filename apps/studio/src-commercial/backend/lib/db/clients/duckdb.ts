@@ -137,7 +137,7 @@ function buildFilterString(
   };
 }
 
-function buildSelectTopQuery(
+export function buildSelectTopQuery(
   table: string,
   offset?: number,
   limit?: number,
@@ -184,7 +184,9 @@ function buildSelectTopQuery(
     filterParams = filterBlob.filterParams;
   }
 
-  const selectSQL = `SELECT ${selects.join(", ")}`;
+  const selectSQL = `SELECT ${selects
+    .map((s) => (s === "*" ? s : DuckDBData.wrapIdentifier(s)))
+    .join(", ")}`;
   const baseSQL = `FROM ${DuckDBData.wrapIdentifier(
     schema
   )}.${DuckDBData.wrapIdentifier(table)} ${filterString}`;
@@ -205,6 +207,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   // We only use one connection to be able to read and write at the same time
   // https://duckdb.org/docs/connect/concurrency#handling-concurrency
   connectionInstance: Connection;
+  // A DuckDB connection runs one statement at a time. Statements that overlap
+  // on it fail with "Failed to execute prepared statement", so they are queued.
+  private queryQueue: Promise<unknown> = Promise.resolve();
   _defaultSchema: string = "main";
   transcoders = [DuckDBBinaryTranscoder];
 
@@ -590,7 +595,17 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return this._defaultSchema;
   }
 
-  protected async rawExecuteQuery(
+  protected rawExecuteQuery(
+    q: string,
+    options: any
+  ): Promise<DuckDBResult | DuckDBResult[]> {
+    const run = () => this.runQueries(q, options);
+    const result = this.queryQueue.then(run, run);
+    this.queryQueue = result.catch(() => undefined);
+    return result;
+  }
+
+  private async runQueries(
     q: string,
     options: any
   ): Promise<DuckDBResult | DuckDBResult[]> {

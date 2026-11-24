@@ -1,7 +1,3 @@
-
-Replace:
-"test:unit": "cross-env TEST_MODE=1 node ../../node_modules/jest/bin/jest.js",
-
 ## Docs TODOS
 
 - Add a section on importing .sql files into Beekeeper Studio

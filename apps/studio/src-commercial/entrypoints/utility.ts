@@ -11,7 +11,8 @@ import { ConnHandlers } from '../backend/handlers/connHandlers';
 import { FileHandlers } from '@/handlers/fileHandlers';
 import { GeneratorHandlers } from '@/handlers/generatorHandlers';
 import { Handlers } from '../backend/handlers/handlers';
-import { newState, removeState, setPluginManager, state } from '@/handlers/handlerState';
+import { newState, removeState, state } from '@/handlers/handlerState';
+import { context } from '@/handlers/handlerContext';
 import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
@@ -20,14 +21,15 @@ import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
+import { ThemeHandlers } from '@/handlers/themeHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
-import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
+import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
-import PluginFileManager from '@/services/plugin/PluginFileManager';
+import ExtensionFileManager from '@/services/extension/ExtensionFileManager';
 import { DriverDepHandlers } from '@/handlers/driverDepHandlers';
 import { DriverDepManager, DriverDepFileManager, createDefaultRegistry } from '@/services/driverDeps';
 import type { DepPlatform, DepArch } from '@/services/driverDeps';
@@ -38,28 +40,25 @@ import {
   BundledPluginModule,
   RegistryModule,
   LicenseModule,
-} from '@commercial/backend/plugin-system/modules';
-import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
+} from '@/services/plugin/modules';
+import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCode, PluginSystemErrorCode, ThemeSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
+import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
+import globals from '@/common/globals';
+import { ThemeManager } from '@/services/theme/ThemeManager';
+import { ThemeConfigurationModule } from '@/services/theme/modules/ThemeConfigurationModule';
+import { ThemeAutoUpdateModule } from '@/services/theme/modules/ThemeAutoUpdateModule';
+import { ThemeLicenseModule } from '@/services/theme/modules/ThemeLicenseModule';
+import { ThemeFileChangedModule } from '@/services/theme/modules/ThemeFileChangedModule';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
 
 let ormConnection: ORMConnection;
-const pluginManager = new PluginManager({
-  appVersion: platformInfo.appVersion,
-  fileManager: new PluginFileManager({
-    pluginsDirectory: platformInfo.pluginsDirectory,
-  }),
-});
-pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
-pluginManager.registerModule(RegistryModule.with({ config: BksConfig }));
-pluginManager.registerModule(BundledPluginModule);
-pluginManager.registerModule(LicenseModule);
 
 const driverDepManager = new DriverDepManager({
   fileManager: new DriverDepFileManager({
@@ -76,8 +75,8 @@ interface Reply {
   type: 'reply' | 'error',
   data?: any,
   error?: string
-  errorName?: "PluginSystemError" | "PluginError" | "Error"
-  errorCode?: PluginSystemErrorCode | PluginErrorCode
+  errorName?: "PluginSystemError" | "PluginError" | "ExtensionRegistryError" | "ExtensionRepositoryError" | "ThemeSystemError" | "Error"
+  errorCode?: PluginSystemErrorCode | PluginErrorCode | ExtensionRegistryErrorCode | ExtensionRepositoryErrorCode | ThemeSystemErrorCode
   errorDetail?: string
   errorHint?: string
   stack?: string
@@ -95,6 +94,7 @@ export const handlers: Handlers = {
   ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
+  ...ThemeHandlers,
   ...TempHandlers,
   ...LicenseHandlers,
   ...PluginHandlers,
@@ -214,11 +214,42 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
+  const pluginManager = new PluginManager({
+    appVersion: platformInfo.appVersion,
+    fileManager: new ExtensionFileManager({
+      root: platformInfo.pluginsDirectory,
+    }),
+    registry: new ExtensionRegistry({ registries: globals.plugins.registries }),
+  });
+  pluginManager.registerModules([
+    ConfigurationModule.with({ config: BksConfig }),
+    RegistryModule.with({ config: BksConfig }),
+    BundledPluginModule,
+    LicenseModule,
+  ]);
+
+  const themeManager = new ThemeManager({
+    fileManager: new ExtensionFileManager({
+      root: platformInfo.themesDirectory,
+    }),
+  });
+  themeManager.registerModules([
+    ThemeConfigurationModule.with({ config: BksConfig }),
+    ThemeAutoUpdateModule.with({ config: BksConfig }),
+    ThemeLicenseModule,
+    ThemeFileChangedModule,
+  ]);
+
+  context.pluginManager = pluginManager;
+  context.themeManager = themeManager;
+
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
   });
 
-  setPluginManager(pluginManager);
+  themeManager.initialize().catch((e) => {
+    log.error("Error initializing theme manager", e);
+  });
 
   driverDepManager.initialize().catch((e) => {
     log.error("Error initializing driver dep manager", e);

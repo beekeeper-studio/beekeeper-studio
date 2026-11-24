@@ -3,10 +3,10 @@
 // '~noty/themes/mint.scss';
 // --------------------------------------
 .noty_theme__mint.noty_bar {
-  background: var(--panel-bg);
+  background: var(--notif-bg);
   border: 0;
   border-radius: 4px;
-  box-shadow: var(--panel-shadow);
+  box-shadow: var(--notif-shadow);
   .noty_body {
     font-size: 1rem;
     line-height: 1.6;
@@ -32,24 +32,24 @@
   right: $gutter-h;
   background-color: transparent;
   border-radius: 20px;
-  color: var(--text);
+  color: var(--notif-close-fg);
   text-align: center;
   font-weight: normal;
   font-size: 24px;
   &:hover {
-    color: var(--text-contrast);
+    color: var(--notif-close-fg-hover);
     background: transparent;
   }
 }
 .noty_theme__mint.noty_type__alert,
 .noty_theme__mint.noty_type__notification {
-  color: var(--text-contrast);
+  color: var(--notif-fg);
 }
 .noty_theme__mint.noty_type__warning {
-  color: var(--warning-text);
+  color: var(--notif-warning-fg);
 }
 .noty_theme__mint.noty_type__error {
-  color: var(--danger-text);
+  color: var(--notif-error-fg);
 
   .noty_body {
     white-space: pre-wrap;
@@ -58,10 +58,10 @@
 }
 .noty_theme__mint.noty_type__info,
 .noty_theme__mint.noty_type__information {
-  color: var(--info-text);
+  color: var(--notif-info-fg);
 }
 .noty_theme__mint.noty_type__success {
-  color: var(--success-text);
+  color: var(--notif-success-fg);
 }
 
 // Onboarding notification

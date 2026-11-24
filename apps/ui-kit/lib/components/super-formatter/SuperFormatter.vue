@@ -155,7 +155,7 @@
       <pre><code
         ref="superFormatterCodeBlock"
         class="language-sql"
-        v-html="formattedCode"
+        v-text="formattedCode"
       /></pre>
     </div>
     <div class="formatter-buttons">

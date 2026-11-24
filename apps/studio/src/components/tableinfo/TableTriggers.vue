@@ -74,13 +74,13 @@ export default {
     },
     sqliteTableColumns() {
       return [
-        { field: 'name', title: 'Name', tooltip: true, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'name', title: 'Name', minWidth: 200, widthGrow: 2, resizable: true, tooltip: true, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
         { field: 'sql', title: 'SQL', tooltip: true, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     normalTableColumns() {
       return [
-        { field: 'name', title: "Name", tooltip: true, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'name', title: "Name", minWidth: 200, widthGrow: 2, resizable: true, tooltip: true, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
         { field: 'timing', title: "Timing", contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
         { field: 'manipulation', title: "Manipulation", contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
         { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
@@ -104,6 +104,7 @@ export default {
       columnDefaults: {
         tooltip: true,
         headerSort: true,
+        resizable: 'header',
         maxInitialWidth: this.$bksConfig.ui.tableTriggers.maxColumnWidth,
       },
       placeholder: "No triggers",

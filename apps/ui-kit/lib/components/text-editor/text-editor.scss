@@ -110,6 +110,39 @@
   .cm-emphasis { color: var(--editor-emphasis-fg); }
   .cm-strikethrough { color: var(--editor-strikethrough-fg); }
 
+  .cm-editor.cm-merge-b {
+    .cm-changedLine,
+    .cm-inlineChangedLine {
+      background: var(--editor-diff-inserted-bg);
+    }
+
+    .cm-changedText {
+      background: var(--editor-diff-inserted-text-bg);
+    }
+
+    .cm-changedLineGutter,
+    .cm-inlineChangedLineGutter {
+      background: var(--editor-diff-inserted-gutter-bg);
+    }
+
+    .cm-deletedChunk {
+      background: var(--editor-diff-deleted-bg);
+
+      .cm-deletedText {
+        background: var(--editor-diff-deleted-text-bg);
+      }
+    }
+
+    .cm-deletedLineGutter {
+      background: var(--editor-diff-deleted-gutter-bg);
+    }
+
+    .cm-collapsedLines {
+      background: var(--editor-diff-collapsed-bg);
+      color: var(--editor-diff-collapsed-fg);
+    }
+  }
+
   .cm-textfield {
     @include bk-form-input;
     width: 15em;
