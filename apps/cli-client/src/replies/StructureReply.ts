@@ -1,6 +1,6 @@
 import { StructureResult } from "../protocol";
 import { CliReply } from "./CliReply";
-import { connectionLine, table, warningsBlock, yesNo } from "../markdown";
+import { table, warningsBlock, yesNo } from "../markdown";
 
 export class StructureReply extends CliReply<StructureResult> {
   markdown(): string {
@@ -8,7 +8,7 @@ export class StructureReply extends CliReply<StructureResult> {
     const fullName = result.schema
       ? `${result.schema}.${result.name}`
       : result.name;
-    const lines = connectionLine(result);
+    const lines: string[] = [];
     lines.push(`# ${fullName} (${result.entityType})`);
     if (result.description) lines.push("", String(result.description));
 
@@ -78,9 +78,7 @@ export class StructureReply extends CliReply<StructureResult> {
                   ? r.fromColumn.join(", ")
                   : r.fromColumn,
                 r.toSchema ? `${r.toSchema}.${r.toTable}` : r.toTable,
-                Array.isArray(r.toColumn)
-                  ? r.toColumn.join(", ")
-                  : r.toColumn,
+                Array.isArray(r.toColumn) ? r.toColumn.join(", ") : r.toColumn,
                 r.onUpdate ?? "",
                 r.onDelete ?? "",
               ]),
@@ -94,12 +92,7 @@ export class StructureReply extends CliReply<StructureResult> {
           ? "None"
           : table(
               ["Name", "Timing", "Event", "Action"],
-              triggers.map((t) => [
-                t.name,
-                t.timing,
-                t.manipulation,
-                t.action,
-              ]),
+              triggers.map((t) => [t.name, t.timing, t.manipulation, t.action]),
             ),
       );
     }

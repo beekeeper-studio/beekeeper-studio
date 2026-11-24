@@ -13,11 +13,17 @@ import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
 import { CliServer } from "@/services/cliServer/CliServer";
-import { CliOpenConnection } from "@/services/cliServer/commands";
+import { CliConnectionHandle } from "@/services/cliServer/commands";
 import { UtilityApi } from "@/services/UtilityApi";
+import { MemoryCliGrantStore } from "@/services/cliServer/grants";
 import { createProgram } from "@/cli/program";
-import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
-import { CliError, CliCreateTabRequest, CliTabSummary } from "@beekeeperstudio/cli-client";
+import { CliAccessRequest } from "@/services/cliServer/rendererRequests";
+import {
+  CliAccess,
+  CliError,
+  CliCreateTabRequest,
+  CliTabSummary,
+} from "@beekeeperstudio/cli-client";
 
 const socketPath =
   process.platform === "win32"
@@ -25,15 +31,19 @@ const socketPath =
     : path.join(os.tmpdir(), `bks-cli-it-${process.pid}.sock`);
 
 /** The parts of UtilityApi that reach the app's renderers, faked by the test. */
-interface FakeParts
-  extends Pick<UtilityApi, "resolveCliEnabled"> {
-  openConnections(): CliOpenConnection[];
+interface FakeParts {
+  openConnections(): CliConnectionHandle[];
+  askRendererForAccess(
+    connection: CliConnectionHandle,
+    request: CliAccessRequest,
+    signal: AbortSignal,
+  ): Promise<CliAccess | null>;
   askRendererToCreateTab(
-    connection: CliOpenConnection,
+    connection: CliConnectionHandle,
     request: CliCreateTabRequest,
   ): Promise<CliTabSummary>;
   askRendererToSwitchTab(
-    connection: CliOpenConnection,
+    connection: CliConnectionHandle,
     tabId: string,
   ): Promise<CliTabSummary>;
 }
@@ -41,29 +51,47 @@ interface FakeParts
 /** UtilityApi with its connections and renderers replaced by a fake. */
 class TestUtilityApi extends UtilityApi {
   constructor(private readonly fake: FakeParts) {
-    // resolveCliEnabled is faked, so the config is never read.
-    super({ config: {} as BksConfig });
+    super({ grants: new MemoryCliGrantStore() });
   }
 
   protected openConnections() {
     return this.fake.openConnections();
   }
 
-  resolveCliEnabled(connection: CliOpenConnection) {
-    return this.fake.resolveCliEnabled(connection);
+  protected askRendererForAccess(
+    connection: CliConnectionHandle,
+    request: CliAccessRequest,
+    signal: AbortSignal,
+  ) {
+    return this.fake.askRendererForAccess(connection, request, signal);
   }
 
   protected askRendererToCreateTab(
-    connection: CliOpenConnection,
+    connection: CliConnectionHandle,
     request: CliCreateTabRequest,
   ) {
     return this.fake.askRendererToCreateTab(connection, request);
   }
 
-  protected askRendererToSwitchTab(connection: CliOpenConnection, tabId: string) {
+  protected askRendererToSwitchTab(connection: CliConnectionHandle, tabId: string) {
     return this.fake.askRendererToSwitchTab(connection, tabId);
   }
 }
+
+const APPROVED: CliAccess = {
+  queryTypes: ["select"],
+  savedQueriesRead: false,
+  savedQueriesWrite: false,
+  openTabs: true,
+};
+
+/** Every approval dialog shown, and how the fake user answers the next ones. */
+const approvals = {
+  asked: [] as CliAccessRequest[],
+  dialogs: [] as AbortSignal[],
+  delayMs: 0,
+  deny: new Set<string>(),
+};
 
 let client: SqliteClient;
 let server: CliServer;
@@ -99,7 +127,14 @@ beforeAll(async () => {
         } as any,
       },
     ],
-    resolveCliEnabled: async () => true,
+    askRendererForAccess: async (_connection, request, signal) => {
+      approvals.asked.push(request);
+      approvals.dialogs.push(signal);
+      if (approvals.delayMs) {
+        await new Promise((resolve) => setTimeout(resolve, approvals.delayMs));
+      }
+      return approvals.deny.has(request.clientName) ? null : APPROVED;
+    },
     askRendererToCreateTab: async (_connection, request) => {
       created.push(request);
       return {
@@ -124,6 +159,8 @@ beforeAll(async () => {
     requests += 1;
   });
   await server.start();
+  // The client every other test runs as.
+  await bks("ask-approval");
 });
 
 afterAll(async () => {
@@ -136,7 +173,7 @@ afterEach(() => {
 });
 
 /** Runs `bks <str>` against the test server and returns what it printed. */
-async function bks(str: string) {
+async function bks(str: string, clientName = "Test Agent") {
   let out = "";
   let err = "";
 
@@ -146,6 +183,7 @@ async function bks(str: string) {
     await createProgram({
       version: "1.2.3",
       preventExit: true,
+      clientName,
       output: {
         writeOut: (str) => (out += str),
         writeErr: (str) => (err += str),
@@ -165,12 +203,54 @@ async function bks(str: string) {
   };
 }
 
+describe("bks approval", () => {
+  afterEach(() => {
+    approvals.delayMs = 0;
+    approvals.deny.clear();
+  });
+
+  it("fails without approval and prints how to ask for it", async () => {
+    const result = await bks("schemas", "Fresh Agent");
+    expect(result.error?.message).toContain("Error (NOT_APPROVED)");
+    expect(result.error?.message).toContain(
+      'bks ask-approval --connection "Local Dev"',
+    );
+    expect(approvals.asked.some((a) => a.clientName === "Fresh Agent")).toBe(false);
+  });
+
+  it("closes the approval dialog when it gives up after --timeout", async () => {
+    approvals.delayMs = 300;
+    const result = await bks("ask-approval --timeout 50", "Slow Agent");
+    expect(result.error?.message).toContain("No reply from Beekeeper Studio after 50ms.");
+    await vi.waitFor(() => expect(approvals.dialogs.at(-1)?.aborted).toBe(true));
+
+    // the user approves the stale dialog anyway
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const again = await bks("schemas", "Slow Agent");
+    expect(again.error?.message).toContain("Error (NOT_APPROVED)");
+  });
+
+  it("answers a as an alias of ask-approval", async () => {
+    const result = await bks("a");
+    expect(result.json()).toMatchObject({ newlyApproved: false });
+  });
+
+  it("fails when the user denies", async () => {
+    approvals.deny.add("Denied Agent");
+    const result = await bks("ask-approval", "Denied Agent");
+    expect(result.error?.message).toContain("Error (ACCESS_DENIED)");
+  });
+});
+
 describe("bks", () => {
-  it("lists the open connections", async () => {
-    const result = await bks("connections");
-    expect(result.json().connections).toEqual([
-      expect.objectContaining({ name: "Local Dev", cliEnabled: true }),
+  it("lists the open connections, approved once a command ran", async () => {
+    const before = await bks("connections", "New Agent");
+    expect(before.json().connections).toEqual([
+      expect.objectContaining({ name: "Local Dev", approved: false }),
     ]);
+    await bks("ask-approval", "New Agent");
+    const after = await bks("connections", "New Agent");
+    expect(after.json().connections[0].approved).toBe(true);
   });
 
   it("lists tables", async () => {
@@ -262,6 +342,13 @@ describe("bks", () => {
     expect(result.sent).toBe(false);
   });
 
+  it("needs something to change for saved-queries update", async () => {
+    const result = await bks("saved-queries update 3");
+    expect(result.err).toContain("pass a new --title, new SQL, or both");
+    expect(result.sent).toBe(false);
+    expect((await bks("saved-queries get abc")).sent).toBe(false);
+  });
+
   it("rejects sql given both ways", async () => {
     const result = await bks("create-tab query select 1 --file x.sql");
     expect(result.err).toContain("not both");
@@ -281,14 +368,13 @@ describe("bks", () => {
     const result = (await bks("create-tab query select 1")).json();
     expect(result).toMatchObject({
       tabId: String(created.length),
-      connection: { name: "Local Dev" },
     });
   });
 
   it("switches to a tab by the id create-tab query printed", async () => {
     const { tabId } = (await bks("create-tab query")).json();
     const result = (await bks(`switch-tab ${tabId}`)).json();
-    expect(result).toMatchObject({ tabId, connection: { name: "Local Dev" } });
+    expect(result).toMatchObject({ tabId });
     expect((await bks("switch-tab 999")).error?.message).toContain(
       "Error (NOT_FOUND): No open tab with id 999.",
     );
@@ -322,9 +408,9 @@ describe("bks", () => {
     expect(result.sent).toBe(false);
   });
 
-  it("rejects writes", async () => {
+  it("rejects statements the client was not granted", async () => {
     const result = await bks("query delete from users");
-    expect(result.error?.message).toContain("Error (READ_ONLY)");
+    expect(result.error?.message).toContain("Error (NOT_PERMITTED)");
     const check = (await bks("query select count(*) as n from users")).json();
     expect(check.results[0].rows).toEqual([{ n: 2 }]);
   });
@@ -335,7 +421,6 @@ describe("bks", () => {
     expect(query.out).toMatch(/\| Ann +\|/);
 
     expect((await bks("connections -f md")).out).toMatch(/\| Local Dev +\|/);
-    expect((await bks("schemas -f md")).out).toContain("Connection: Local Dev");
     expect((await bks("entities -f md")).out).toMatch(/\| recent_users +\| view +\|/);
     const structure = (await bks("structure users -f md")).out;
     expect(structure).toContain("# users (table)");

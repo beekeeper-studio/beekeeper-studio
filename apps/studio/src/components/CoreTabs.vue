@@ -189,6 +189,7 @@
         />
       </div>
     </div>
+    <cli-access-modal />
     <portal to="modals">
       <modal
         :name="modalName"
@@ -351,6 +352,7 @@ import _ from 'lodash'
 import QueryEditor from './TabQueryEditor.vue'
 import Statusbar from './common/StatusBar.vue'
 import CoreTabHeader from './CoreTabHeader.vue'
+import CliAccessModal from './cli/CliAccessModal.vue'
 import TableTable from './tableview/TableTable.vue'
 import TableProperties from './TabTableProperties.vue'
 import TableBuilder from './TabTableBuilder.vue'
@@ -391,6 +393,7 @@ const log = rawLog.scope('CoreTabs.vue')
 export default Vue.extend({
   props: [],
   components: {
+    CliAccessModal,
     Statusbar,
     QueryEditor,
     CoreTabHeader,
@@ -1333,6 +1336,9 @@ export default Vue.extend({
         return this.cliTabSummary(tab)
       })
     },
+    savedQueryChangedFromCli({ id }: { id: number }) {
+      return this.$store.dispatch('data/queries/reload', id)
+    },
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
       this.$copyText(item.tableName)
@@ -1349,6 +1355,7 @@ export default Vue.extend({
     this.cliListenerIds = [
       this.$util.addListener('cli/createTab', this.createTabFromCli),
       this.$util.addListener('cli/switchTab', this.switchTabFromCli),
+      this.$util.addListener('cli/savedQueryChanged', this.savedQueryChangedFromCli),
     ]
   }
 })

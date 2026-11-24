@@ -13,7 +13,6 @@ describe('buildAuditEntry', () => {
     const response: CliResponse = {
       ok: true,
       result: {
-        connection: { id: 'sid-1', name: 'Local Dev' },
         results: [
           { command: 'SELECT', columns: ['id'], rows: [{ id: 1 }, { id: 2 }], rowCount: 2, totalRowCount: 20005, truncated: true, maxRows: 20000, affectedRows: 0 },
           { command: 'SELECT', columns: ['n'], rows: [{ n: 1 }], rowCount: 1, totalRowCount: 1, truncated: false, maxRows: 20000, affectedRows: 0 },
@@ -27,8 +26,8 @@ describe('buildAuditEntry', () => {
     expect(entry).toEqual({
       time: '2026-10-30T12:00:00.000Z',
       method: 'query',
+      client: 'Unknown client',
       params: { sql: 'select id from users; select 1 as n', connection: 'Local Dev' },
-      connection: { id: 'sid-1', name: 'Local Dev' },
       ok: true,
       durationMs: 13,
       responseBytes: 345,
@@ -41,7 +40,6 @@ describe('buildAuditEntry', () => {
     const response: CliResponse = {
       ok: true,
       result: {
-        connection: { id: 'sid-1', name: 'Local Dev' },
         schema: 'public',
         entities: [
           { schema: 'public', name: 'customers', entityType: 'table' },
@@ -55,7 +53,6 @@ describe('buildAuditEntry', () => {
       { request: request('entities', { schema: 'public', entityTypes: ['table'] }), response, durationMs: 4, responseBytes: 300 },
       now
     )
-    expect(entry.connection).toEqual({ id: 'sid-1', name: 'Local Dev' })
     expect(entry.result).toEqual({ schema: 'public', entities: 3, warnings: 0 })
     const line = JSON.stringify(entry)
     for (const name of ['customers', 'invoices', 'payroll']) {
@@ -66,24 +63,13 @@ describe('buildAuditEntry', () => {
   it('records errors with their code', () => {
     const response: CliResponse = {
       ok: false,
-      error: { code: 'CLI_DISABLED', message: 'CLI access is not enabled for the open connection "Prod".', hint: 'Check the box.' },
+      error: { code: 'ACCESS_DENIED', message: 'Access to "Prod" was denied for Claude Code.', hint: 'Run the command again to ask again.' },
     }
     const entry = buildAuditEntry({ request: request('entities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
     expect(entry.ok).toBe(false)
-    expect(entry.connection).toBeNull()
-    expect(entry.error).toEqual({ code: 'CLI_DISABLED', message: 'CLI access is not enabled for the open connection "Prod".' })
+    expect(entry.error).toEqual({ code: 'ACCESS_DENIED', message: 'Access to "Prod" was denied for Claude Code.' })
     expect(entry.result).toBeUndefined()
     expect(entry.params).toEqual({ schema: 'public' })
-  })
-
-  it('keeps the connection of a failed query', () => {
-    const response: CliResponse = {
-      ok: false,
-      error: { code: 'READ_ONLY', message: 'The statement was rejected because the CLI is read only.', details: { connection: { id: 'sid-1', name: 'Local Dev' } } },
-    }
-    const entry = buildAuditEntry({ request: request('query', { sql: 'delete from users' }), response, durationMs: 1, responseBytes: 100 }, now)
-    expect(entry.connection).toEqual({ id: 'sid-1', name: 'Local Dev' })
-    expect(entry.error.code).toBe('READ_ONLY')
   })
 
   it('handles requests that could not be parsed', () => {
@@ -108,7 +94,7 @@ describe('buildAuditEntry', () => {
 
 describe('summarizeResult', () => {
   it('summarizes each method', () => {
-    expect(summarizeResult('connections', { connections: [{ cliEnabled: true }, { cliEnabled: false }] })).toEqual({ connections: 2, cliEnabled: 1 })
+    expect(summarizeResult('connections', { connections: [{ approved: true }, { approved: false }] })).toEqual({ connections: 2, approved: 1 })
     expect(summarizeResult('schemas', { schemas: ['a', 'b'] })).toEqual({ schemas: 2 })
     expect(summarizeResult('entities', { schema: 'public', entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
       schema: 'public',

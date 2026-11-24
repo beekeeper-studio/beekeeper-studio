@@ -103,7 +103,6 @@ import splitThemeDarkFlag from './20260908_split_theme_dark_flag'
 import addGithubPluginSetting from './20261021_add_github_plugin_setting.js'
 import addConfirmWindowCloseSetting from './20260929_add_confirm_window_close_setting'
 import addPluginEntryCache from './20261026_add_plugin_entry_cache.js'
-import addCliEnabledToConnections from './20261030_add_cli_enabled_to_connections'
 import addThemeEntryCache from './20261105_add_theme_entry_cache.js'
 
 import ultimate from './ultimate/index'
@@ -167,8 +166,7 @@ const realMigrations = [
   addGithubPluginSetting,
   addConfirmWindowCloseSetting,
   addPluginEntryCache,
-  addCliEnabledToConnections,
-  addThemeEntryCache
+  addThemeEntryCache,
 ]
 
 // fixtures require the models

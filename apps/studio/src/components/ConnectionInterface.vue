@@ -211,24 +211,6 @@
                     <span>Read Only Mode</span>
                   </label>
                 </div>
-                <!-- Let `beekeeper-studio cli` use this connection while it is open -->
-                <div class="form-group" v-if="!shouldUpsell">
-                  <label class="checkbox-group" for="cliEnabled">
-                    <input
-                      :disabled="editingDisabled"
-                      class="form-control"
-                      id="cliEnabled"
-                      type="checkbox"
-                      name="cliEnabled"
-                      v-model="config.cliEnabled"
-                    >
-                    <span>Enable CLI Access</span>
-                    <i
-                      class="material-icons help-icon"
-                      v-tooltip="{ content: cliAccessTooltip, html: true }"
-                    >help_outlined</i>
-                  </label>
-                </div>
                 <!-- TEST AND CONNECT -->
                 <div v-if="!shouldUpsell" class="test-connect row flex-middle">
                   <span class="expand" />
@@ -422,9 +404,6 @@ export default Vue.extend({
     },
     determineLabelColor() {
       return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
-    },
-    cliAccessTooltip() {
-      return 'Allows <code>beekeeper-studio cli</code> commands to use this connection while it is open in the app. The CLI is read only: it can list schemas and tables, describe them and run queries that read data. Every call is recorded in cli.log.'
     },
     folder() {
       return this.connectionFolders.find((f) => f.id === this.config.connectionFolderId);

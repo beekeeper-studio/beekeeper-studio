@@ -10,15 +10,14 @@ export class ConnectionsReply extends CliReply<ConnectionsResult> {
       return "No open connections.";
     }
     return table(
-      ["Name", "Id", "Type", "Host", "Database", "Read only", "CLI enabled"],
+      ["Name", "Id", "Type", "Default database", "Read only", "Approved"],
       connections.map((c) => [
         c.name,
         c.id,
         c.connectionType,
-        c.host,
-        c.database,
+        c.defaultDatabase,
         yesNo(c.readOnlyMode),
-        yesNo(c.cliEnabled),
+        yesNo(c.approved),
       ]),
     );
   }

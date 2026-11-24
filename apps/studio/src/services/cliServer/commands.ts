@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { IConnection } from '@/common/interfaces/IConnection'
+import { uniqueColumnNames } from '@/common/utils'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import {
   DatabaseEntity,
@@ -9,17 +10,17 @@ import {
 } from '@/lib/db/models'
 import {
   CLI_MAX_QUERY_ROWS,
-  CliBinaryValue,
-  CliColumn,
-  CliConnectionRef,
-  CliConnectionSummary,
-  CliEntity,
+  BinaryValue,
+  Column,
+  OpenConnection,
+  Entity,
   CliEntityType,
-  CliQueryResult,
+  StatementResult,
+  CliClientInfo,
 } from '@beekeeperstudio/cli-client'
 
 /** A live connection the app holds, as the CLI sees it. One per connected renderer. */
-export interface CliOpenConnection {
+export interface CliConnectionHandle {
   id: string
   /** The config the renderer connected with. Null for a connection restored without one. */
   config: IConnection | null
@@ -27,18 +28,30 @@ export interface CliOpenConnection {
   client: BasicDatabaseClient<any, any>
 }
 
-export const ENABLE_CLI_HINT =
-  'To enable it, edit the connection in Beekeeper Studio, check "Enable CLI Access", save, ' +
-  'and connect again. To enable it for every connection instead, add these two lines to ' +
-  'user.config.ini and restart Beekeeper Studio:\n[cli]\nenableForAllConnections = true'
+/** Who made a request, and whether they are still waiting for the answer. */
+export interface CliCallContext {
+  client: CliClientInfo
+  /** Aborted when the caller hangs up, e.g. after its timeout. */
+  signal: AbortSignal
+}
+
+export const UNKNOWN_CLIENT_NAME = 'Unknown client'
+
+export function clientInfo(raw: unknown): CliClientInfo {
+  const name = typeof (raw as any)?.name === 'string' ? (raw as any).name.trim().slice(0, 100) : ''
+  return { name: name || UNKNOWN_CLIENT_NAME }
+}
+
+export const CHANGE_ACCESS_HINT =
+  "Access is chosen when the client is approved. Reconnect in Beekeeper Studio, then run `bks ask-approval --timeout 0` to choose again."
 
 const FILE_BASED_TYPES = ['sqlite', 'duckdb', 'libsql']
 
 export const READ_ONLY_HINT =
-  'The CLI is read only. It runs statements that read data (SELECT, SHOW, EXPLAIN, DESCRIBE and ' +
-  'the like) on any connection; run writes in the Beekeeper Studio app.'
+  'The connection is in read only mode, so only statements that read data run. Turn read only ' +
+  'mode off in the connection settings to allow writes.'
 
-export function connectionDisplayName(connection: CliOpenConnection): string {
+export function connectionDisplayName(connection: CliConnectionHandle): string {
   const config = connection.config
   if (config?.name) return config.name
   const type = config?.connectionType || connection.client?.connectionType || 'database'
@@ -50,13 +63,9 @@ export function connectionDisplayName(connection: CliOpenConnection): string {
   return location ? `${type} ${location}` : `${type} ${connection.id.slice(0, 8)}`
 }
 
-export function ref(summary: CliConnectionSummary): CliConnectionRef {
-  return { id: summary.id, name: summary.name }
-}
-
 export interface Candidate {
-  connection: CliOpenConnection
-  summary: CliConnectionSummary
+  connection: CliConnectionHandle
+  summary: OpenConnection
 }
 
 export function quotedNames(items: Candidate[]): string {
@@ -73,11 +82,11 @@ export async function attempt<T>(label: string, warnings: string[], fn: () => Pr
   }
 }
 
-export function toEntity(entity: DatabaseEntity, entityType: CliEntityType): CliEntity {
-  return { schema: entity.schema ?? null, name: entity.name, entityType }
+export function toEntity(entity: DatabaseEntity, entityType: CliEntityType): Entity {
+  return { schema: entity.schema || undefined, name: entity.name, entityType }
 }
 
-export function toColumn(column: ExtendedTableColumn | TableColumn): CliColumn {
+export function toColumn(column: ExtendedTableColumn | TableColumn): Column {
   const extended = column as Partial<ExtendedTableColumn>
   return _.omitBy(
     {
@@ -93,38 +102,27 @@ export function toColumn(column: ExtendedTableColumn | TableColumn): CliColumn {
       enumValues: extended.enumValues,
     },
     _.isUndefined
-  ) as CliColumn
-}
-
-/** Column names, made unique so a result with two `id` columns loses nothing. */
-export function uniqueColumnNames(names: string[]): string[] {
-  const counts = new Map<string, number>()
-  return names.map((rawName) => {
-    const name = rawName ?? ''
-    const count = counts.get(name) ?? 0
-    counts.set(name, count + 1)
-    return count === 0 ? name : `${name}_${count + 1}`
-  })
+  ) as Column
 }
 
 /** Binary cells as hex; JSON would otherwise write a Buffer as an array of bytes. */
 function cellValue(value: unknown): unknown {
   if (value instanceof ArrayBuffer) {
-    return { type: 'binary', encoding: 'hex', data: Buffer.from(value).toString('hex') } satisfies CliBinaryValue
+    return { type: 'binary', encoding: 'hex', data: Buffer.from(value).toString('hex') } satisfies BinaryValue
   }
   if (ArrayBuffer.isView(value)) {
     const buffer = Buffer.from(value.buffer, value.byteOffset, value.byteLength)
-    return { type: 'binary', encoding: 'hex', data: buffer.toString('hex') } satisfies CliBinaryValue
+    return { type: 'binary', encoding: 'hex', data: buffer.toString('hex') } satisfies BinaryValue
   }
   return value
 }
 
-export function formatQueryResult(result: NgQueryResult): CliQueryResult {
+export function formatQueryResult(result: NgQueryResult): StatementResult {
   const rows = result.rows || []
-  const fields =
-    result.fields && result.fields.length > 0
-      ? result.fields
-      : Object.keys(rows[0] || {}).map((name) => ({ id: name, name }))
+  let fields = result.fields || []
+  if (fields.length === 0) {
+    fields = Object.keys(rows[0] || {}).map((name) => ({ id: name, name }))
+  }
   const columns = uniqueColumnNames(fields.map((field) => field.name ?? field.id))
 
   const limited = rows.slice(0, CLI_MAX_QUERY_ROWS)

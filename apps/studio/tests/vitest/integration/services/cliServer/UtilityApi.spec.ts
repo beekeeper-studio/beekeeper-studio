@@ -1,13 +1,17 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
 import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
-import { SavedConnection } from '@/common/appdb/models/saved_connection'
+import { newState, removeState } from '@/handlers/handlerState'
+import { ConnHandlers } from '@commercial/backend/handlers/connHandlers'
+import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import { SqliteClient } from '@/lib/db/clients/sqlite'
-import { CliOpenConnection, connectionDisplayName, formatQueryResult, uniqueColumnNames } from '@/services/cliServer/commands'
+import { CliCallContext, CliConnectionHandle, connectionDisplayName, formatQueryResult } from '@/services/cliServer/commands'
+import { CliGrantStore, MemoryCliGrantStore, SessionCliGrantStore } from '@/services/cliServer/grants'
+import { CliAccessRequest } from '@/services/cliServer/rendererRequests'
 import { UtilityApi } from '@/services/UtilityApi'
-import { BksConfig } from '@/common/bksConfig/BksConfigProvider'
 import {
   CLI_MAX_QUERY_ROWS,
   CLI_METHODS,
+  CliAccess,
   CliError,
   CliCreateTabRequest,
   CliTabSummary,
@@ -22,47 +26,88 @@ async function createSqliteClient(): Promise<SqliteClient> {
   return client
 }
 
-function openConnection(id: string, client: SqliteClient, config: Record<string, any> | null): CliOpenConnection {
+function openConnection(id: string, client: SqliteClient, config: Record<string, any> | null): CliConnectionHandle {
   return { id, client, database: ':memory:', config: config as any }
 }
 
-function backendFor(connections: CliOpenConnection[], enabledIds: string[] = connections.map((c) => c.id)): FakeParts {
+const READ_ONLY_ACCESS: CliAccess = { queryTypes: ['select'], savedQueriesRead: false, savedQueriesWrite: false, openTabs: true }
+
+function access(patch: Partial<CliAccess> = {}): CliAccess {
+  return { ...READ_ONLY_ACCESS, ...patch }
+}
+
+function context(name = 'Claude Code'): CliCallContext & { hangUp(): void } {
+  const caller = new AbortController()
+  return { client: { name }, signal: caller.signal, hangUp: () => caller.abort() }
+}
+
+/**
+ * `answer` is what the user picks in the approval dialog. Unless a test passes
+ * its own grant store, every client also starts out approved with it.
+ */
+function backendFor(connections: CliConnectionHandle[], answer: CliAccess | null = READ_ONLY_ACCESS): FakeParts {
+  const asked: CliAccessRequest[] = []
   return {
+    asked,
+    answer,
     openConnections: () => connections,
-    resolveCliEnabled: async (connection) => enabledIds.includes(connection.id),
+    askRendererForAccess: async (_connection, request) => {
+      asked.push(request)
+      return answer
+    },
     askRendererToCreateTab: async () => ({ tabId: '1', title: 'Query #1', tabType: 'query' }),
     askRendererToSwitchTab: async (_connection, tabId) => ({ tabId, title: 'Query #1', tabType: 'query' }),
   }
 }
 
 /** The parts of UtilityApi that reach the app's renderers, faked by each test. */
-interface FakeParts extends Pick<UtilityApi, 'resolveCliEnabled'> {
-  openConnections(): CliOpenConnection[]
-  askRendererToCreateTab(connection: CliOpenConnection, request: CliCreateTabRequest): Promise<CliTabSummary>
-  askRendererToSwitchTab(connection: CliOpenConnection, tabId: string): Promise<CliTabSummary>
+interface FakeParts {
+  /** Every approval dialog shown. */
+  asked: CliAccessRequest[]
+  answer: CliAccess | null
+  openConnections(): CliConnectionHandle[]
+  askRendererForAccess(connection: CliConnectionHandle, request: CliAccessRequest, signal: AbortSignal): Promise<CliAccess | null>
+  askRendererToCreateTab(connection: CliConnectionHandle, request: CliCreateTabRequest): Promise<CliTabSummary>
+  askRendererToSwitchTab(connection: CliConnectionHandle, tabId: string): Promise<CliTabSummary>
+}
+
+/** Approves every client up front, so tests that are not about approval can skip it. */
+class PreApprovedStore extends MemoryCliGrantStore {
+  constructor(private readonly access: CliAccess | null) {
+    super()
+  }
+
+  async find(clientName: string, connection: CliConnectionHandle) {
+    return (await super.find(clientName, connection)) ?? this.access
+  }
 }
 
 /** UtilityApi with its connections and renderers replaced by a fake. */
 class TestUtilityApi extends UtilityApi {
-  constructor(private readonly fake: FakeParts) {
-    // resolveCliEnabled is faked, so the config is never read.
-    super({ config: {} as BksConfig })
+  readonly savedQueryChanges: number[] = []
+
+  constructor(private readonly fake: FakeParts, grants: CliGrantStore = new PreApprovedStore(fake.answer)) {
+    super({ grants })
   }
 
   protected openConnections() {
     return this.fake.openConnections()
   }
 
-  resolveCliEnabled(connection: CliOpenConnection) {
-    return this.fake.resolveCliEnabled(connection)
+  protected askRendererForAccess(connection: CliConnectionHandle, request: CliAccessRequest, signal: AbortSignal) {
+    return this.fake.askRendererForAccess(connection, request, signal)
   }
 
-  protected askRendererToCreateTab(connection: CliOpenConnection, request: CliCreateTabRequest) {
+  protected askRendererToCreateTab(connection: CliConnectionHandle, request: CliCreateTabRequest) {
     return this.fake.askRendererToCreateTab(connection, request)
   }
 
-  protected askRendererToSwitchTab(connection: CliOpenConnection, tabId: string) {
+  protected askRendererToSwitchTab(connection: CliConnectionHandle, tabId: string) {
     return this.fake.askRendererToSwitchTab(connection, tabId)
+  }
+
+  protected notifySavedQueryChanged(_connection: CliConnectionHandle, id: number) {
+    this.savedQueryChanges.push(id)
   }
 }
 
@@ -81,7 +126,7 @@ describe('UtilityApi', () => {
   let client: SqliteClient
   let other: SqliteClient
   let backend: FakeParts
-  let primary: CliOpenConnection
+  let primary: CliConnectionHandle
 
   beforeAll(async () => {
     client = await createSqliteClient()
@@ -108,13 +153,17 @@ describe('UtilityApi', () => {
   })
 
   describe('connection selection', () => {
-    it('lists open connections with their cli status', async () => {
+    it('lists open connections with whether the caller is approved for them', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite', readOnlyMode: true })
-      const result = await call(new TestUtilityApi(backendFor([primary, second], ['sid-primary'])).connections({}))
+      const api = new TestUtilityApi(backendFor([primary, second]), new MemoryCliGrantStore())
+      await api.askApproval({ connection: 'Local Dev' }, context())
+      const result = await call(api.connections({}, context()))
       expect(result.connections).toEqual([
-        expect.objectContaining({ id: 'sid-primary', name: 'Local Dev', connectionType: 'sqlite', cliEnabled: true, readOnlyMode: false }),
-        expect.objectContaining({ id: 'sid-other', name: 'Other', cliEnabled: false, readOnlyMode: true }),
+        expect.objectContaining({ id: 'sid-primary', name: 'Local Dev', connectionType: 'sqlite', approved: true, readOnlyMode: false }),
+        expect.objectContaining({ id: 'sid-other', name: 'Other', approved: false, readOnlyMode: true }),
       ])
+      const otherClient = await call(api.connections({}, context('Cursor')))
+      expect(otherClient.connections.map((c) => c.approved)).toEqual([false, false])
     })
 
     it('names unsaved connections after their type and database', async () => {
@@ -128,40 +177,130 @@ describe('UtilityApi', () => {
       expect(connectionDisplayName({ id: 'abcdef123', client: other, database: null, config: { connectionType: 'mysql', name: 'Named' } as any })).toBe('Named')
     })
 
-    it('explains how to enable the cli when nothing is enabled', async () => {
-      const error = await expectError(new TestUtilityApi(backendFor([primary], [])).entities({ entityTypes: ['table'] }), 'CLI_DISABLED')
-      expect(error.message).toContain('"Local Dev"')
-      expect(error.hint).toContain('Enable CLI Access')
-      expect(error.hint).toContain('enableForAllConnections = true')
-      expect((error.details as any).connections[0]).toMatchObject({ name: 'Local Dev', cliEnabled: false })
-    })
-
     it('reports when no connection is open at all', async () => {
       const error = await expectError(new TestUtilityApi(backendFor([])).entities({ entityTypes: ['table'] }), 'NO_OPEN_CONNECTIONS')
       expect(error.hint).toContain('Connect to a database')
     })
 
-    it('needs --connection when more than one connection is enabled', async () => {
+    it('needs --connection when several are open and the caller is approved for none or several', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite' })
-      const both = backendFor([primary, second])
-      const error = await expectError(new TestUtilityApi(both).entities({ entityTypes: ['table'] }), 'AMBIGUOUS_CONNECTION')
+      const api = new TestUtilityApi(backendFor([primary, second]), new MemoryCliGrantStore())
+      await expectError(api.entities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
+      await api.askApproval({ connection: 'Other' }, context())
+      await api.askApproval({ connection: 'Local Dev' }, context())
+      const error = await expectError(api.entities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
       expect(error.message).toContain('"Local Dev"')
       expect(error.message).toContain('"Other"')
 
-      const byName = await call(new TestUtilityApi(both).entities({ entityTypes: ['table'], connection: 'other' }))
-      expect(byName.connection).toEqual({ id: 'sid-other', name: 'Other' })
+      const byName = await call(api.entities({ entityTypes: ['table'], connection: 'other' }, context()))
       expect(byName.entities.map((e) => e.name)).toEqual(['widgets'])
 
-      const byId = await call(new TestUtilityApi(both).entities({ entityTypes: ['table'], connection: 'sid-primary' }))
+      const byId = await call(api.entities({ entityTypes: ['table'], connection: 'sid-primary' }, context()))
       expect(byId.entities.map((e) => e.name)).toEqual(['orders', 'users'])
+
+      await expectError(api.entities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
     })
 
-    it('rejects unknown and disabled --connection values', async () => {
+    it('picks the one connection the caller is approved for when several are open', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite' })
-      const both = backendFor([primary, second], ['sid-primary'])
-      const unknown = await expectError(new TestUtilityApi(both).entities({ entityTypes: ['table'], connection: 'nope' }), 'UNKNOWN_CONNECTION')
+      const api = new TestUtilityApi(backendFor([primary, second]), new MemoryCliGrantStore())
+      await api.askApproval({ connection: 'Other' }, context())
+      const result = await call(api.entities({ entityTypes: ['table'] }, context()))
+      expect(result.entities.map((e) => e.name)).toEqual(['widgets'])
+    })
+
+    it('rejects unknown --connection values', async () => {
+      const unknown = await expectError(new TestUtilityApi(backend).entities({ entityTypes: ['table'], connection: 'nope' }), 'UNKNOWN_CONNECTION')
       expect(unknown.hint).toContain('"Local Dev"')
-      await expectError(new TestUtilityApi(both).entities({ entityTypes: ['table'], connection: 'Other' }), 'CLI_DISABLED')
+    })
+  })
+
+  describe('approval', () => {
+    it('fails without approval and says how to ask for it, without showing a dialog', async () => {
+      const fake = backendFor([primary])
+      const api = new TestUtilityApi(fake, new MemoryCliGrantStore())
+      const error = await expectError(api.schemas({}, context()), 'NOT_APPROVED')
+      expect(error.message).toContain('Claude Code')
+      expect(error.hint).toContain('bks ask-approval --connection "Local Dev"')
+      expect(fake.asked).toEqual([])
+    })
+
+    it('asks once per client and connection, then remembers', async () => {
+      const fake = backendFor([primary])
+      const api = new TestUtilityApi(fake, new MemoryCliGrantStore())
+      const result = await call(api.askApproval({}, context()))
+      expect(result).toEqual({ newlyApproved: true, access: READ_ONLY_ACCESS })
+      expect(fake.asked).toEqual([{ clientName: 'Claude Code', connectionName: 'Local Dev', readOnlyMode: false }])
+
+      expect((await call(api.askApproval({}, context()))).newlyApproved).toBe(false)
+      await api.schemas({}, context())
+      expect(fake.asked).toHaveLength(1)
+
+      await expectError(api.schemas({}, context('Cursor')), 'NOT_APPROVED')
+    })
+
+    it('shows one dialog for requests that arrive while it is open', async () => {
+      let answer: (access: CliAccess) => void = () => undefined
+      const fake = backendFor([primary])
+      fake.askRendererForAccess = async (_connection, request) => {
+        fake.asked.push(request)
+        return new Promise((resolve) => { answer = resolve })
+      }
+      const api = new TestUtilityApi(fake, new MemoryCliGrantStore())
+      const both = Promise.all([api.askApproval({}, context()), api.askApproval({}, context())])
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      answer(access())
+      await both
+      expect(fake.asked).toHaveLength(1)
+    })
+
+    it('closes the dialog once every caller waiting on it has hung up', async () => {
+      let answer: (access: CliAccess) => void = () => undefined
+      let dialog: AbortSignal | null = null
+      const fake = backendFor([primary])
+      fake.askRendererForAccess = async (_connection, request, signal) => {
+        fake.asked.push(request)
+        dialog = signal
+        return new Promise((resolve) => { answer = resolve })
+      }
+      const grants = new MemoryCliGrantStore()
+      const api = new TestUtilityApi(fake, grants)
+      const a = context()
+      const b = context()
+      const first = expectError(api.askApproval({}, a), 'INTERNAL')
+      const second = expectError(api.askApproval({}, b), 'INTERNAL')
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      a.hangUp()
+      await first
+      expect(dialog!.aborted).toBe(false)
+
+      b.hangUp()
+      await second
+      expect(dialog!.aborted).toBe(true)
+
+      // An answer that arrives after everyone left approves nothing.
+      answer(access())
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      expect(await grants.find('Claude Code', primary)).toBeNull()
+    })
+
+    it('fails with ACCESS_DENIED on deny and asks again next time', async () => {
+      const fake = backendFor([primary], null)
+      const api = new TestUtilityApi(fake, new MemoryCliGrantStore())
+      const error = await expectError(api.askApproval({}, context()), 'ACCESS_DENIED')
+      expect(error.hint).toContain('ask-approval')
+      await expectError(api.schemas({}, context()), 'NOT_APPROVED')
+      await expectError(api.askApproval({}, context()), 'ACCESS_DENIED')
+      expect(fake.asked).toHaveLength(2)
+    })
+
+    it('never grants writes on a read only connection', async () => {
+      const readOnly = openConnection('sid-ro', client, { id: 5, name: 'Prod', connectionType: 'sqlite', readOnlyMode: true })
+      const grants = new MemoryCliGrantStore()
+      const api = new TestUtilityApi(backendFor([readOnly], access({ queryTypes: ['select', 'update', 'anything'] })), grants)
+      await api.askApproval({}, context())
+      expect((await grants.find('Claude Code', readOnly))?.queryTypes).toEqual(['select'])
     })
   })
 
@@ -171,15 +310,14 @@ describe('UtilityApi', () => {
 
   it('lists schemas', async () => {
     const result = await call(new TestUtilityApi(backend).schemas({}))
-    expect(result.connection).toEqual({ id: 'sid-primary', name: 'Local Dev' })
     expect(Array.isArray(result.schemas)).toBe(true)
   })
 
   it('lists tables and entities', async () => {
     const tables = await call(new TestUtilityApi(backend).entities({ entityTypes: ['table'] }))
     expect(tables.entities).toEqual([
-      { schema: null, name: 'orders', entityType: 'table' },
-      { schema: null, name: 'users', entityType: 'table' },
+      { name: 'orders', entityType: 'table' },
+      { name: 'users', entityType: 'table' },
     ])
 
     const all = await call(new TestUtilityApi(backend).entities({}))
@@ -192,7 +330,7 @@ describe('UtilityApi', () => {
     expect(all.warnings).toEqual([])
 
     const views = await call(new TestUtilityApi(backend).entities({ entityTypes: ['view'] }))
-    expect(views.entities).toEqual([{ schema: null, name: 'recent_users', entityType: 'view' }])
+    expect(views.entities).toEqual([{ name: 'recent_users', entityType: 'view' }])
   })
 
   describe('structure', () => {
@@ -255,6 +393,22 @@ describe('UtilityApi', () => {
       expect(result.tabId).toBe('7')
     })
 
+    it('needs permission to open tabs', async () => {
+      const created: CliCreateTabRequest[] = []
+      const api = new TestUtilityApi({
+        ...backendFor([primary], access({ openTabs: false })),
+        askRendererToCreateTab: async (_connection, request) => {
+          created.push(request)
+          return { tabId: '7', title: 'Query #1', tabType: 'query' }
+        },
+      })
+      const error = await expectError(api.createTab({ tab: 'query' }, context()), 'NOT_PERMITTED')
+      expect(error.message).toContain('Claude Code')
+      expect(error.hint).toContain('ask-approval')
+      await expectError(api.switchTab({ tabId: '1' }, context()), 'NOT_PERMITTED')
+      expect(created).toEqual([])
+    })
+
     it('opens nothing for an unknown tab type', async () => {
       const { methods, created } = recording()
       await expectError(methods.createTab({ tab: 'table' as any }), 'USAGE')
@@ -266,7 +420,6 @@ describe('UtilityApi', () => {
   describe('query', () => {
     it('returns rows keyed by column name', async () => {
       const result = await call(new TestUtilityApi(backend).query({ sql: 'select id, email, name from users order by id' }))
-      expect(result.connection.name).toBe('Local Dev')
       expect(result.results).toHaveLength(1)
       const [first] = result.results
       expect(first.columns).toEqual(['id', 'email', 'name'])
@@ -311,12 +464,11 @@ describe('UtilityApi', () => {
     it('reports sql errors as QUERY_FAILED', async () => {
       const error = await expectError(new TestUtilityApi(backend).query({ sql: 'select * from missing_table' }), 'QUERY_FAILED')
       expect(error.message).toContain('missing_table')
-      expect((error.details as any).connection).toEqual({ id: 'sid-primary', name: 'Local Dev' })
       await expectError(new TestUtilityApi(backend).query({ sql: '   ' }), 'USAGE')
     })
 
-    it('rejects writes even when the connection is not read only', async () => {
-      expect(client.readOnlyMode).toBe(false)
+    it('runs only the statement types the client was granted', async () => {
+      const selectOnly = new TestUtilityApi(backend)
       for (const sql of [
         "insert into users (id, email) values (3, 'c@example.com')",
         "update users set name = 'x' where id = 1",
@@ -326,13 +478,24 @@ describe('UtilityApi', () => {
         // a read followed by a write is rejected as a whole
         "select 1; insert into users (id, email) values (4, 'd@example.com')",
       ]) {
-        const error = await expectError(new TestUtilityApi(backend).query({ sql }), 'READ_ONLY')
-        expect(error.hint).toContain('read only')
+        const error = await expectError(selectOnly.query({ sql }, context()), 'NOT_PERMITTED')
+        expect(error.hint).toContain('ask-approval')
       }
-      const check = await call(new TestUtilityApi(backend).query({ sql: 'select count(*) as n from users; select count(*) as orders from orders' }))
+      const check = await call(selectOnly.query({ sql: 'select count(*) as n from users; select count(*) as orders from orders' }, context()))
       expect(check.results[0].rows[0].n).toBe(2)
       expect(check.results[1].rows[0].orders).toBe(2)
-      expect((await call(new TestUtilityApi(backend).entities({ entityTypes: ['table'] }))).entities.map((e) => e.name)).toEqual(['orders', 'users'])
+
+      const updates = new TestUtilityApi(backendFor([primary], access({ queryTypes: ['select', 'update'] })))
+      const updated = await call(updates.query({ sql: "update users set name = name where id = 1" }, context()))
+      expect(updated.results[0].affectedRows).toBe(1)
+      const denied = await expectError(updates.query({ sql: 'delete from users where id = 2' }, context()), 'NOT_PERMITTED')
+      expect(denied.message).toContain('delete')
+      expect((denied.details as any).statements).toEqual([{ text: 'delete from users where id = 2', needs: ['delete'] }])
+    })
+
+    it('runs anything with the anything permission', async () => {
+      const api = new TestUtilityApi(backendFor([primary], access({ queryTypes: ['anything'] })))
+      await call(api.query({ sql: 'create table scratch_anything (id integer); drop table scratch_anything' }, context()))
     })
 
     it('still answers reads on a read only connection', async () => {
@@ -340,7 +503,9 @@ describe('UtilityApi', () => {
       try {
         const result = await call(new TestUtilityApi(backend).query({ sql: 'select count(*) as n from users' }))
         expect(result.results[0].rows[0].n).toBe(2)
-        await expectError(new TestUtilityApi(backend).query({ sql: 'delete from users' }), 'READ_ONLY')
+        const writer = new TestUtilityApi(backendFor([primary], access({ queryTypes: ['select', 'delete'] })))
+        const error = await expectError(writer.query({ sql: 'delete from users' }, context()), 'READ_ONLY')
+        expect(error.hint).toContain('read only mode')
       } finally {
         client.readOnlyMode = false
       }
@@ -381,85 +546,76 @@ describe('formatQueryResult', () => {
   })
 })
 
-describe('uniqueColumnNames', () => {
-  it('suffixes duplicates in order', () => {
-    expect(uniqueColumnNames(['a', 'b', 'a', 'a'])).toEqual(['a', 'b', 'a_2', 'a_3'])
-    expect(uniqueColumnNames([undefined as any, undefined as any])).toEqual(['', '_2'])
+describe('SessionCliGrantStore', () => {
+  afterEach(async () => {
+    await removeState('sid-session')
+  })
+
+  it('revokes approvals when the window disconnects', async () => {
+    newState('sid-session')
+    const store = new SessionCliGrantStore()
+    const open: CliConnectionHandle = { id: 'sid-session', client: {} as any, database: null, config: null }
+    await store.save('Claude Code', open, access())
+    expect(await store.find('Claude Code', open)).toEqual(access())
+
+    await ConnHandlers['conn/clearConnection']({ sId: 'sid-session' })
+    expect(await store.find('Claude Code', open)).toBeNull()
   })
 })
 
-function connection(config: Record<string, any> | null): CliOpenConnection {
-  return { id: 'sid', client: {} as any, database: null, config: config as any }
-}
+describe('saved queries', () => {
+  let client: SqliteClient
+  let primary: CliConnectionHandle
 
-function utilityApi(enableForAllConnections: boolean): UtilityApi {
-  const config = { cli: { enableForAllConnections } } as BksConfig
-  return new UtilityApi({ config })
-}
-
-async function saveConnection(cliEnabled: boolean): Promise<SavedConnection> {
-  const saved = new SavedConnection()
-  saved.connectionType = 'sqlite'
-  saved.defaultDatabase = ':memory:'
-  saved.name = 'CLI Connection'
-  saved.cliEnabled = cliEnabled
-  await saved.save()
-  return saved
-}
-
-describe('resolveCliEnabled', () => {
   beforeAll(async () => {
     await TestOrmConnection.connect()
+    client = await createSqliteClient()
+    primary = openConnection('sid-primary', client, { id: 1, name: 'Local Dev', connectionType: 'sqlite' })
   })
 
   afterAll(async () => {
+    await client?.disconnect()
     await TestOrmConnection.disconnect()
   })
 
   beforeEach(async () => {
-    await SavedConnection.clear()
+    await FavoriteQuery.clear()
   })
 
-  it('is true for every connection when the ini setting is on', async () => {
-    const saved = await saveConnection(false)
-    const api = utilityApi(true)
-    expect(await api.resolveCliEnabled(connection({ id: saved.id, cliEnabled: false }))).toBe(true)
-    expect(await api.resolveCliEnabled(connection(null))).toBe(true)
+  it('needs read access to list or read them, and write access to change them', async () => {
+    const none = new TestUtilityApi(backendFor([primary], access()))
+    await expectError(none.savedQueries({}, context()), 'NOT_PERMITTED')
+    await expectError(none.createSavedQuery({ title: 'x', text: 'select 1' }, context()), 'NOT_PERMITTED')
+
+    const readOnly = new TestUtilityApi(backendFor([primary], access({ savedQueriesRead: true })))
+    expect((await call(readOnly.savedQueries({}, context()))).savedQueries).toEqual([])
+    await expectError(readOnly.createSavedQuery({ title: 'x', text: 'select 1' }, context()), 'NOT_PERMITTED')
+    expect(await FavoriteQuery.count()).toBe(0)
   })
 
-  it('uses the latest saved copy of a local saved connection', async () => {
-    const saved = await saveConnection(true)
-    const api = utilityApi(false)
-    expect(await api.resolveCliEnabled(connection({ id: saved.id, workspaceId: -1, cliEnabled: false }))).toBe(true)
+  it('creates and updates them, telling the window', async () => {
+    const api = new TestUtilityApi(backendFor([primary], access({ savedQueriesRead: true, savedQueriesWrite: true })))
+    const created = await call(api.createSavedQuery({ title: ' Active users ', text: 'select * from users' }, context()))
+    expect(created.savedQuery).toMatchObject({ title: 'Active users', text: 'select * from users', excerpt: 'select * from users' })
+    const id = created.savedQuery.id
 
-    saved.cliEnabled = false
-    await saved.save()
-    expect(await api.resolveCliEnabled(connection({ id: saved.id, cliEnabled: true }))).toBe(false)
-  })
+    const updated = await call(api.updateSavedQuery({ id, text: 'select id from users' }, context()))
+    expect(updated.savedQuery).toMatchObject({ id, title: 'Active users', text: 'select id from users' })
+    expect(api.savedQueryChanges).toEqual([id, id])
 
-  it('falls back to the connected config when the saved row is gone', async () => {
-    const api = utilityApi(false)
-    expect(await api.resolveCliEnabled(connection({ id: 9999, cliEnabled: true }))).toBe(true)
-    expect(await api.resolveCliEnabled(connection({ id: 9999, cliEnabled: false }))).toBe(false)
-  })
+    const listed = await call(api.savedQueries({}, context()))
+    expect(listed.savedQueries).toEqual([expect.objectContaining({ id, title: 'Active users' })])
+    expect(listed.savedQueries[0].text).toBeUndefined()
+    expect((await call(api.savedQuery({ id }, context()))).savedQuery.text).toBe('select id from users')
 
-  it('does not look up cloud workspace connections locally', async () => {
-    const saved = await saveConnection(true)
-    const api = utilityApi(false)
-    expect(await api.resolveCliEnabled(connection({ id: saved.id, workspaceId: 42, cliEnabled: false }))).toBe(false)
-  })
-
-  it('is false for unsaved connections without the flag and for missing configs', async () => {
-    const api = utilityApi(false)
-    expect(await api.resolveCliEnabled(connection({ connectionType: 'sqlite' }))).toBe(false)
-    expect(await api.resolveCliEnabled(connection({ connectionType: 'sqlite', cliEnabled: true }))).toBe(true)
-    expect(await api.resolveCliEnabled(connection(null))).toBe(false)
+    await expectError(api.updateSavedQuery({ id: 9999, title: 'x' }, context()), 'NOT_FOUND')
+    await expectError(api.updateSavedQuery({ id }, context()), 'USAGE')
   })
 })
 
 describe('getCliApis', () => {
   it('has a command for every CLI method', () => {
-    const commands = utilityApi(false).getCliApis()
+    const commands = new UtilityApi({ grants: new MemoryCliGrantStore() }).getCliApis()
     expect(commands.map((command) => command.name)).toEqual([...CLI_METHODS])
     for (const command of commands) {
       expect(typeof command.func).toBe('function')

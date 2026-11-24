@@ -1,5 +1,12 @@
 import { CliError, CliErrorCode } from '@beekeeperstudio/cli-client'
 
+/** What the approval dialog shows. */
+export interface CliAccessRequest {
+  clientName: string
+  connectionName: string
+  readOnlyMode: boolean
+}
+
 export interface RendererResponse {
   requestId: string
   result?: unknown

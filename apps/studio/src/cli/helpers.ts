@@ -1,5 +1,4 @@
 import fs from "fs";
-import os from "os";
 import path from "path";
 import { text } from "stream/consumers";
 import {
@@ -11,7 +10,6 @@ import {
   CliEntityType,
   CliErrorPayload,
   isCliError,
-  resolveCliSocketPath,
 } from "@beekeeperstudio/cli-client";
 
 export const ENTITY_TYPE_ALIASES = {
@@ -43,6 +41,14 @@ export function resolveEntityTypes(
   return [...new Set(aliases.map((alias) => ENTITY_TYPE_ALIASES[alias]))];
 }
 
+export function savedQueryId(value: string): number {
+  const id = Number(value);
+  if (!Number.isInteger(id) || id < 1) {
+    throw new InvalidArgumentError("Expected the id of a saved query.");
+  }
+  return id;
+}
+
 export function singleValue(
   value: string,
   previous: string | undefined,
@@ -67,7 +73,7 @@ export const formatOption = new Option("-f, --format <format>", "Output format")
 
 export const connectionOption = new Option(
   "-c, --connection <name>",
-  "Open connection to use (its name or id). Required when more than one open connection has CLI access enabled",
+  "Which open connection to use, by name or id. Optional if only one is open.",
 ).argParser(singleValue);
 
 export const schemaOption = new Option(
@@ -163,7 +169,7 @@ export function formatErrorPayload(error: CliErrorPayload): string {
     lines.push("Open connections:");
     for (const c of connections) {
       const flags = [
-        c.cliEnabled ? "CLI enabled" : "CLI disabled",
+        c.approved ? "approved" : "not approved",
         c.readOnlyMode ? "read only" : null,
       ]
         .filter(Boolean)
@@ -191,56 +197,3 @@ export async function send(
   command.configureOutput().writeOut(output + "\n");
 }
 
-/** The directory name electron derives from package.json `name`: appData/<name>. */
-export const APP_DATA_DIR_NAME = "beekeeper-studio";
-
-export interface HostEnvironment {
-  platform: NodeJS.Platform;
-  homedir: string;
-  env: NodeJS.ProcessEnv;
-}
-
-function hostEnvironment(overrides: Partial<HostEnvironment>): HostEnvironment {
-  return {
-    platform: overrides.platform ?? process.platform,
-    homedir: overrides.homedir ?? os.homedir(),
-    env: overrides.env ?? process.env,
-  };
-}
-
-/**
- * Where electron's app.getPath("userData") points for this app, computed
- * without electron so the CLI can find the socket from a plain node process.
- */
-export function defaultUserDirectory(overrides: Partial<HostEnvironment> = {}): string {
-  const { platform, homedir, env } = hostEnvironment(overrides);
-  if (platform === "win32") {
-    return path.join(env.APPDATA || path.join(homedir, "AppData", "Roaming"), APP_DATA_DIR_NAME);
-  }
-  if (platform === "darwin") {
-    return path.join(homedir, "Library", "Application Support", APP_DATA_DIR_NAME);
-  }
-  return path.join(env.XDG_CONFIG_HOME || path.join(homedir, ".config"), APP_DATA_DIR_NAME);
-}
-
-function envFlag(value: string | undefined): boolean {
-  return !!value && !["0", "false", "no", ""].includes(value.trim().toLowerCase());
-}
-
-/**
- * The socket the CLI connects to. BKS_CLI_SOCKET overrides everything (odd
- * data directories, portable installs); BKS_CLI_DEV targets a development
- * build of the app.
- */
-export function defaultCliSocketPath(overrides: Partial<HostEnvironment> = {}): string {
-  const host = hostEnvironment(overrides);
-  const override = host.env.BKS_CLI_SOCKET?.trim();
-  if (override) {
-    return override;
-  }
-  return resolveCliSocketPath({
-    userDirectory: defaultUserDirectory(host),
-    isWindows: host.platform === "win32",
-    isDevelopment: envFlag(host.env.BKS_CLI_DEV),
-  });
-}

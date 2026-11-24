@@ -28,9 +28,3 @@ export function warningsBlock(warnings?: string[]): string[] {
   if (!warnings || warnings.length === 0) return [];
   return ["", "**Warnings**", ...warnings.map((w) => `- ${cell(w)}`)];
 }
-
-export function connectionLine(result: any): string[] {
-  return result?.connection?.name
-    ? [`Connection: ${result.connection.name}`, ""]
-    : [];
-}

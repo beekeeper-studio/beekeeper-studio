@@ -12,6 +12,7 @@ import { FSWatcher } from "fs";
 import fs from "fs";
 import tmp from 'tmp';
 import rawLog from "@bksLogger";
+import type { CliAccess } from "@beekeeperstudio/cli-client";
 
 const log = rawLog.scope("handlerState");
 
@@ -38,6 +39,9 @@ export class State {
   workspaceId: number = null;
 
   connectionAbortController: AbortController = null;
+
+  /** CLI clients approved for this connection, by client name. */
+  cliGrants: Map<string, CliAccess> = new Map();
 
   // enums
   enumsInitialized = false;

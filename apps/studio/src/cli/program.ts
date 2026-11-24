@@ -17,15 +17,19 @@ import {
   ENTITY_TYPE_ALIASES,
   EntityTypeAlias,
   resolveEntityTypes,
+  savedQueryId,
+  singleValue,
   formatErrorPayload,
-  defaultCliSocketPath,
   notRunningMessage,
 } from "./helpers";
 import {
   CliClient,
   isConnectError,
   isCliError,
+  defaultCliSocketPath,
+  DEFAULT_CLI_TIMEOUT,
 } from "@beekeeperstudio/cli-client";
+import { detectClientName } from "./clientName";
 
 /**
  * The `bks` program. Each command sends its request to the running app and
@@ -38,18 +42,20 @@ export function createProgram(options: {
   /** Where help, errors and command results are written. Defaults to stdout and stderr. */
   output?: OutputConfiguration;
   version: string;
+  /** Who the app is told is calling. Detected from the parent processes when left out. */
+  clientName?: string;
 }): Command {
   const program = new Command("bks")
     .version(options.version, "-v, --version", "Output the version number")
     .description(
-      "Runs read-only commands against a database connection that is already open in the Beekeeper Studio desktop app.",
+      "Runs commands against a database connection that is already open in the Beekeeper Studio desktop app. A client has to be approved first: run ask-approval.",
     )
     .configureHelp({ showGlobalOptions: true })
     .showHelpAfterError("(add --help for usage)")
     .addOption(
       new Option(
         "--socket <path>",
-        "Socket the app listens on (beekeeper-studio cli prints it).",
+        "Socket the app listens on.",
       )
         .env("BKS_CLI_SOCKET")
         .default(defaultCliSocketPath(), "the app's socket"),
@@ -57,7 +63,7 @@ export function createProgram(options: {
     .addOption(
       new Option(
         "--timeout <ms>",
-        "Give up waiting for the app after this many milliseconds. 0 waits forever",
+        "Stop waiting for the app after this many milliseconds (0 waits forever)",
       )
         .argParser((value) => {
           const timeout = Number(value);
@@ -68,7 +74,7 @@ export function createProgram(options: {
           }
           return timeout;
         })
-        .default(5000),
+        .default(DEFAULT_CLI_TIMEOUT),
     )
     .addHelpText(
       "after",
@@ -78,7 +84,12 @@ Examples:
   bks tables --schema public
   bks structure users --schema public
   bks query "select id, email from users limit 10"
-  bks create-tab query "select id, email from users limit 10"`,
+  bks create-tab query "select id, email from users limit 10"
+  bks ask-approval
+  bks saved-queries list
+
+The client name shown in the approval dialog is detected from the parent
+processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     );
 
   let client: CliClient;
@@ -88,6 +99,7 @@ Examples:
     client = new CliClient({
       socketPath: globals.socket,
       timeout: globals.timeout,
+      clientName: options.clientName ?? detectClientName(),
     });
     client.on("error", (error) => {
       if (isConnectError(error)) {
@@ -197,7 +209,7 @@ Examples:
   program
     .command("query")
     .description(
-      "Run a read-only SQL statement and print the results (at most 20,000 rows per result)",
+      "Run SQL and print the results (at most 20,000 rows per result). Only the statement types the client was approved for run",
     )
     .addArgument(
       new Argument("[sql...]", "SQL to run, or - to read it from stdin"),
@@ -259,6 +271,95 @@ Examples:
         const reply = await client.switchTab({
           connection: opts.connection,
           tabId: id,
+        });
+        return reply.raw();
+      });
+    });
+
+  program
+    .command("ask-approval")
+    .alias("a")
+    .description(
+      "Ask for access to a connection. Opens a dialog in the app and waits until it is answered",
+    )
+    .addOption(connectionOption)
+    .action(async (opts, command) => {
+      await send(command, async () => {
+        const reply = await client.askApproval({ connection: opts.connection });
+        return reply.raw();
+      });
+    });
+
+  const savedQueries = program
+    .command("saved-queries")
+    .description("Read and write the queries saved in the app");
+
+  savedQueries
+    .command("list")
+    .description("List the saved queries")
+    .addOption(connectionOption)
+    .addOption(formatOption)
+    .action(async (opts, command) => {
+      await send(command, async () => {
+        const reply = await client.savedQueries({ connection: opts.connection });
+        return opts.format === "md" ? reply.markdown() : reply.raw();
+      });
+    });
+
+  savedQueries
+    .command("get")
+    .description("Print a saved query, its SQL included")
+    .addArgument(new Argument("<id>", "Id of the saved query").argParser(savedQueryId))
+    .addOption(connectionOption)
+    .action(async (id, opts, command) => {
+      await send(command, async () => {
+        const reply = await client.savedQuery({ connection: opts.connection, id });
+        return reply.raw();
+      });
+    });
+
+  savedQueries
+    .command("create")
+    .description("Save a new query")
+    .addArgument(new Argument("<title>", "Title of the saved query"))
+    .addArgument(
+      new Argument("[sql...]", "SQL to save, or - to read it from stdin"),
+    )
+    .addOption(connectionOption)
+    .addOption(fileOption)
+    .action(async (title, words, opts, command) => {
+      const sql = await readSql(command, words, opts.file, { required: true });
+      await send(command, async () => {
+        const reply = await client.createSavedQuery({
+          connection: opts.connection,
+          title,
+          text: sql as string,
+        });
+        return reply.raw();
+      });
+    });
+
+  savedQueries
+    .command("update")
+    .description("Change the title or the SQL of a saved query")
+    .addArgument(new Argument("<id>", "Id of the saved query").argParser(savedQueryId))
+    .addArgument(
+      new Argument("[sql...]", "New SQL, or - to read it from stdin"),
+    )
+    .addOption(new Option("--title <title>", "New title").argParser(singleValue))
+    .addOption(connectionOption)
+    .addOption(fileOption)
+    .action(async (id, words, opts, command) => {
+      const sql = await readSql(command, words, opts.file, { required: false });
+      if (sql === undefined && opts.title === undefined) {
+        command.error("error: pass a new --title, new SQL, or both.");
+      }
+      await send(command, async () => {
+        const reply = await client.updateSavedQuery({
+          connection: opts.connection,
+          id,
+          title: opts.title,
+          text: sql,
         });
         return reply.raw();
       });

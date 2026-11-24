@@ -176,6 +176,25 @@ describe("CliServer", () => {
     });
   });
 
+  it("tells a running method when its caller hangs up", async () => {
+    const server = createServer();
+    const hungUp = new Promise<void>((resolve) => {
+      server.register("method1", async (_params, context) => {
+        await new Promise((done) => context.signal.addEventListener("abort", done));
+        resolve();
+        return {};
+      });
+    });
+    await server.start();
+
+    const socket = net.createConnection(socketPath);
+    socket.on("connect", () => {
+      socket.write(JSON.stringify({ method: "method1" }) + "\n");
+      setTimeout(() => socket.destroy(), 20);
+    });
+    await hungUp;
+  });
+
   it("refuses to start without a socket path", async () => {
     const server = new CliServer({ socketPath: "" });
     const error = await server.start().then(

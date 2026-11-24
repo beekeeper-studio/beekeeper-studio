@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import path from 'path'
-import { isWindowsPipePath, resolveCliSocketPath } from '@beekeeperstudio/cli-client'
-import { defaultCliSocketPath, defaultUserDirectory } from '@/cli/helpers'
+import { isWindowsPipePath, resolveCliSocketPath, defaultCliSocketPath, defaultUserDirectory } from '@beekeeperstudio/cli-client'
 
 describe('defaultUserDirectory', () => {
   it("matches electron's userData on each platform", () => {

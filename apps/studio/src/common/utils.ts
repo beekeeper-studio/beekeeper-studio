@@ -414,3 +414,14 @@ export function isNumericDataType (dataType) {
 
   return numericStarts.some(t => base.startsWith(t))
 }
+
+/** Column names, made unique so a result with two `id` columns loses nothing. */
+export function uniqueColumnNames(names: string[]): string[] {
+  const counts = new Map<string, number>()
+  return names.map((rawName) => {
+    const name = rawName ?? ''
+    const count = counts.get(name) ?? 0
+    counts.set(name, count + 1)
+    return count === 0 ? name : `${name}_${count + 1}`
+  })
+}

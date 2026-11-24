@@ -1,11 +1,10 @@
 import { SchemasResult } from "../protocol";
 import { CliReply } from "./CliReply";
-import { connectionLine } from "../markdown";
 
 export class SchemasReply extends CliReply<SchemasResult> {
   markdown(): string {
     const result = this.json();
-    const lines = connectionLine(result);
+    const lines: string[] = [];
     const schemas = result.schemas || [];
     lines.push(
       schemas.length === 0

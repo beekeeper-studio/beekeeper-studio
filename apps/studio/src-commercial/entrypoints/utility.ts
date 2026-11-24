@@ -250,7 +250,7 @@ async function init() {
   const cliServer = new CliServer({
     socketPath: platformInfo.cliSocketPath,
   });
-  const utilityApi = new UtilityApi({ config: BksConfig });
+  const utilityApi = new UtilityApi();
   for (const command of utilityApi.getCliApis()) {
     cliServer.register(command.name, command.func);
   }

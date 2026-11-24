@@ -1,5 +1,6 @@
 import { redactMessage } from '@/lib/log/redact'
 import { CliRequest, CliResponse } from '@beekeeperstudio/cli-client'
+import { clientInfo } from './commands'
 
 /** What the socket server reports after answering one request. */
 export interface CliRequestEvent {
@@ -13,10 +14,10 @@ export interface CliRequestEvent {
 export interface CliAuditEntry {
   time: string
   method: string | null
+  /** Who made the call, as the bks command detected it. */
+  client: string
   /** The params as received, SQL included (cut at CLI_AUDIT_SQL_MAX_CHARS). */
   params: Record<string, unknown> | null
-  /** The connection that answered, when one was selected. */
-  connection: { id: string; name: string } | null
   ok: boolean
   durationMs: number
   responseBytes: number
@@ -38,7 +39,7 @@ export function summarizeResult(method: string | null, result: any): Record<stri
   switch (method) {
     case 'connections': {
       const connections: any[] = result.connections || []
-      return { connections: connections.length, cliEnabled: connections.filter((c) => c?.cliEnabled).length }
+      return { connections: connections.length, approved: connections.filter((c) => c?.approved).length }
     }
     case 'schemas':
       return { schemas: (result.schemas || []).length }
@@ -88,25 +89,18 @@ export function buildAuditEntry(event: CliRequestEvent, now: Date = new Date()):
   const entry: CliAuditEntry = {
     time: now.toISOString(),
     method,
+    client: clientInfo(event.request?.client).name,
     params: auditParams(event.request),
-    connection: null,
     ok: !!event.response?.ok,
     durationMs: Math.max(0, Math.round(event.durationMs)),
     responseBytes: event.responseBytes,
   }
   if (event.response?.ok) {
     const result: any = event.response.result
-    if (result?.connection?.id) {
-      entry.connection = { id: String(result.connection.id), name: String(result.connection.name ?? '') }
-    }
     entry.result = summarizeResult(method, result)
   } else if (event.response && event.response.ok === false) {
     const error = event.response.error
     entry.error = { code: error?.code ?? 'INTERNAL', message: String(error?.message ?? '') }
-    const connection = (error?.details as any)?.connection
-    if (connection?.id) {
-      entry.connection = { id: String(connection.id), name: String(connection.name ?? '') }
-    }
   }
   return entry
 }

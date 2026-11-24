@@ -1,11 +1,11 @@
 import { QueryResult } from "../protocol";
 import { CliReply } from "./CliReply";
-import { connectionLine, table } from "../markdown";
+import { table } from "../markdown";
 
 export class QueryReply extends CliReply<QueryResult> {
   markdown(): string {
     const result = this.json();
-    const lines = connectionLine(result);
+    const lines: string[] = [];
     const results = result.results || [];
     if (results.length === 0) {
       lines.push("The query returned no results.");

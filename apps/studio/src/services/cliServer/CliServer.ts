@@ -1,6 +1,7 @@
 import fs from 'fs'
 import net from 'net'
 import { CliRequestEvent } from './auditLog'
+import { CliCallContext, clientInfo } from './commands'
 import { CliError, CliRequest, CliResponse, isCliError, isWindowsPipePath } from '@beekeeperstudio/cli-client'
 import { EventEmitter } from '@/common/EventEmitter'
 import { serializeBigInt } from '@/services/plugin/utils'
@@ -205,11 +206,21 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
       return
     }
 
-    const response = await this.call(request)
+    const caller = new AbortController()
+    const hangUp = () => caller.abort()
+    // A client that half-closed to mark the end of its request is still listening.
+    if (!socket.readableEnded) {
+      socket.once('end', hangUp)
+    }
+    socket.once('close', hangUp)
+    const context: CliCallContext = { client: clientInfo(request?.client), signal: caller.signal }
+    const response = await this.call(request, context)
+    socket.off('end', hangUp)
+    socket.off('close', hangUp)
     this.respond(socket, response, request, started)
   }
 
-  private async call(request: CliRequest): Promise<CliResponse> {
+  private async call(request: CliRequest, context: CliCallContext): Promise<CliResponse> {
     try {
       const method = typeof request?.method === 'string' ? this.funcs.get(request.method) : null
       if (!method) {
@@ -217,7 +228,7 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
           hint: `Methods: ${[...this.funcs.keys()].join(', ')}.`,
         })
       }
-      const result = await method(request.params || {})
+      const result = await method(request.params || {}, context)
       return { ok: true, result }
     } catch (error) {
       if (isCliError(error)) {

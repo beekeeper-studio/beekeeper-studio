@@ -233,6 +233,7 @@ export const ConnHandlers: IConnectionHandlers = {
     await UsedConnection.recordUse(config);
 
     state(sId).server = server;
+    state(sId).cliGrants.clear();
     state(sId).usedConfig = config;
     state(sId).connection = connection;
     state(sId).database = config.defaultDatabase;
@@ -305,6 +306,7 @@ export const ConnHandlers: IConnectionHandlers = {
     s.usedConfig = null;
     s.database = null;
     s.generator = null;
+    s.cliGrants.clear();
   },
   'conn/getServerConfig': async function({ sId }: { sId: string }) {
     return state(sId).server.getServerConfig();

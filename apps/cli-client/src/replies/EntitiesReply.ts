@@ -1,11 +1,11 @@
 import { EntitiesResult } from "../protocol";
 import { CliReply } from "./CliReply";
-import { connectionLine, table, warningsBlock } from "../markdown";
+import { table, warningsBlock } from "../markdown";
 
 export class EntitiesReply extends CliReply<EntitiesResult> {
   markdown(): string {
     const result = this.json();
-    const lines = connectionLine(result);
+    const lines: string[] = [];
     const entities = result.entities || [];
     if (entities.length === 0) {
       lines.push("No entities found.");
