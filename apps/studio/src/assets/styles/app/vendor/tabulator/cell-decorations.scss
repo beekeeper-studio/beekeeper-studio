@@ -17,4 +17,9 @@
   &.bks-type-binary > .cell-link-wrapper {
     color: var(--table-cell-binary-fg);
   }
+
+  &.text-right > .cell-link-wrapper {
+    justify-content: flex-end;
+    text-align: right;
+  }
 }

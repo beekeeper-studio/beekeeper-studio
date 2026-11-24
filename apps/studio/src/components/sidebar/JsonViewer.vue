@@ -83,6 +83,7 @@ import {
   findValueInfo,
   createExpandableTextDecoration,
   createTruncatableTextDecoration,
+  createShowLessTextDecoration,
   deepFilterObjectProps,
   eachPath,
   binaryBufferOf,
@@ -299,6 +300,29 @@ export default Vue.extend({
           });
         } catch (e) {
           log.warn("Failed to mark truncated path", path);
+          log.warn(e);
+        }
+      })
+      _.forEach(this.restoredTruncatedPaths, (path) => {
+        if (this.expandablePaths.includes(path)) {
+          return
+        }
+        try {
+          const line = findKeyPosition(this.text, path.split("."));
+          if (line === -1 || !this.lines[line]) return
+          const info = findValueInfo(this.lines[line]);
+          if (!info) return
+          const onClick = async () => {
+            this.restoredTruncatedPaths = this.restoredTruncatedPaths.filter((p) => p !== path)
+          }
+          markers.push({
+            type: "custom",
+            from: { line, ch: info.to },
+            to: { line, ch: info.to },
+            decoration: createShowLessTextDecoration(onClick),
+          });
+        } catch (e) {
+          log.warn("Failed to mark restored truncated path", path);
           log.warn(e);
         }
       })

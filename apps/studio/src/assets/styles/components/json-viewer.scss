@@ -172,7 +172,9 @@
   }
 }
 
-.truncatable-value .more {
+.truncatable-value .more,
+.show-less-wrapper .more,
+.show-less {
   @include btn;
   @include btn-flat;
   margin-left: 0.5rem;
