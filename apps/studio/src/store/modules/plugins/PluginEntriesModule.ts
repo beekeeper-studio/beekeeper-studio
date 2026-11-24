@@ -42,11 +42,12 @@ export const PluginEntriesModule: Module<PluginEntriesState, RootState> = {
       context.commit("setLoading", true);
       context.commit("setError", null);
       try {
-        const entries = await Vue.prototype.$util.send(
+        const { entries, errors } = await Vue.prototype.$util.send(
           "plugin/entries",
           { clearCache: true }
         );
         context.commit("setEntries", entries);
+        context.commit("setError", errors.length > 0 ? errors.join("; ") : null);
       } catch (e) {
         log.error(e);
         context.commit("setError", e.message ?? String(e));
