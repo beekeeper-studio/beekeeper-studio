@@ -57,6 +57,7 @@ export const SqlServerData: DialectData = {
   textEditorMode: "text/x-mssql",
   disabledFeatures: {
     shell: true,
+    comments: true,
     alter: {
       multiStatement: true,
       renameSchema: true,
