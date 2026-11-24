@@ -43,4 +43,11 @@ describe("FirebirdChangeBuilder", () => {
 
     expect(builder.reorderColumns(initArr, updatedArr)).toEqual(updatedArrStuff.join(';'))
   }))
+
+  it("uses the quotes from escapeString once", () => {
+    expect(builder.setComment('name', 'hello')).toBe("COMMENT ON COLUMN beans.name IS 'hello'")
+    expect(builder.setComment('name', "o'brien")).toBe("COMMENT ON COLUMN beans.name IS 'o''brien'")
+    expect(builder.setComment('name', null)).toBe('COMMENT ON COLUMN beans.name IS NULL')
+    expect(builder.setComment('name', '')).toBe('COMMENT ON COLUMN beans.name IS NULL')
+  })
 })
