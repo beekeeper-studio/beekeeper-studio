@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest"
+import _ from "lodash"
 import { dbtimeout, rowobj } from "@tests/lib/db"
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
@@ -6,6 +7,7 @@ import { createServer } from "@commercial/backend/lib/db/server";
 import { setupDB } from "./mongodb/setupDb";
 import { TableOrView } from "@/lib/db/models";
 import { DatabaseElement } from "@/lib/db/types";
+import { BSON, Binary, Code, DBRef, Decimal128, Double, Int32, Long, MinKey, ObjectId, Timestamp, UUID } from "mongodb";
 
 
 describe(`MongoDB`, () => {
@@ -414,6 +416,130 @@ describe(`MongoDB`, () => {
           // Ignore errors
         }
       }
+    });
+
+    describe("Editing BSON types", () => {
+      const AUTHOR = "64a1b1c2e4b0a1b2c3d4e5f2"
+
+      const bsonDoc = () => ({
+        price: Decimal128.fromString("12.345"),
+        views: Long.fromString("9007199254740993"),
+        small: Long.fromNumber(7),
+        count: new Int32(3),
+        ratio: new Double(2),
+        uuid: new UUID("6ba7b810-9dad-41d1-80b4-00c04fd430c8"),
+        avatar: new Binary(Buffer.from([1, 2, 3, 4])),
+        updated: new Timestamp({ t: 1700000000, i: 1 }),
+        released: new Date("2006-01-01T00:00:00.000Z"),
+        owner: new DBRef("users", new ObjectId(AUTHOR)),
+        check: new Code("function () { return 1 }"),
+        low: new MinKey(),
+        pattern: /a+b/i,
+        meta: { author: new ObjectId(AUTHOR), rating: Decimal128.fromString("4.5"), n: Long.fromNumber(7) },
+        items: [{ sku: new ObjectId(AUTHOR), price: Decimal128.fromString("1.50") }],
+        related: [new ObjectId(AUTHOR)],
+        status: "pending",
+      })
+
+      // what the cell editor sends back: text, with objects and arrays as JSON
+      const editorText = (value) => {
+        if (value instanceof Date) return value.toISOString()
+        if (value instanceof Uint8Array) return Buffer.from(value).toString("hex")
+        return typeof value === "object" && value !== null ? JSON.stringify(value) : String(value)
+      }
+
+      const bytes = (doc) => Buffer.from(BSON.serialize(doc)).toString("hex")
+
+      async function withCollection(name: string, test: (collection) => Promise<void>) {
+        const collectionName = getTestCollectionName(name)
+        const collection = (connection as any).conn.db("bee").collection(collectionName)
+        await collection.insertOne(bsonDoc())
+        try {
+          await test({ name: collectionName, raw: collection })
+        } finally {
+          await connection.dropElement(collectionName, DatabaseElement.TABLE).catch(() => undefined)
+        }
+      }
+
+      const stored = (raw) => raw.findOne({}, { promoteValues: false })
+
+      const edits = (table: string, row, values: Record<string, unknown>) => ({
+        inserts: [],
+        deletes: [],
+        updates: Object.entries(values).map(([column, value]) => ({
+          table,
+          column,
+          value,
+          primaryKeys: [{ column: "_id", value: row._id }],
+        })),
+      })
+
+      it("Should save unchanged query result cells exactly as they were", async () => {
+        await withCollection("bson_query_roundtrip", async ({ name, raw }) => {
+          const before = await stored(raw)
+          const [result] = await connection.executeQuery(`SELECT * FROM ${name}`)
+          const row = result.rows[0]
+
+          const unchanged = _.mapValues(_.omit(row, "_id"), editorText)
+          await connection.applyChanges(edits(name, row, unchanged))
+
+          expect(bytes(await stored(raw))).toBe(bytes(before))
+        })
+      })
+
+      it("Should keep BSON types when query result cells are edited", async () => {
+        await withCollection("bson_query_edit", async ({ name, raw }) => {
+          const [result] = await connection.executeQuery(`SELECT * FROM ${name}`)
+          const row = result.rows[0]
+
+          await connection.applyChanges(edits(name, row, {
+            price: "13.5",
+            views: "9007199254740995",
+            count: "4",
+            released: "2007-02-03T00:00:00.000Z",
+            meta: JSON.stringify({ ...row.meta, rating: "5" }),
+            items: JSON.stringify([{ ...row.items[0], price: "2.00" }]),
+            related: JSON.stringify([...row.related, "64a1b1c2e4b0a1b2c3d4e5f3"]),
+          }))
+
+          const doc = await stored(raw)
+          expect(doc.price).toEqual(Decimal128.fromString("13.5"))
+          expect(doc.views).toEqual(Long.fromString("9007199254740995"))
+          expect(doc.count).toEqual(new Int32(4))
+          expect(doc.released).toEqual(new Date("2007-02-03T00:00:00.000Z"))
+          expect(doc.meta.author).toEqual(new ObjectId(AUTHOR))
+          expect(doc.meta.rating).toEqual(Decimal128.fromString("5"))
+          expect(doc.meta.n).toEqual(Long.fromNumber(7))
+          expect(doc.items[0]).toEqual({ sku: new ObjectId(AUTHOR), price: Decimal128.fromString("2.00") })
+          expect(doc.related).toEqual([new ObjectId(AUTHOR), new ObjectId("64a1b1c2e4b0a1b2c3d4e5f3")])
+        })
+      })
+
+      it("Should write nothing when an edit would change a field's type", async () => {
+        await withCollection("bson_query_invalid", async ({ name, raw }) => {
+          const before = await stored(raw)
+          const [result] = await connection.executeQuery(`SELECT * FROM ${name}`)
+          const row = result.rows[0]
+
+          await expect(connection.applyChanges(edits(name, row, { status: "done", price: "abc" })))
+            .rejects.toThrow("Invalid Decimal128 value: abc")
+
+          expect(bytes(await stored(raw))).toBe(bytes(before))
+        })
+      })
+
+      it("Should save unchanged table view cells exactly as they were", async () => {
+        await withCollection("bson_table_roundtrip", async ({ name, raw }) => {
+          const before = await stored(raw)
+          const { result } = await connection.selectTop(name, 0, 10, [], [])
+          const row = result[0]
+
+          const unchanged = _.mapValues(_.omit(row, "_id"), editorText)
+          await connection.applyChanges(edits(name, row, unchanged))
+
+          expect(bytes(await stored(raw))).toBe(bytes(before))
+        })
+      })
     });
 
     it("Should delete documents", async () => {
