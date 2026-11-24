@@ -12,7 +12,7 @@ import { FSWatcher } from "fs";
 import fs from "fs";
 import tmp from 'tmp';
 import rawLog from "@bksLogger";
-import type { CliAccess } from "@beekeeperstudio/cli-client";
+import { AuthorizedClient } from "@/services/cliServer/AuthorizedClient";
 
 const log = rawLog.scope("handlerState");
 
@@ -22,6 +22,8 @@ export interface TempFile {
 }
 
 export class State {
+  constructor(readonly id: string) {}
+
   port: MessagePortMain = null
   server: IDbConnectionPublicServer = null;
   usedConfig: IConnection = null;
@@ -41,7 +43,7 @@ export class State {
   connectionAbortController: AbortController = null;
 
   /** CLI clients approved for this connection, by client name. */
-  cliGrants: Map<string, CliAccess> = new Map();
+  cliClients: Map<string, AuthorizedClient> = new Map();
 
   // enums
   enumsInitialized = false;
@@ -77,12 +79,18 @@ export function broadcast(message: unknown): void {
 }
 
 export function newState(id: string): void {
-  states.set(id, new State());
+  states.set(id, new State(id));
 }
 
-/** Every window's state, keyed by its sId. Read-only use (the CLI lists open connections). */
-export function allStates(): IterableIterator<[string, State]> {
-  return states.entries();
+/** All states that have a connection. */
+export function getConnectedStates(): State[] {
+  const ret = [];
+  for (const state of states.values()) {
+    if (state.connection) {
+      ret.push(state);
+    }
+  }
+  return ret;
 }
 
 export async function removeState(id: string): Promise<void> {

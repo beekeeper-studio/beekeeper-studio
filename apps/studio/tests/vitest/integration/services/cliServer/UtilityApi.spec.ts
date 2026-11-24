@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
 import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
-import { newState, removeState } from '@/handlers/handlerState'
+import { getConnectedStates, newState, removeState, state, State } from '@/handlers/handlerState'
 import { ConnHandlers } from '@commercial/backend/handlers/connHandlers'
 import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import { SqliteClient } from '@/lib/db/clients/sqlite'
-import { CliCallContext, CliConnectionHandle, connectionDisplayName, formatQueryResult } from '@/services/cliServer/commands'
-import { CliGrantStore, MemoryCliGrantStore, SessionCliGrantStore } from '@/services/cliServer/grants'
+import { CliCallContext, connectionDisplayName, formatQueryResult, UNKNOWN_CLIENT_NAME } from '@/services/cliServer/commands'
+import { AuthorizedClient } from '@/services/cliServer/AuthorizedClient'
 import { CliAccessRequest } from '@/services/cliServer/rendererRequests'
 import { UtilityApi } from '@/services/UtilityApi'
 import {
@@ -26,7 +26,15 @@ async function createSqliteClient(): Promise<SqliteClient> {
   return client
 }
 
-function openConnection(id: string, client: SqliteClient, config: Record<string, any> | null): CliConnectionHandle {
+/** A connection a test puts into handler state, as if a window had opened it. */
+interface FakeConnection {
+  id: string
+  client: SqliteClient
+  database: string | null
+  config: any
+}
+
+function openConnection(id: string, client: SqliteClient, config: Record<string, any> | null): FakeConnection {
   return { id, client, database: ':memory:', config: config as any }
 }
 
@@ -43,9 +51,9 @@ function context(name = 'Claude Code'): CliCallContext & { hangUp(): void } {
 
 /**
  * `answer` is what the user picks in the approval dialog. Unless a test passes
- * its own grant store, every client also starts out approved with it.
+ * `approved: false`, the default clients also start out approved with it.
  */
-function backendFor(connections: CliConnectionHandle[], answer: CliAccess | null = READ_ONLY_ACCESS): FakeParts {
+function backendFor(connections: FakeConnection[], answer: CliAccess | null = READ_ONLY_ACCESS): FakeParts {
   const asked: CliAccessRequest[] = []
   return {
     asked,
@@ -65,48 +73,49 @@ interface FakeParts {
   /** Every approval dialog shown. */
   asked: CliAccessRequest[]
   answer: CliAccess | null
-  openConnections(): CliConnectionHandle[]
-  askRendererForAccess(connection: CliConnectionHandle, request: CliAccessRequest, signal: AbortSignal): Promise<CliAccess | null>
-  askRendererToCreateTab(connection: CliConnectionHandle, request: CliCreateTabRequest): Promise<CliTabSummary>
-  askRendererToSwitchTab(connection: CliConnectionHandle, tabId: string): Promise<CliTabSummary>
-}
-
-/** Approves every client up front, so tests that are not about approval can skip it. */
-class PreApprovedStore extends MemoryCliGrantStore {
-  constructor(private readonly access: CliAccess | null) {
-    super()
-  }
-
-  async find(clientName: string, connection: CliConnectionHandle) {
-    return (await super.find(clientName, connection)) ?? this.access
-  }
+  openConnections(): FakeConnection[]
+  askRendererForAccess(connectionState: State, request: CliAccessRequest, signal: AbortSignal): Promise<CliAccess | null>
+  askRendererToCreateTab(connectionState: State, request: CliCreateTabRequest): Promise<CliTabSummary>
+  askRendererToSwitchTab(connectionState: State, tabId: string): Promise<CliTabSummary>
 }
 
 /** UtilityApi with its connections and renderers replaced by a fake. */
 class TestUtilityApi extends UtilityApi {
   readonly savedQueryChanges: number[] = []
 
-  constructor(private readonly fake: FakeParts, grants: CliGrantStore = new PreApprovedStore(fake.answer)) {
-    super({ grants })
+  // Tests that are not about approval skip it by starting approved.
+  constructor(private readonly fake: FakeParts, approved = true) {
+    super()
+    // Only this test's fake connections count as open.
+    for (const connected of getConnectedStates()) {
+      connected.connection = null
+    }
+    for (const connection of fake.openConnections()) {
+      newState(connection.id)
+      state(connection.id).connection = connection.client
+      state(connection.id).usedConfig = connection.config
+      state(connection.id).database = connection.database
+      if (approved && fake.answer) {
+        for (const name of [UNKNOWN_CLIENT_NAME, 'Claude Code']) {
+          state(connection.id).cliClients.set(name, new AuthorizedClient(name, fake.answer))
+        }
+      }
+    }
   }
 
-  protected openConnections() {
-    return this.fake.openConnections()
+  protected askRendererForAccess(connectionState: State, request: CliAccessRequest, signal: AbortSignal) {
+    return this.fake.askRendererForAccess(connectionState, request, signal)
   }
 
-  protected askRendererForAccess(connection: CliConnectionHandle, request: CliAccessRequest, signal: AbortSignal) {
-    return this.fake.askRendererForAccess(connection, request, signal)
+  protected askRendererToCreateTab(connectionState: State, request: CliCreateTabRequest) {
+    return this.fake.askRendererToCreateTab(connectionState, request)
   }
 
-  protected askRendererToCreateTab(connection: CliConnectionHandle, request: CliCreateTabRequest) {
-    return this.fake.askRendererToCreateTab(connection, request)
+  protected askRendererToSwitchTab(connectionState: State, tabId: string) {
+    return this.fake.askRendererToSwitchTab(connectionState, tabId)
   }
 
-  protected askRendererToSwitchTab(connection: CliConnectionHandle, tabId: string) {
-    return this.fake.askRendererToSwitchTab(connection, tabId)
-  }
-
-  protected notifySavedQueryChanged(_connection: CliConnectionHandle, id: number) {
+  protected notifySavedQueryChanged(_connectionState: State, id: number) {
     this.savedQueryChanges.push(id)
   }
 }
@@ -126,7 +135,7 @@ describe('UtilityApi', () => {
   let client: SqliteClient
   let other: SqliteClient
   let backend: FakeParts
-  let primary: CliConnectionHandle
+  let primary: FakeConnection
 
   beforeAll(async () => {
     client = await createSqliteClient()
@@ -155,7 +164,7 @@ describe('UtilityApi', () => {
   describe('connection selection', () => {
     it('lists open connections with whether the caller is approved for them', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite', readOnlyMode: true })
-      const api = new TestUtilityApi(backendFor([primary, second]), new MemoryCliGrantStore())
+      const api = new TestUtilityApi(backendFor([primary, second]), false)
       await api.askApproval({ connection: 'Local Dev' }, context())
       const result = await call(api.connections({}, context()))
       expect(result.connections).toEqual([
@@ -172,9 +181,9 @@ describe('UtilityApi', () => {
       const result = await call(new TestUtilityApi(backendFor([unsaved])).connections({}))
       expect(result.connections[0].name).toBe('sqlite :memory:')
 
-      expect(connectionDisplayName({ id: 'abcdef123', client: other, database: 'app', config: { connectionType: 'postgresql', host: 'db.local' } as any })).toBe('postgresql db.local/app')
-      expect(connectionDisplayName({ id: 'abcdef123', client: other, database: null, config: { connectionType: 'postgresql' } as any })).toBe('postgresql abcdef12')
-      expect(connectionDisplayName({ id: 'abcdef123', client: other, database: null, config: { connectionType: 'mysql', name: 'Named' } as any })).toBe('Named')
+      expect(connectionDisplayName(Object.assign(new State('abcdef123'), { connection: other, database: 'app', usedConfig: { connectionType: 'postgresql', host: 'db.local' } as any }))).toBe('postgresql db.local/app')
+      expect(connectionDisplayName(Object.assign(new State('abcdef123'), { connection: other, database: null, usedConfig: { connectionType: 'postgresql' } as any }))).toBe('postgresql abcdef12')
+      expect(connectionDisplayName(Object.assign(new State('abcdef123'), { connection: other, database: null, usedConfig: { connectionType: 'mysql', name: 'Named' } as any }))).toBe('Named')
     })
 
     it('reports when no connection is open at all', async () => {
@@ -184,7 +193,7 @@ describe('UtilityApi', () => {
 
     it('needs --connection when several are open and the caller is approved for none or several', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite' })
-      const api = new TestUtilityApi(backendFor([primary, second]), new MemoryCliGrantStore())
+      const api = new TestUtilityApi(backendFor([primary, second]), false)
       await expectError(api.entities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
       await api.askApproval({ connection: 'Other' }, context())
       await api.askApproval({ connection: 'Local Dev' }, context())
@@ -203,7 +212,7 @@ describe('UtilityApi', () => {
 
     it('picks the one connection the caller is approved for when several are open', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite' })
-      const api = new TestUtilityApi(backendFor([primary, second]), new MemoryCliGrantStore())
+      const api = new TestUtilityApi(backendFor([primary, second]), false)
       await api.askApproval({ connection: 'Other' }, context())
       const result = await call(api.entities({ entityTypes: ['table'] }, context()))
       expect(result.entities.map((e) => e.name)).toEqual(['widgets'])
@@ -218,7 +227,7 @@ describe('UtilityApi', () => {
   describe('approval', () => {
     it('fails without approval and says how to ask for it, without showing a dialog', async () => {
       const fake = backendFor([primary])
-      const api = new TestUtilityApi(fake, new MemoryCliGrantStore())
+      const api = new TestUtilityApi(fake, false)
       const error = await expectError(api.schemas({}, context()), 'NOT_APPROVED')
       expect(error.message).toContain('Claude Code')
       expect(error.hint).toContain('bks ask-approval --connection "Local Dev"')
@@ -227,7 +236,7 @@ describe('UtilityApi', () => {
 
     it('asks once per client and connection, then remembers', async () => {
       const fake = backendFor([primary])
-      const api = new TestUtilityApi(fake, new MemoryCliGrantStore())
+      const api = new TestUtilityApi(fake, false)
       const result = await call(api.askApproval({}, context()))
       expect(result).toEqual({ newlyApproved: true, access: READ_ONLY_ACCESS })
       expect(fake.asked).toEqual([{ clientName: 'Claude Code', connectionName: 'Local Dev', readOnlyMode: false }])
@@ -246,7 +255,7 @@ describe('UtilityApi', () => {
         fake.asked.push(request)
         return new Promise((resolve) => { answer = resolve })
       }
-      const api = new TestUtilityApi(fake, new MemoryCliGrantStore())
+      const api = new TestUtilityApi(fake, false)
       const both = Promise.all([api.askApproval({}, context()), api.askApproval({}, context())])
       await new Promise((resolve) => setTimeout(resolve, 10))
       answer(access())
@@ -263,8 +272,7 @@ describe('UtilityApi', () => {
         dialog = signal
         return new Promise((resolve) => { answer = resolve })
       }
-      const grants = new MemoryCliGrantStore()
-      const api = new TestUtilityApi(fake, grants)
+      const api = new TestUtilityApi(fake, false)
       const a = context()
       const b = context()
       const first = expectError(api.askApproval({}, a), 'INTERNAL')
@@ -282,12 +290,12 @@ describe('UtilityApi', () => {
       // An answer that arrives after everyone left approves nothing.
       answer(access())
       await new Promise((resolve) => setTimeout(resolve, 10))
-      expect(await grants.find('Claude Code', primary)).toBeNull()
+      expect(state(primary.id).cliClients.get('Claude Code')).toBeUndefined()
     })
 
     it('fails with ACCESS_DENIED on deny and asks again next time', async () => {
       const fake = backendFor([primary], null)
-      const api = new TestUtilityApi(fake, new MemoryCliGrantStore())
+      const api = new TestUtilityApi(fake, false)
       const error = await expectError(api.askApproval({}, context()), 'ACCESS_DENIED')
       expect(error.hint).toContain('ask-approval')
       await expectError(api.schemas({}, context()), 'NOT_APPROVED')
@@ -297,10 +305,9 @@ describe('UtilityApi', () => {
 
     it('never grants writes on a read only connection', async () => {
       const readOnly = openConnection('sid-ro', client, { id: 5, name: 'Prod', connectionType: 'sqlite', readOnlyMode: true })
-      const grants = new MemoryCliGrantStore()
-      const api = new TestUtilityApi(backendFor([readOnly], access({ queryTypes: ['select', 'update', 'anything'] })), grants)
+      const api = new TestUtilityApi(backendFor([readOnly], access({ queryTypes: ['select', 'update', 'anything'] })), false)
       await api.askApproval({}, context())
-      expect((await grants.find('Claude Code', readOnly))?.queryTypes).toEqual(['select'])
+      expect(state(readOnly.id).cliClients.get('Claude Code')?.access.queryTypes).toEqual(['select'])
     })
   })
 
@@ -375,11 +382,11 @@ describe('UtilityApi', () => {
 
   describe('createTab', () => {
     function recording() {
-      const created: { id: string; request: CliCreateTabRequest }[] = []
+      const created: { connectionState: State; request: CliCreateTabRequest }[] = []
       const methods = new TestUtilityApi({
         ...backend,
-        askRendererToCreateTab: async (connection, request) => {
-          created.push({ id: connection.id, request })
+        askRendererToCreateTab: async (connectionState, request) => {
+          created.push({ connectionState, request })
           return { tabId: '7', title: 'Query #1', tabType: 'query' }
         },
       })
@@ -389,7 +396,7 @@ describe('UtilityApi', () => {
     it('opens a query tab with the sql and returns its id', async () => {
       const { methods, created } = recording()
       const result: any = await methods.createTab({ tab: 'query', sql: 'select 1' })
-      expect(created).toEqual([{ id: 'sid-primary', request: { tab: 'query', sql: 'select 1' } }])
+      expect(created).toEqual([{ connectionState: state('sid-primary'), request: { tab: 'query', sql: 'select 1' } }])
       expect(result.tabId).toBe('7')
     })
 
@@ -397,7 +404,7 @@ describe('UtilityApi', () => {
       const created: CliCreateTabRequest[] = []
       const api = new TestUtilityApi({
         ...backendFor([primary], access({ openTabs: false })),
-        askRendererToCreateTab: async (_connection, request) => {
+        askRendererToCreateTab: async (_connectionState, request) => {
           created.push(request)
           return { tabId: '7', title: 'Query #1', tabType: 'query' }
         },
@@ -546,26 +553,23 @@ describe('formatQueryResult', () => {
   })
 })
 
-describe('SessionCliGrantStore', () => {
+describe('cliClients', () => {
   afterEach(async () => {
     await removeState('sid-session')
   })
 
-  it('revokes approvals when the window disconnects', async () => {
+  it('forgets approvals when the window disconnects', async () => {
     newState('sid-session')
-    const store = new SessionCliGrantStore()
-    const open: CliConnectionHandle = { id: 'sid-session', client: {} as any, database: null, config: null }
-    await store.save('Claude Code', open, access())
-    expect(await store.find('Claude Code', open)).toEqual(access())
+    state('sid-session').cliClients.set('Claude Code', new AuthorizedClient('Claude Code', access()))
 
     await ConnHandlers['conn/clearConnection']({ sId: 'sid-session' })
-    expect(await store.find('Claude Code', open)).toBeNull()
+    expect(state('sid-session').cliClients.size).toBe(0)
   })
 })
 
 describe('saved queries', () => {
   let client: SqliteClient
-  let primary: CliConnectionHandle
+  let primary: FakeConnection
 
   beforeAll(async () => {
     await TestOrmConnection.connect()
@@ -615,7 +619,7 @@ describe('saved queries', () => {
 
 describe('getCliApis', () => {
   it('has a command for every CLI method', () => {
-    const commands = new UtilityApi({ grants: new MemoryCliGrantStore() }).getCliApis()
+    const commands = new UtilityApi().getCliApis()
     expect(commands.map((command) => command.name)).toEqual([...CLI_METHODS])
     for (const command of commands) {
       expect(typeof command.func).toBe('function')

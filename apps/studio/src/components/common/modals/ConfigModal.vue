@@ -14,6 +14,9 @@
       <config-page id="plugins" title="Plugins" icon="extension" fill-height>
         <plugins-config @loading="loadingPlugins = $event" />
       </config-page>
+      <config-page id="cli" title="CLI" icon="settings_remote">
+        <cli-config />
+      </config-page>
     </config>
   </base-modal>
 </template>
@@ -26,6 +29,7 @@ import Config from "@/components/common/config/Config.vue";
 import ConfigPage from "@/components/common/config/ConfigPage.vue";
 import ThemesConfig from "./ThemesConfig.vue";
 import PluginsConfig from "./PluginsConfig.vue";
+import CliConfig from "./CliConfig.vue";
 
 export default Vue.extend({
   components: {
@@ -34,6 +38,7 @@ export default Vue.extend({
     ConfigPage,
     ThemesConfig,
     PluginsConfig,
+    CliConfig,
   },
   data() {
     return {
@@ -47,6 +52,7 @@ export default Vue.extend({
       return [
         { event: AppEvent.openAppearanceModal, handler: this.openAppearance },
         { event: AppEvent.openPluginManager, handler: this.openPlugins },
+        { event: AppEvent.openCliConfig, handler: this.openCli },
       ];
     },
   },
@@ -68,6 +74,10 @@ export default Vue.extend({
       this.activeId = "plugins";
       this.$modal.show(this.modalName);
     },
+    openCli() {
+      this.activeId = "cli";
+      this.$modal.show(this.modalName);
+    },
   },
 });
 </script>
@@ -76,13 +86,6 @@ export default Vue.extend({
 .config ::v-deep {
   .config-content > :first-child {
     margin-top: 0;
-  }
-
-  h3 {
-    margin-top: 0;
-    margin-bottom: 0.75rem;
-    padding-inline: 0.5rem;
-    font-size: 1rem;
   }
 
   hr {

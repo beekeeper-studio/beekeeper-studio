@@ -13,9 +13,8 @@ import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
 import { CliServer } from "@/services/cliServer/CliServer";
-import { CliConnectionHandle } from "@/services/cliServer/commands";
 import { UtilityApi } from "@/services/UtilityApi";
-import { MemoryCliGrantStore } from "@/services/cliServer/grants";
+import { getConnectedStates, newState, state, State } from "@/handlers/handlerState";
 import { createProgram } from "@/cli/program";
 import { CliAccessRequest } from "@/services/cliServer/rendererRequests";
 import {
@@ -32,18 +31,23 @@ const socketPath =
 
 /** The parts of UtilityApi that reach the app's renderers, faked by the test. */
 interface FakeParts {
-  openConnections(): CliConnectionHandle[];
+  openConnections(): {
+    id: string;
+    client: SqliteClient;
+    database: string | null;
+    config: any;
+  }[];
   askRendererForAccess(
-    connection: CliConnectionHandle,
+    connectionState: State,
     request: CliAccessRequest,
     signal: AbortSignal,
   ): Promise<CliAccess | null>;
   askRendererToCreateTab(
-    connection: CliConnectionHandle,
+    connectionState: State,
     request: CliCreateTabRequest,
   ): Promise<CliTabSummary>;
   askRendererToSwitchTab(
-    connection: CliConnectionHandle,
+    connectionState: State,
     tabId: string,
   ): Promise<CliTabSummary>;
 }
@@ -51,30 +55,36 @@ interface FakeParts {
 /** UtilityApi with its connections and renderers replaced by a fake. */
 class TestUtilityApi extends UtilityApi {
   constructor(private readonly fake: FakeParts) {
-    super({ grants: new MemoryCliGrantStore() });
-  }
-
-  protected openConnections() {
-    return this.fake.openConnections();
+    super();
+    // Only this test's fake connections count as open.
+    for (const connected of getConnectedStates()) {
+      connected.connection = null;
+    }
+    for (const connection of fake.openConnections()) {
+      newState(connection.id);
+      state(connection.id).connection = connection.client;
+      state(connection.id).usedConfig = connection.config;
+      state(connection.id).database = connection.database;
+    }
   }
 
   protected askRendererForAccess(
-    connection: CliConnectionHandle,
+    connectionState: State,
     request: CliAccessRequest,
     signal: AbortSignal,
   ) {
-    return this.fake.askRendererForAccess(connection, request, signal);
+    return this.fake.askRendererForAccess(connectionState, request, signal);
   }
 
   protected askRendererToCreateTab(
-    connection: CliConnectionHandle,
+    connectionState: State,
     request: CliCreateTabRequest,
   ) {
-    return this.fake.askRendererToCreateTab(connection, request);
+    return this.fake.askRendererToCreateTab(connectionState, request);
   }
 
-  protected askRendererToSwitchTab(connection: CliConnectionHandle, tabId: string) {
-    return this.fake.askRendererToSwitchTab(connection, tabId);
+  protected askRendererToSwitchTab(connectionState: State, tabId: string) {
+    return this.fake.askRendererToSwitchTab(connectionState, tabId);
   }
 }
 
