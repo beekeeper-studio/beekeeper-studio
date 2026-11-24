@@ -26,7 +26,7 @@ export const Mutators = {
     if (dataType && dataType.startsWith('bit')) {
       return this.bitMutator.bind(this, dialect)
     }
-    if (dataType && dataType.startsWith('json') && mutateJSON) {
+    if (dataType && dataType.toLowerCase().startsWith('json') && mutateJSON) {
       return this.jsonMutator.bind(this)
     }
     return this.genericMutator.bind(this)

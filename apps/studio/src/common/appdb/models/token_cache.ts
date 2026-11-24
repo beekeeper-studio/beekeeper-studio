@@ -12,8 +12,8 @@ export class TokenCache extends ApplicationEntity {
     return this;
   }
 
-  @Column({ type: "varchar", nullable: false, transformer: [encrypt] })
-  homeId: string
+  @Column({ type: "varchar", nullable: true, transformer: [encrypt] })
+  homeId: Nullable<string>
 
   @Column({ type: "text", nullable: true, transformer: [encrypt] })
   cache: Nullable<string>;

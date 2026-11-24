@@ -338,6 +338,35 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         expect(results[1].rows[0].c0).toContain("2");
       });
     });
+
+    if (!options.readOnly) {
+      describe("updates keep backslashes", () => {
+        it("stores a String value with backslashes exactly as edited", async () => {
+          await util.knex.schema.raw(`
+            CREATE TABLE ch_backslash_update (id UInt32, v String)
+            ENGINE = MergeTree ORDER BY id
+          `);
+          await util.knex.schema.raw(`INSERT INTO ch_backslash_update VALUES (1, 'plain'), (2, 'other')`);
+
+          await util.connection.applyChanges({
+            updates: [
+              { table: "ch_backslash_update", primaryKeys: [{ column: "id", value: 1 }], column: "v", value: "C:\\temp\\new" },
+            ],
+          });
+
+          const { result } = await util.connection.selectTop("ch_backslash_update", 0, 10, [], []);
+          expect(result[0].v).toHaveLength(11);
+          expect(result).toStrictEqual([
+            { id: 1, v: "C:\\temp\\new" },
+            { id: 2, v: "other" },
+          ]);
+        });
+
+        afterAll(async () => {
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS ch_backslash_update`);
+        });
+      });
+    }
   });
 }
 

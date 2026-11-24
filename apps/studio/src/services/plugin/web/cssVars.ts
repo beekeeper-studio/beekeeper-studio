@@ -10,7 +10,7 @@ export const cssVars = [
   "--scrollbar-track",
   "--scrollbar-thumb",
 
-  // Semantic color tokens (see assets/styles/tokens/aliases.scss)
+  // Semantic color tokens (see assets/styles/tokens/semantics.scss)
   "--white",
   "--black",
 
@@ -251,6 +251,7 @@ export const cssVars = [
   "--table-range-border",
   "--table-range-handle-bg",
   "--table-resize-guide-bg",
+  "--table-filter-bg",
   "--alert-bg",
   "--alert-fg",
   "--kbd-bg",
@@ -260,6 +261,16 @@ export const cssVars = [
   "--badge-flat-fg",
   "--badge-primary-bg",
   "--badge-primary-fg",
+  "--icon-table-fg",
+  "--icon-view-fg",
+  "--icon-materialized-view-fg",
+  "--icon-schema-fg",
+  "--icon-routine-fg",
+  "--icon-function-fg",
+  "--icon-procedure-fg",
+  "--icon-aggregate-fg",
+  "--icon-window-fg",
+  "--icon-query-fg",
 
   // BksTextEditor
   "--editor-activeline-bg",

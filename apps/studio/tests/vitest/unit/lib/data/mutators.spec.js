@@ -23,4 +23,15 @@ describe("Mutators", () => {
       expect(() => Mutators.genericMutator(BigInt(123))).not.toThrow();
     });
   });
+
+  describe("resolveTabulatorMutator", () => {
+    // Postgres query results name built-in types in upper case (JSONB, JSON)
+    it.each(["json", "jsonb", "JSON", "JSONB"])(
+      "stringifies %s objects as JSON instead of [object Object]",
+      (dataType) => {
+        const mutate = Mutators.resolveTabulatorMutator(dataType, "postgresql");
+        expect(String(mutate({ a: 1 }))).toBe('{"a":1}');
+      }
+    );
+  });
 });

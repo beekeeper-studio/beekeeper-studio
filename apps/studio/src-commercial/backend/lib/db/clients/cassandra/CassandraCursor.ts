@@ -6,7 +6,7 @@ const log = rawLog.scope('cassandra:cursor');
 
 export class CassandraCursor extends BeeCursor {
 
-  private rowBuffer: any[][] = [[]]
+  private rowBuffer: any[][] = []
   private bufferReady = false;
   private end = false
   private error?: Error

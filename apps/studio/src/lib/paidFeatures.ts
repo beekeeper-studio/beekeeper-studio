@@ -62,11 +62,6 @@ export const PAID_FEATURES: PaidFeature[] = [
     description: 'Native dump and restore from inside the app',
   },
   {
-    id: 'advanced-filters',
-    label: 'Unlimited table filters',
-    description: 'Three or more filters on a table',
-  },
-  {
     id: 'editable-query-results',
     label: 'Editable query results',
     description: 'Edit rows straight from a SELECT',

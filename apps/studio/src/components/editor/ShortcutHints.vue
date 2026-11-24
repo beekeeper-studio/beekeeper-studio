@@ -2,22 +2,22 @@
   <div class="shortcut-hints">
     <div class="shortcuts">
       <div class="shortcut-item">
-        <div>Quick Search</div>
+        <div class="shortcut-label">Quick Search</div>
         <shortcut-display-helper shortcut-path="general.openQuickSearch" />
       </div>
       <template v-if="type === 'core-tabs'">
         <div class="shortcut-item">
-          <div>New Tab</div>
+          <div class="shortcut-label">New Tab</div>
           <div class="shortcut">
             <span>{{ $config.isMac ? '⌘' : 'Ctrl' }}</span><span>T</span>
           </div>
         </div>
         <div class="shortcut-item">
-          <div>Reopen Last Closed Tab</div>
+          <div class="shortcut-label">Reopen Last Closed Tab</div>
           <shortcut-display-helper shortcut-path="tab.reopenLastClosedTab" />
         </div>
         <div class="shortcut-item">
-          <div>Toggle Primary Sidebar</div>
+          <div class="shortcut-label">Toggle Primary Sidebar</div>
           <div class="shortcut" v-if="$config.isMac">
             <span>⌘</span><span>B</span>
           </div>
@@ -26,7 +26,7 @@
           </div>
         </div>
         <div class="shortcut-item">
-          <div>New Window</div>
+          <div class="shortcut-label">New Window</div>
           <div class="shortcut">
             <span>{{ $config.isMac ? '⌘' : 'Ctrl' }}</span><span>⇧</span><span>N</span>
           </div>
@@ -34,23 +34,23 @@
       </template>
       <template v-else>
         <div class="shortcut-item">
-          <div>Autocomplete</div>
+          <div class="shortcut-label">Autocomplete</div>
           <div class="shortcut">
             <span>Ctrl</span><span>Space</span>
           </div>
         </div>
         <div class="shortcut-item">
-          <div>Format Query</div>
+          <div class="shortcut-label">Format Query</div>
           <div class="shortcut">
             <span>{{ $config.isMac ? '⌘' : 'Ctrl' }}</span><span>⇧</span><span>F</span>
           </div>
         </div>
         <div class="shortcut-item">
-          <div>{{ queryActionText(true) }}</div>
+          <div class="shortcut-label">{{ queryActionText(true) }}</div>
           <shortcut-display-helper shortcut-path="queryEditor.primaryQueryAction" />
         </div>
         <div class="shortcut-item">
-          <div>{{ queryActionText(false) }}</div>
+          <div class="shortcut-label">{{ queryActionText(false) }}</div>
           <shortcut-display-helper shortcut-path="queryEditor.secondaryQueryAction" />
         </div>
       </template>

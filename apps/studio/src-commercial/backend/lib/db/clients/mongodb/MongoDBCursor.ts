@@ -2,11 +2,13 @@ import { BeeCursor, TableColumn } from "@/lib/db/models";
 import { CursorResult, QueryLeaf } from "@queryleaf/lib";
 import { AggregationCursor } from "mongodb";
 import _ from "lodash";
+import { objectIdsToHex } from "./utils";
 
 interface CursorOptions {
   query?: string,
   queryLeaf?: QueryLeaf,
   cursor?: AggregationCursor,
+  columns?: string[],
   chunkSize: number
 }
 
@@ -19,6 +21,8 @@ export class MongoDBCursor extends BeeCursor {
   constructor(options: CursorOptions) {
     super(options.chunkSize);
     this.options = options;
+    // an empty list means the columns aren't known yet, so read them from the documents
+    this.fields = options.columns?.length ? options.columns : undefined;
   }
 
   get columns(): TableColumn[] | null {
@@ -55,11 +59,14 @@ export class MongoDBCursor extends BeeCursor {
       const firstDoc = await this.cursor.next();
       const rest = this.cursor.readBufferedDocuments();
 
+      const docs = [firstDoc, ...rest];
+
       if (!this.fields) {
-        this.fields = _.uniq(_.flatten(_.takeRight(rest, 10).map((obj) => Object.keys(obj))));
+        this.fields = _.uniq(_.flatten(docs.map((obj) => Object.keys(obj))));
       }
 
-      return [firstDoc, ...rest].map((v) => Object.values(v));
+      // fields can come in any order or be missing, so build rows by field name
+      return docs.map((doc) => this.fields.map((field) => objectIdsToHex(doc[field])));
     }
     return [];
   }

@@ -20,7 +20,6 @@ import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
-import { createThemeProtocol } from "@commercial/backend/lib/theme/ThemeProtocol";
 import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
@@ -49,11 +48,17 @@ function initUserDirectory(d: string) {
 }
 
 let utilityProcess: Electron.UtilityProcess
+// Resolves once the current utility process has reported 'ready'. Anything
+// that talks to the utility process awaits this, so the process can boot in
+// the background while the window loads.
+let utilityReady: Promise<void> | null = null
 let newWindows: number[] = [];
+let appReady = false
+let pendingOpens: string[] = []
 
-async function createUtilityProcess() {
-  if (utilityProcess) {
-    return;
+function createUtilityProcess(): Promise<void> {
+  if (utilityReady) {
+    return utilityReady;
   }
 
   const args = {
@@ -61,7 +66,7 @@ async function createUtilityProcess() {
     bksConfigSource: JSON.stringify(bksConfig.source),
   }
 
-  utilityProcess = electron.utilityProcess.fork(
+  const proc = electron.utilityProcess.fork(
     path.join(__dirname, 'utility.js'),
     [],
     {
@@ -70,20 +75,24 @@ async function createUtilityProcess() {
       serviceName: 'BeekeeperUtility'
     }
   );
+  utilityProcess = proc;
 
-
-  utilityProcess.on('exit', async (code) => {
+  proc.on('exit', async (code) => {
     // if non zero exit code
     log.log("UTILITY DEAD", code)
+    // a later requestPorts must start a new process rather than wait on this one
+    if (utilityProcess === proc) {
+      utilityProcess = null;
+      utilityReady = null;
+    }
     if (code) {
       log.info('Utility process died, restarting')
-      utilityProcess = null;
       await createUtilityProcess();
       createAndSendPorts(false, true);
     }
   })
 
-  utilityProcess.on("message", (msg: UtilProcMessage) => {
+  proc.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       safeOpenExternal(msg.url)
     } else if (msg.type === 'configChanged') {
@@ -94,14 +103,15 @@ async function createUtilityProcess() {
     }
   })
 
-  utilityProcess.postMessage({ type: 'init' });
-  return new Promise<void>((resolve, _reject) => {
-    utilityProcess.on('message', (msg: UtilProcMessage) => {
+  proc.postMessage({ type: 'init' });
+  utilityReady = new Promise<void>((resolve, _reject) => {
+    proc.on('message', (msg: UtilProcMessage) => {
       if (msg.type === 'ready') {
         resolve()
       }
     })
   })
+  return utilityReady
 }
 
 
@@ -131,18 +141,18 @@ log.debug("registering schema")
 protocol.registerSchemesAsPrivileged([
   {scheme: 'app', privileges: { secure: true, standard: true } },
   {scheme: 'plugin', privileges: { secure: true, standard: true } },
-  {scheme: 'theme', privileges: { secure: true, standard: true } }
+  {scheme: 'theme', privileges: { secure: true, standard: true, corsEnabled: true } }
 ])
-let initialized = false
+let initPromise: Promise<IGroupedUserSettings> | null = null
 
-async function initBasics() {
-  // this creates the app:// protocol we use for loading assets
-  ProtocolBuilder.createAppProtocol()
-  // this creates the plugin:// protocol we use for loading plugins
-  ProtocolBuilder.createPluginProtocol()
-  if (initialized) return settings
-  initialized = true
-  createThemeProtocol();
+// callers can run concurrently (eg 'ready' and 'open-url'), so they all share
+// one init, and all wait for it to actually finish before getting settings.
+function initBasics() {
+  if (!initPromise) initPromise = doInitBasics()
+  return initPromise
+}
+
+async function doInitBasics() {
   await ormConnection.connect()
   console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
   log.info("running migrations!!")
@@ -199,7 +209,9 @@ ipcMain.handle('bksConfigSource', () => {
 app.on('activate', async (_event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (!hasVisibleWindows) {
+  // 'activate' also fires on first launch, where the ready handler is still
+  // building the initial window - don't race it with an empty one.
+  if (!hasVisibleWindows && appReady) {
     if (!settings) throw "No settings initialized!"
     await createUtilityProcess()
 
@@ -234,22 +246,30 @@ app.on('ready', async () => {
 
   }
 
-  // this gets positional arguments
-  const options = platformInfo.parsedArgs._.map((url: string) => ({ url }))
+  // this creates the app:// protocol we use for loading assets
+  ProtocolBuilder.createAppProtocol()
+  // this creates the plugin:// protocol we use for loading plugins
+  ProtocolBuilder.createPluginProtocol()
+  // this creates the theme:// protocol we use for loading themes
+  ProtocolBuilder.createThemeProtocol()
+
   const settings = await initBasics()
+  initializeSecurity();
+  initializeFileHelpers();
+  // Not awaited: the utility process takes a while to boot, so it boots
+  // while the window loads. The renderer's requestPorts call waits for it.
+  createUtilityProcess().catch((e) => log.error('Utility process failed to start', e))
 
-  if (options.length > 0) {
+  // positional arguments, plus anything macOS handed us via open-file /
+  // open-url before we were ready
+  const urls = [...platformInfo.parsedArgs._, ...pendingOpens]
+  pendingOpens = []
+  appReady = true
 
-    await Promise.all(options.map((option) => buildWindow(settings, option)))
-  } else {
-    if (getActiveWindows().length === 0) {
-      const settings = await initBasics()
-      initializeSecurity(app);
-      initializeFileHelpers();
-      await createUtilityProcess()
-
-      await buildWindow(settings)
-    }
+  if (urls.length > 0) {
+    await Promise.all(urls.map((url: string) => buildWindow(settings, { url })))
+  } else if (getActiveWindows().length === 0) {
+    await buildWindow(settings)
   }
 
 })
@@ -275,11 +295,8 @@ function createAndSendPorts(filter: boolean, utilDied = false) {
 
 ipcMain.handle('requestPorts', async () => {
   log.info('Client requested ports');
-  if (!utilityProcess || !utilityProcess.pid) {
-    log.info('NO UTIL PROCESS')
-    utilityProcess = null;
-    await createUtilityProcess();
-  }
+  // starts the utility process if there isn't one, and waits until it is ready
+  await createUtilityProcess();
 
   if (newWindows.length > 0) {
     createAndSendPorts(true);
@@ -288,19 +305,27 @@ ipcMain.handle('requestPorts', async () => {
   }
 })
 
-// Open a connection from a file (e.g. ./sqlite.db)
-app.on('open-file', async (event, file) => {
-  event.preventDefault();
+// On macOS a cold start fires open-file / open-url before 'ready'. Nothing can
+// be built that early, so queue it and let the ready handler open the window.
+async function openFromUrl(url: string) {
+  if (!appReady) {
+    pendingOpens.push(url)
+    return
+  }
   const settings = await initBasics()
-  await buildWindow(settings, { url: file })
+  await buildWindow(settings, { url })
+}
+
+// Open a connection from a file (e.g. ./sqlite.db)
+app.on('open-file', (event, file) => {
+  event.preventDefault();
+  openFromUrl(file).catch((e) => log.error("error opening file", file, e))
 });
 
 // Open a connection from a url (e.g. postgres://host)
-app.on('open-url', async (event, url) => {
+app.on('open-url', (event, url) => {
   event.preventDefault();
-  const settings = await initBasics()
-
-  await buildWindow(settings, { url })
+  openFromUrl(url).catch((e) => log.error("error opening url", url, e))
 });
 
 ipcMain.handle('isMaximized', () => {

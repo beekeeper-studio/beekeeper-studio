@@ -743,7 +743,7 @@ export default Vue.extend({
       await this.$store.dispatch('tabs/save', this.tab)
     },
     pendingChangesCount() {
-      this.tab.unsavedChanges = this.pendingChangesCount > 0
+      this.$set(this.tab, 'unsavedChanges', this.pendingChangesCount > 0)
     },
     minimalMode() {
       // Auto resize the columns when the tab is active (not hidden in the DOM)
@@ -767,6 +767,7 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
+    this.$set(this.tab, 'unsavedChanges', this.pendingChangesCount > 0)
     if (this.shouldInitialize) {
       await this.$nextTick()
       await this.initialize()
@@ -1017,6 +1018,7 @@ export default Vue.extend({
         fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
         isPK: isPK,
         binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+        bksType: this.$bksConfig.ui.tableTable.dataTypeColors ? column.bksField?.bksType : undefined,
       }
 
       const result = {
@@ -1811,6 +1813,15 @@ export default Vue.extend({
 
       // the component doesn't really matter, tabulator just throws if you don't pass one
       this.tabulator.modules.history.action('queuePendingDelete', nullComponent, rows)
+
+      if (this.selectedRow && (rows.includes(this.selectedRow) || this.selectedRow.getElement()?.classList?.contains('deleted'))) {
+        this.selectedRow = null
+        this.selectedRowPosition = null
+        this.selectedRowData = {}
+        this.selectedRowIndex = null
+        this.expandablePaths = []
+        this.updateJsonViewerSidebar()
+      }
     },
     removeRowsFromPendingDeletes(rows: RowComponent[]) {
       rows.forEach((row) => {
@@ -1830,6 +1841,7 @@ export default Vue.extend({
         updates: [],
         deletes: []
       }
+      this.$set(this.tab, 'unsavedChanges', false)
     },
     async copyToSql() {
       this.saveError = null
@@ -1907,6 +1919,11 @@ export default Vue.extend({
           if (replaceData) {
             const niceChanges = this.$pluralize('change', this.pendingChangesCount, true);
             this.$noty.success(`${niceChanges} successfully applied`)
+            this.selectedRow = null
+            this.selectedRowPosition = null
+            this.selectedRowData = {}
+            this.selectedRowIndex = null
+            this.expandablePaths = []
             this.tabulator.replaceData()
           }
 
@@ -1944,6 +1961,14 @@ export default Vue.extend({
     discardChanges() {
       this.saveError = null
       this.addedCol = false
+
+      if (this.selectedRow && this.pendingChanges.inserts.some(insert => insert.row === this.selectedRow)) {
+        this.selectedRow = null
+        this.selectedRowPosition = null
+        this.selectedRowData = {}
+        this.selectedRowIndex = null
+        this.expandablePaths = []
+      }
 
       this.pendingChanges.inserts.forEach(insert => this.tabulator.deleteRow(insert.row))
 
@@ -2207,11 +2232,14 @@ export default Vue.extend({
     },
     updateJsonViewer(options: { range?: RangeComponent } = {}) {
       const range = options.range ?? this.tabulator.getRanges()[0]
-      const row = range.getRows()[0]
-      if (!row) {
+      const row = range?.getRows?.()?.[0]
+      if (!row || row.getElement()?.classList?.contains('deleted')) {
         this.selectedRow = null
         this.selectedRowPosition = null
         this.selectedRowData = {}
+        this.selectedRowIndex = null
+        this.expandablePaths = []
+        this.updateJsonViewerSidebar()
         return
       }
       const position = this.positionRowOf(row)

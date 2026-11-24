@@ -1,4 +1,4 @@
-# Self-contained Jest runner for the SQL Server Kerberos integration test. Carries the
+# Self-contained Vitest runner for the SQL Server Kerberos integration test. Carries the
 # Microsoft ODBC Driver 18 (the GSSAPI/Kerberos client path msnodesqlv8 uses), the MIT
 # Kerberos client, and Electron's runtime shared libraries (the test harness launches
 # `electron` with ELECTRON_RUN_AS_NODE). Source and node_modules are mounted at runtime
