@@ -230,6 +230,59 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
+// Knex reads a '.' inside an identifier as a schema/table/column separator and
+// ' as ' as an alias, so a column named `first.name` is written as [first].[name].
+function isSplitByKnex(identifier: string): boolean {
+  return identifier.includes('.') || / as /i.test(identifier)
+}
+
+/**
+ * Renames (in place) every column that knex would split into a placeholder knex
+ * leaves alone, and returns placeholder -> real column name. Use
+ * `compileWithLiteralColumns` to put the real names back. `reserved` holds the
+ * other identifiers in the query (table, schema) so no placeholder matches them.
+ */
+function aliasColumnsSplitByKnex(data: Record<string, any>[], reserved: string[] = []): Map<string, string> {
+  const aliases = new Map<string, string>()
+  const aliasFor = new Map<string, string>()
+  const taken = new Set([...reserved, ...data.flatMap((item) => Object.keys(item))])
+  let next = 0
+
+  data.forEach((item) => {
+    Object.keys(item).forEach((column) => {
+      if (!isSplitByKnex(column)) return
+
+      if (!aliasFor.has(column)) {
+        let alias = `bks_literal_column_${next++}`
+        while (taken.has(alias)) alias = `bks_literal_column_${next++}`
+        taken.add(alias)
+        aliases.set(alias, column)
+        aliasFor.set(column, alias)
+      }
+
+      item[aliasFor.get(column)] = item[column]
+      delete item[column]
+    })
+  })
+
+  return aliases
+}
+
+function compileWithLiteralColumns(knex, builder, aliases: Map<string, string>): string {
+  if (aliases.size === 0) return builder.toQuery()
+
+  // Swap the names in the SQL template, before values are interpolated, so
+  // only identifiers are touched, then format the query the way toQuery() does.
+  const { sql, bindings } = builder.toSQL()
+  let template: string = sql
+  aliases.forEach((column, alias) => {
+    template = template
+      .split(knex.client.wrapIdentifier(alias, {}))
+      .join(knex.client.wrapIdentifier(column, {}))
+  })
+  return knex.raw(template, bindings).toQuery()
+}
+
 export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitConversionFunc = _.toNumber, runAsUpsert = false, primaryKeys = [] as string[], createUpsertFunc = null }: BuildInsertOptions = {}) {
   const data = _.cloneDeep(insert.data)
   const canRunAsUpsert = _.intersection(Object.keys(data[0]), primaryKeys).length === primaryKeys.length && runAsUpsert
@@ -265,18 +318,20 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
 
   if (canRunAsUpsert && typeof(createUpsertFunc) === 'function'){
     return createUpsertFunc({ schema: insert.schema, name: insert.table, entityType: 'table' }, data, primaryKeys)
-  } else if (canRunAsUpsert) {
-    // https://knexjs.org/guide/query-builder.html#onconflict
-    return builder
-      .insert(data)
-      .onConflict(primaryKeys)
-      .merge()
-      .toQuery()
   }
 
-  return builder
-    .insert(data)
-    .toQuery()
+  const aliases = aliasColumnsSplitByKnex(data, [insert.table, insert.schema, insert.dataset].filter(Boolean))
+
+  if (canRunAsUpsert) {
+    const aliasFor = new Map(Array.from(aliases, ([alias, column]) => [column, alias]))
+    // https://knexjs.org/guide/query-builder.html#onconflict
+    return compileWithLiteralColumns(knex, builder
+      .insert(data)
+      .onConflict(primaryKeys.map((key) => aliasFor.get(key) ?? key))
+      .merge(), aliases)
+  }
+
+  return compileWithLiteralColumns(knex, builder.insert(data), aliases)
 }
 
 export function buildInsertQueries(knex, inserts, { runAsUpsert = false, primaryKeys = [], createUpsertFunc = null } = {}) {

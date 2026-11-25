@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildDatabaseFilter, buildSchemaFilter, buildSelectTopQuery, escapeString, groupForeignKeyRows, isAllowedReadOnlyQuery } from "@/lib/db/clients/utils";
+import knexlib from "knex";
+import { buildDatabaseFilter, buildInsertQuery, buildSchemaFilter, buildSelectTopQuery, escapeString, groupForeignKeyRows, isAllowedReadOnlyQuery } from "@/lib/db/clients/utils";
 
 describe('Escape String', () => {
   it("should escape single quotes", () => {
@@ -319,5 +320,81 @@ describe("groupForeignKeyRows", () => {
     ])
 
     expect(keys.map((k) => k.constraintName)).toEqual(["zeta_fk", "alpha_fk"])
+  })
+})
+
+describe("buildInsertQuery", () => {
+  const mssql = knexlib({ client: "mssql" })
+  const pg = knexlib({ client: "pg" })
+  const mysql = knexlib({ client: "mysql2" })
+
+  function insert(data, extra = {}) {
+    return { table: "people", schema: "dbo", data, ...extra }
+  }
+
+  it("leaves ordinary column names to knex", () => {
+    const data = [{ id: 1, name: "a" }]
+
+    expect(buildInsertQuery(mssql, insert(data)))
+      .toBe(mssql("people").withSchema("dbo").insert(data).toQuery())
+  })
+
+  it("quotes a column name containing a period as one identifier (#5021)", () => {
+    const data = [{ "first.name": "Ada", "amount.usd": 10 }]
+
+    expect(buildInsertQuery(mssql, insert(data)))
+      .toBe("insert into [dbo].[people] ([first.name], [amount.usd]) values ('Ada', 10)")
+    expect(buildInsertQuery(pg, insert(data)))
+      .toBe(`insert into "dbo"."people" ("first.name", "amount.usd") values ('Ada', 10)`)
+    expect(buildInsertQuery(mysql, insert(data)))
+      .toBe("insert into `dbo`.`people` (`first.name`, `amount.usd`) values ('Ada', 10)")
+  })
+
+  it("does not read ' as ' in a column name as an alias", () => {
+    expect(buildInsertQuery(pg, insert([{ "price as usd": 3 }], { schema: null })))
+      .toBe(`insert into "people" ("price as usd") values (3)`)
+  })
+
+  it("keeps the '?' escaping for a column name that also has a period", () => {
+    expect(buildInsertQuery(pg, insert([{ "is.active?": true }], { schema: null })))
+      .toBe(`insert into "people" ("is.active?") values (true)`)
+  })
+
+  it("never rewrites values, even ones that look like the placeholder", () => {
+    const data = [{ "first.name": "bks_literal_column_0", note: `"bks_literal_column_0" a.b ?` }]
+
+    expect(buildInsertQuery(pg, insert(data, { schema: null })))
+      .toBe(`insert into "people" ("first.name", "note") values ('bks_literal_column_0', '"bks_literal_column_0" a.b ?')`)
+  })
+
+  it("does not collide with a real column named like the placeholder", () => {
+    const data = [{ bks_literal_column_0: 1, "a.b": 2 }]
+
+    expect(buildInsertQuery(pg, insert(data, { schema: null })))
+      .toBe(`insert into "people" ("bks_literal_column_0", "a.b") values (1, 2)`)
+  })
+
+  it("does not collide with a table or schema named like the placeholder", () => {
+    const data = [{ "a.b": 1 }]
+
+    expect(buildInsertQuery(pg, insert(data, { table: "bks_literal_column_0", schema: "bks_literal_column_1" })))
+      .toBe(`insert into "bks_literal_column_1"."bks_literal_column_0" ("a.b") values (1)`)
+  })
+
+  it("handles rows that do not all have the same columns", () => {
+    const data = [{ "first.name": "Ada", id: 1 }, { id: 2 }]
+
+    expect(buildInsertQuery(pg, insert(data, { schema: null })))
+      .toBe(`insert into "people" ("first.name", "id") values ('Ada', 1), (DEFAULT, 2)`)
+  })
+
+  it("quotes a period in an upsert's conflict target and update list", () => {
+    const data = [{ "user.id": 1, "first.name": "Ada" }]
+    const sql = buildInsertQuery(pg, insert(data, { schema: null }), { runAsUpsert: true, primaryKeys: ["user.id"] })
+
+    expect(sql).toBe(
+      `insert into "people" ("user.id", "first.name") values (1, 'Ada') ` +
+      `on conflict ("user.id") do update set "user.id" = excluded."user.id", "first.name" = excluded."first.name"`
+    )
   })
 })
