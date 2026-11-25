@@ -10,6 +10,7 @@ import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import Client_Firebird from '@shared/lib/knex-firebird'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
+import Client_StarRocks from '@shared/lib/knex-starrocks'
 import { SnowflakeDialect } from '@beekeeperstudio/knex-snowflake-dialect'
 import { safelyIdentify } from '@/lib/db/sql_tools'
 
@@ -112,6 +113,8 @@ export class SqlGenerator {
 
     if (this.dialect === 'oracle') {
         this.knex = knexlib({ client: Client_Oracledb })
+    } else if (this.dialect === 'starrocks') {
+        this.knex = knexlib({ client: Client_StarRocks })
     } else if (this.isNativeKnex) {
         this.knex = knexlib({ client: this.knexDialect })
     } else if (this.dialect === 'duckdb') {
