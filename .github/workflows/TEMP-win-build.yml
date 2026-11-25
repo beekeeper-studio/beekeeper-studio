@@ -1,0 +1,115 @@
+name: TEMP - WIN BUILD
+
+permissions:
+  actions: write
+  id-token: write
+
+on:
+  pull_request:
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Set up Java (for jsign)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install jsign
+        shell: powershell
+        env:
+          JSIGN_VERSION: '7.4'
+          JSIGN_SHA256: '2abf2ade9ea322acc2d60c24794eadc465ff9380938fca4c932d09e0b25f1c28'
+        run: |
+          $jar = "$env:RUNNER_TEMP\jsign.jar"
+          Invoke-WebRequest -Uri "https://github.com/ebourg/jsign/releases/download/$env:JSIGN_VERSION/jsign-$env:JSIGN_VERSION.jar" -OutFile $jar
+          $expected = ($env:JSIGN_SHA256 -replace '\s','').ToLower()
+          $actual = (Get-FileHash $jar -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) {
+            Write-Error "jsign checksum mismatch: expected $expected got $actual"
+            exit 1
+          }
+          "JSIGN_JAR=$jar" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Decode Windows code signing certificate
+        shell: powershell
+        env:
+          WIN_CODESIGN_CERT: ${{ secrets.win_codesign_cert }}
+        run: |
+          $cert = "$env:RUNNER_TEMP\codesign-cert.pem"
+          [IO.File]::WriteAllBytes($cert, [Convert]::FromBase64String($env:WIN_CODESIGN_CERT))
+          "WIN_CERT_FILE=$cert" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '16.11.14'
+
+      - name: "Install python 3.11"
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      - name: Verify Python Version
+        run: |
+          $PYTHON_VERSION = python --version | Out-String
+          Write-Output "Installed Python version: $PYTHON_VERSION"
+          if (-not $PYTHON_VERSION.StartsWith("Python 3.11")) {
+            Write-Output "Error: Python version does not start with 3.11"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: yarn install (with retry)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: "yarn install --frozen-lockfile --network-timeout 100000"
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+
+      - name: Verify msnodesqlv8 native build
+        run: node -e "require('msnodesqlv8')"
+
+      - name: Remove dist directory
+        run: Remove-Item dist_electron -Recurse -ErrorAction Ignore
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
+          service_account: ${{ secrets.gcp_service_account }}
+
+      - name: Build & Publish (NT)
+        env:
+          GCP_KMS_KEYRING: "${{ secrets.gcp_kms_keyring }}"
+          GCP_KMS_KEY: "${{ secrets.gcp_kms_key }}"
+          GCP_ACCESS_TOKEN: "${{ steps.auth.outputs.access_token }}"
+          # WIN_CERT_FILE and JSIGN_JAR are exported to $GITHUB_ENV by earlier steps
+          PYTHON_PATH: "${{'$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ '$PYTHONPATH' }}"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USE_SYSTEM_FPM: true
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+        run: yarn run electron:build --publish never
+
+      - name: Upload signed build
+        uses: actions/upload-artifact@v6
+        with:
+          name: signed-win-x64
+          path: |
+            apps/studio/dist_electron/*.exe
+          retention-days: 5
