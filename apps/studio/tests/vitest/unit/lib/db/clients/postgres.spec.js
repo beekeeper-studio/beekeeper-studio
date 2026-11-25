@@ -138,6 +138,35 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(result).toBe(expected);
   })
 
+  it("clears a column comment instead of storing the word null", async () => {
+    const cleared = await client.alterTableSql({
+      table: 'foo',
+      schema: 'public',
+      alterations: [
+        { columnName: 'd', changeType: 'comment', newValue: null }
+      ]
+    })
+    expect(cleared).toBe('COMMENT ON COLUMN "public"."foo"."d" IS NULL;')
+
+    const empty = await client.alterTableSql({
+      table: 'foo',
+      schema: 'public',
+      alterations: [
+        { columnName: 'd', changeType: 'comment', newValue: '' }
+      ]
+    })
+    expect(empty).toBe('COMMENT ON COLUMN "public"."foo"."d" IS \'\';')
+
+    const literal = await client.alterTableSql({
+      table: 'foo',
+      schema: 'public',
+      alterations: [
+        { columnName: 'd', changeType: 'comment', newValue: 'null' }
+      ]
+    })
+    expect(literal).toBe('COMMENT ON COLUMN "public"."foo"."d" IS \'null\';')
+  })
+
   it("Should handle read-only permission errors gracefully and still return relations", async () => {
     // Mock the methods that might fail due to permission issues
     const mockRelations = [
