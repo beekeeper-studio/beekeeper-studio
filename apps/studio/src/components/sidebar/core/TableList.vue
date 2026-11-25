@@ -50,6 +50,13 @@
                   >
                   <span>Routines</span>
                 </label>
+                <label v-if="supportsColumnSearch">
+                  <input
+                    type="checkbox"
+                    v-model="searchColumns"
+                  >
+                  <span>Search columns</span>
+                </label>
                 <x-menuitem />
               </x-menu>
             </x-button>
@@ -62,6 +69,9 @@
       v-show="tablesLoading"
       style="margin-top: -5px;"
     />
+    <div v-if="$store.state.columnSearch.error" class="empty">
+      Unable to search columns: {{ $store.state.columnSearch.error }}
+    </div>
 
     <!-- Pinned Tables -->
     <div
@@ -196,6 +206,7 @@
   import VirtualTableList from './table_list/VirtualTableList.vue'
   import { TableOrView, Routine } from "@/lib/db/models";
   import { matches } from '@/common/transport/TransportPinnedEntity'
+  import { supportsColumnSearch } from '@/lib/db/columnSearch'
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
@@ -251,6 +262,7 @@
           return this.$store.state.entityFilter.filterQuery
         },
         set(newFilter) {
+          this.$store.commit('columnSearch/invalidate')
           this.$store.dispatch('setFilterQuery', newFilter)
         }
       },
@@ -287,6 +299,17 @@
       supportsRoutines() {
         return this.supportedFeatures.customRoutines
       },
+      supportsColumnSearch() {
+        return supportsColumnSearch(this.connectionType)
+      },
+      searchColumns: {
+        get() {
+          return this.$store.state.columnSearch.enabled
+        },
+        set(enabled) {
+          this.$store.dispatch('columnSearch/setEnabled', enabled)
+        }
+      },
       canCreateTable() {
         return !this.dialectData.disabledFeatures?.createTable
       },
@@ -300,7 +323,11 @@
       }
     },
     watch: {
+      usedConfig() {
+        this.$store.commit('columnSearch/reset', '')
+      },
       currentDatabase(){
+        this.$store.commit('columnSearch/reset', '')
         this.filterQuery = null
       },
       loadedWithPins (loaded, oldloaded) {
@@ -339,6 +366,8 @@
         try {
           this.$store.dispatch('updateRoutines')
           await this.$store.dispatch('updateTables')
+          this.$store.commit('columnSearch/reset', '')
+          await this.$store.dispatch('columnSearch/search', { query: this.filterQuery, dialect: this.dialect })
           // When we refresh sidebar tables we need to also refresh:
           // 1. Any open tables
           // 2. Any pinned tables
