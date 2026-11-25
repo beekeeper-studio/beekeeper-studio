@@ -2329,6 +2329,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
       this.removeTransactionTimeoutListener();
+      this.stopTimer();
       if (!_.isNil(this.pollInterval)) {
         clearInterval(this.pollInterval);
       }
