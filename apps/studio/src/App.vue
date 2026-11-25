@@ -2,7 +2,10 @@
   <div class="style-wrapper" :style="{ '--editor-font-size': `${editorFontSize}px` }">
     <div
       class="beekeeper-studio-wrapper"
-      :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
+      :class="{
+        'beekeeper-studio-minimal-mode': $store.getters.minimalMode,
+        'beekeeper-studio-hide-column-data-types': $store.getters.showColumnDataTypes === false,
+      }"
     >
       <titlebar />
       <template v-if="storeInitialized">

@@ -63,6 +63,13 @@ const SettingStoreModule: Module<State, any> = {
       const options = { key: "startedEditingResult", value: new Date() };
       await context.dispatch("save", options);
     },
+    async toggleShowColumnDataTypes(context) {
+      const next = !context.getters.showColumnDataTypes;
+      await context.dispatch("save", { key: "showColumnDataTypes", value: next });
+      if (typeof window !== "undefined" && window.main?.setShowColumnDataTypes) {
+        await window.main.setShowColumnDataTypes(next);
+      }
+    },
   },
   getters: {
     settings(state) {
@@ -96,6 +103,11 @@ const SettingStoreModule: Module<State, any> = {
     privacyMode(state) {
       if (!state.settings.privacyMode) return false;
       return state.settings.privacyMode.value;
+    },
+    showColumnDataTypes(state) {
+      const val = state.settings.showColumnDataTypes?.value;
+      if (_.isNil(val)) return true;
+      return val !== false && val !== 'false';
     },
     editResultsHintShown: (state) =>
       !_.isEmpty(state.settings["editResultsHintShown"]?.value),

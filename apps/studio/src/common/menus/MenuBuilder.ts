@@ -31,7 +31,8 @@ export default class extends DefaultMenu {
         // This is added automatically in Mac
         ...(!this.platformInfo.isMac ? [this.menuItems.fullscreen] : []),
         this.menuItems.privacyModeToggle,
-        this.menuItems.confirmWindowCloseToggle
+        this.menuItems.confirmWindowCloseToggle,
+        this.menuItems.showColumnDataTypesToggle
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
       ]
