@@ -42,7 +42,7 @@ import {
   RegistryModule,
   LicenseModule,
 } from '@/services/plugin/modules';
-import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCode, PluginSystemErrorCode, ThemeSystemErrorCode } from '@/lib/errors';
+import type { Reply } from '@/rpc/types';
 
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
@@ -73,18 +73,6 @@ const driverDepManager = new DriverDepManager({
   platform: platformInfo.platform as DepPlatform,
   arch: (process.arch === 'x64' ? 'x64' : 'arm64') as DepArch,
 });
-
-interface Reply {
-  id: string,
-  type: 'reply' | 'error',
-  data?: any,
-  error?: string
-  errorName?: "PluginSystemError" | "PluginError" | "ExtensionRegistryError" | "ExtensionRepositoryError" | "ThemeSystemError" | "Error"
-  errorCode?: PluginSystemErrorCode | PluginErrorCode | ExtensionRegistryErrorCode | ExtensionRepositoryErrorCode | ThemeSystemErrorCode
-  errorDetail?: string
-  errorHint?: string
-  stack?: string
-}
 
 export const handlers: Handlers = {
   ...ConnHandlers,
