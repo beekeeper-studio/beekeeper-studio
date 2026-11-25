@@ -68,6 +68,9 @@ export const api = {
   async setConfirmWindowClose(enabled: boolean) {
     await ipcRenderer.invoke('setConfirmWindowClose', enabled);
   },
+  async setShowColumnDataTypes(enabled: boolean) {
+    await ipcRenderer.invoke('setShowColumnDataTypes', enabled);
+  },
   onUpdateEvent(event: 'update-available' | 'manual-update' | 'managed-update' | 'update-downloaded', bind: any) {
     const eType = ['update-available', 'manual-update', 'managed-update', 'update-downloaded'];
     if (!eType.includes(event)) return;

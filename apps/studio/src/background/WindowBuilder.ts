@@ -3,7 +3,7 @@ import path from 'path'
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
-import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
+import { IGroupedUserSettings, UserSetting, UserSettingValueType } from '../common/appdb/models/user_setting'
 import rawLog from '@bksLogger'
 import querystring from 'query-string'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
@@ -36,6 +36,22 @@ export async function setConfirmWindowClose(settings: IGroupedUserSettings, enab
   setting.value = !enabled
   await setting.save()
   const menuItem = Menu.getApplicationMenu()?.getMenuItemById('confirm-window-close-toggle')
+  if (menuItem) menuItem.checked = enabled
+  getActiveWindows().forEach((window) => window.send(AppEvent.settingsChanged))
+}
+
+export async function setShowColumnDataTypes(settings: IGroupedUserSettings, enabled: boolean): Promise<void> {
+  let setting = settings.showColumnDataTypes
+  if (!setting) {
+    setting = new UserSetting()
+    setting.key = 'showColumnDataTypes'
+    setting.defaultValue = 'true'
+    setting.valueType = UserSettingValueType.boolean
+    settings.showColumnDataTypes = setting
+  }
+  setting.value = enabled
+  await setting.save()
+  const menuItem = Menu.getApplicationMenu()?.getMenuItemById('show-column-data-types-toggle')
   if (menuItem) menuItem.checked = enabled
   getActiveWindows().forEach((window) => window.send(AppEvent.settingsChanged))
 }

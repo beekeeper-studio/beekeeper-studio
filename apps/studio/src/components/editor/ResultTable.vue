@@ -68,7 +68,7 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
+  import { copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange, toggleColumnDataTypesMenuItem } from '@/lib/menu/tableMenu';
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
@@ -120,6 +120,7 @@
         propogatedChangesFilters: new Map<string, Filter[]>(),
         fieldOriginalClassMap: new Map<string, string>(),
         saveError: null,
+        columnDataTypesChangedWhileInactive: false,
       }
     },
     props: {
@@ -140,10 +141,24 @@
         if (this.active) {
           this.tabulator.restoreRedraw()
           this.$nextTick(() => {
+            if (this.columnDataTypesChangedWhileInactive) {
+              this.columnDataTypesChangedWhileInactive = false
+              if (this.tabulator) resizeAllColumnsToFitContentAction(this.tabulator)
+              return
+            }
             this.tabulator.redraw()
           })
         } else {
           this.tabulator.blockRedraw()
+        }
+      },
+      showColumnDataTypes() {
+        if (this.tabulator && this.active) {
+          this.$nextTick(() => {
+            if (this.tabulator) resizeAllColumnsToFitContentAction(this.tabulator)
+          })
+        } else {
+          this.columnDataTypesChangedWhileInactive = true
         }
       },
       result() {
@@ -162,7 +177,7 @@
     },
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
-      ...mapGetters(['isUltimate', 'dialectData', 'dialect']),
+      ...mapGetters(['isUltimate', 'dialectData', 'dialect', 'showColumnDataTypes']),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
       queryDialect() {
         return this.dialectData?.queryDialectOverride ?? this.dialect;
@@ -307,6 +322,10 @@
                 { separator: true },
                 resizeAllColumnsToFitContent,
                 resizeAllColumnsToFixedWidth,
+                toggleColumnDataTypesMenuItem(
+                  this.showColumnDataTypes ?? true,
+                  () => this.$store.dispatch('settings/toggleShowColumnDataTypes')
+                ),
                 ...this.getExtraPopupMenu('results.corner', { transform: "tabulator" }),
               ];
             },
@@ -486,6 +505,10 @@
             }),
             { separator: true },
             ...commonColumnMenu,
+            toggleColumnDataTypesMenuItem(
+              this.showColumnDataTypes ?? true,
+              () => this.$store.dispatch('settings/toggleShowColumnDataTypes')
+            ),
             { separator: true },
             filterMenuItem,
             ...this.getExtraPopupMenu('results.columnHeader', { transform: "tabulator" }),

@@ -104,6 +104,7 @@ import addGithubPluginSetting from './20261021_add_github_plugin_setting.js'
 import addConfirmWindowCloseSetting from './20260929_add_confirm_window_close_setting'
 import addPluginEntryCache from './20261026_add_plugin_entry_cache.js'
 import addThemeEntryCache from './20261105_add_theme_entry_cache.js'
+import addShowColumnDataTypesSetting from './20261124_add_show_column_data_types_setting.js'
 
 import ultimate from './ultimate/index'
 
@@ -166,7 +167,8 @@ const realMigrations = [
   addGithubPluginSetting,
   addConfirmWindowCloseSetting,
   addPluginEntryCache,
-  addThemeEntryCache
+  addThemeEntryCache,
+  addShowColumnDataTypesSetting
 ]
 
 // fixtures require the models

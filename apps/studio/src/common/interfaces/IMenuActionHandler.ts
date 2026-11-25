@@ -11,6 +11,7 @@ export interface IMenuActionHandler {
   toggleSecondarySidebar: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   togglePrivacyMode: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   toggleConfirmWindowClose: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
+  toggleShowColumnDataTypes: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   quit: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   undo: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   redo: (menuItem: Electron.MenuItem, win: ElectronWindow) => void

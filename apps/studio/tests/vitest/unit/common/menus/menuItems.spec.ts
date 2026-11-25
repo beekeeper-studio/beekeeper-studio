@@ -69,6 +69,30 @@ describe("menuItems", () => {
       expect(withSetting(true).checked).toBe(false);
     });
   });
+
+  describe("showColumnDataTypesToggle", () => {
+    const withSetting = (value?: boolean) =>
+      menuItems(
+        actionHandler,
+        (value === undefined ? {} : { showColumnDataTypes: { value } }) as unknown as IGroupedUserSettings,
+        { isMac: false, isWindows: true } as IPlatformInfo
+      ).showColumnDataTypesToggle;
+
+    it("is a checkbox wired to toggleShowColumnDataTypes", () => {
+      const item = withSetting(true);
+      expect(item.type).toBe("checkbox");
+      expect(typeof item.click).toBe("function");
+    });
+
+    it("is ticked by default and when enabled", () => {
+      expect(withSetting(undefined).checked).toBe(true);
+      expect(withSetting(true).checked).toBe(true);
+    });
+
+    it("is unticked when disabled", () => {
+      expect(withSetting(false).checked).toBe(false);
+    });
+  });
   it("shows the user config in the file manager", () => {
     const item = buildItems({ isMac: false, isWindows: true }).showUserConfig;
     expect(item.label).toBe("Show User Config in Filesystem");

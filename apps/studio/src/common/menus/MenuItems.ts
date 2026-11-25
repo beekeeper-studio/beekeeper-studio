@@ -273,6 +273,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.toggleConfirmWindowClose,
       checked: !settings?.dontConfirmWindowClose?.value
     },
+    showColumnDataTypesToggle: {
+      id: 'show-column-data-types-toggle',
+      label: 'Show Column Data Types',
+      type: 'checkbox',
+      click: actionHandler.toggleShowColumnDataTypes,
+      checked: settings?.showColumnDataTypes?.value ?? true
+    },
     appearance: {
       id: "appearance-menu",
       label: "Appearance",

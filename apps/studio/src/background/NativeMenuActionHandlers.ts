@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
-import { buildWindow, getActiveWindows, OpenOptions, setConfirmWindowClose } from './WindowBuilder'
+import { buildWindow, getActiveWindows, OpenOptions, setConfirmWindowClose, setShowColumnDataTypes } from './WindowBuilder'
 import { app, dialog, shell } from 'electron'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 import platformInfo from '../common/platform_info'
@@ -253,6 +253,11 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   toggleConfirmWindowClose = async (): Promise<void> => {
     await setConfirmWindowClose(this.settings, !!this.settings.dontConfirmWindowClose?.value)
+  }
+
+  toggleShowColumnDataTypes = async (): Promise<void> => {
+    const current = this.settings.showColumnDataTypes?.value ?? true
+    await setShowColumnDataTypes(this.settings, !current)
   }
 
   switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {

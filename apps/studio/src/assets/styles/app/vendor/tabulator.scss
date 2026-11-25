@@ -941,13 +941,16 @@ $cell-padding:           $gutter-w;
   color: var(--panel-fg);
 }
 
-.beekeeper-studio-minimal-mode .tabulator-header {
-  font-weight: inherit;
-
+.beekeeper-studio-minimal-mode .tabulator-header,
+.beekeeper-studio-hide-column-data-types .tabulator-header {
   .tabulator-col .tabulator-col-content .tabulator-col-title .title >
   .column-data-type {
     display: none;
   }
+}
+
+.beekeeper-studio-minimal-mode .tabulator-header {
+  font-weight: inherit;
 }
 
 .tabulator .tabulator-range-overlay .tabulator-range.tabulator-range-copy-highlight {

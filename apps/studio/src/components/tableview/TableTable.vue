@@ -344,7 +344,7 @@ import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, 
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
-import { pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction, toggleColumnDataTypesMenuItem } from '@/lib/menu/tableMenu';
 import { selectedCells, tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
@@ -411,6 +411,7 @@ export default Vue.extend({
 
       /** This is true when we switch to minimal mode while TableTable is not active */
       enabledMinimalModeWhileInactive: false,
+      columnDataTypesChangedWhileInactive: false,
 
       selectedRow: null,
       selectedRowPosition: -1,
@@ -425,7 +426,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
-    ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
+    ...mapGetters(['dialectData', 'dialect', 'minimalMode', 'showColumnDataTypes']),
     ...mapGetters('popupMenu', ['getExtraPopupMenu']),
     canJumpToLastPage() {
       const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
@@ -711,6 +712,13 @@ export default Vue.extend({
           resizeAllColumnsToFitContentAction(this.tabulator)
         }
 
+        if (this.columnDataTypesChangedWhileInactive) {
+          this.columnDataTypesChangedWhileInactive = false
+          this.$nextTick(() => {
+            if (this.tabulator) resizeAllColumnsToFitContentAction(this.tabulator)
+          })
+        }
+
         // $nextTick doesn't work here
         setTimeout(() => {
           this.tabulator.modules.selectRange.restoreFocus()
@@ -755,6 +763,15 @@ export default Vue.extend({
       // If the tab is not active, we can auto resize later when it's active
       if (!this.active) {
         this.enabledMinimalModeWhileInactive = this.minimalMode
+      }
+    },
+    showColumnDataTypes() {
+      if (this.tabulator && this.active) {
+        this.$nextTick(() => {
+          if (this.tabulator) resizeAllColumnsToFitContentAction(this.tabulator)
+        })
+      } else {
+        this.columnDataTypesChangedWhileInactive = true
       }
     },
   },
@@ -937,6 +954,10 @@ export default Vue.extend({
           }),
           { separator: true },
           ...commonColumnMenu,
+          toggleColumnDataTypesMenuItem(
+            this.showColumnDataTypes ?? true,
+            () => this.$store.dispatch('settings/toggleShowColumnDataTypes')
+          ),
           { separator: true },
           {
             label: createMenuItem(hideColumnLabel),

@@ -104,6 +104,16 @@ export const commonColumnMenu = [
   resizeAllColumnsToFixedWidth,
 ];
 
+export function toggleColumnDataTypesMenuItem(
+  showing: boolean,
+  onToggle: () => void
+): ColumnMenuItem {
+  return {
+    label: createMenuItem(showing ? "Hide column data types" : "Show column data types"),
+    action: onToggle,
+  };
+}
+
 export interface MenuItemOptions {
   /** Show the paid-feature star on the trailing edge. */
   ultimate?: boolean;

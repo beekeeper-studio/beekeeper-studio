@@ -301,6 +301,9 @@ const store = new Vuex.Store<State>({
     minimalMode(_state, getters) {
       return getters['settings/minimalMode']
     },
+    showColumnDataTypes(_state, getters) {
+      return getters['settings/showColumnDataTypes']
+    },
     // TODO (@day): this may need to be removed
     versionString(state) {
       return state.server.versionString();
