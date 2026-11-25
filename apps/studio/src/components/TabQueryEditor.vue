@@ -98,7 +98,7 @@
         ref="toolbar"
       >
         <div
-          class="actions secondary-actions"
+          class="actions secondary-actions inline-scrollable"
           @wheel="scrollSecondaryActions"
         >
           <div v-if="canManageTransactions">
@@ -2396,6 +2396,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     padding: 0.215rem 0.75rem;
     box-shadow: 0 0 6px 0 var(--warning-a11);
     animation: glowAndDrop 0.9s cubic-bezier(0.33, 0, 0.2, 1) forwards;
+    white-space: nowrap;
   }
 
   @keyframes glowAndDrop {
@@ -2453,13 +2454,37 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     white-space: nowrap;
   }
 
-  .query-editor .toolbar .actions.secondary-actions {
-    margin: 0;
+  .inline-scrollable {
+    --scrollbar-height: 1px;
+    --scrollbar-hover-height: 6px;
     overflow-x: auto;
+    overflow-y: hidden;
+    container-type: scroll-state;
+
+    @container scroll-state(scrollable: inline) {
+      > * {
+        // scrollbar sit in the bottom padding
+        margin-bottom: calc(var(--scrollbar-height) * -1);
+      }
+
+      &:hover > * {
+        margin-bottom: calc(var(--scrollbar-hover-height) * -1);
+      }
+    }
 
     &::-webkit-scrollbar {
-      height: 1px;
+      height: var(--scrollbar-height);
     }
+
+    &:hover {
+      &::-webkit-scrollbar {
+        height: var(--scrollbar-hover-height);
+      }
+    }
+  }
+
+  .query-editor .toolbar .actions.secondary-actions {
+    margin: 0;
 
     .btn-group {
       display: flex;
@@ -2477,6 +2502,12 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   .btn.history-btn {
     background-color: transparent;
     box-shadow: none;
+  }
+
+  .toolbar {
+    & > * {
+     padding: 0.4rem 0.8rem;
+    }
   }
 </style>
 
