@@ -80,8 +80,7 @@
   import { FieldDescriptor, FieldEditData, FieldReadOnlyReasonStr, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
-  import { safeSqlFormat } from '@/common/utils'
-  import { stringToTypedArray } from '@/common/utils'
+  import { safeSqlFormat, stringToTypedArray, stringifyRangeData } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
@@ -1103,14 +1102,15 @@
         }
 
         const result = this.dataToJson(allRows, false)
+        const stringified = stringifyRangeData(result)
 
         if (format === 'md') {
           const mdContent = [
-            Object.keys(result[0]),
-            ...result
+            Object.keys(stringified[0]),
+            ...stringified
                 .map((row) =>
                   Object.values(row).map(v =>
-                    (typeof v === 'object') ? JSON.stringify(v) : v
+                    v === null ? '' : v
                   )
                 )
           ];
@@ -1120,7 +1120,7 @@
         } else {
           await this.$native.clipboard.writeText(
             Papa.unparse(
-              result,
+              stringified,
               { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
             )
           )
