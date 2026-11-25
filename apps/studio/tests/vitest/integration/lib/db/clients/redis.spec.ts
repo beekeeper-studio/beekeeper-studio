@@ -1559,6 +1559,49 @@ describe('Redis', () => {
       expect(result[0].rows[0].result).toBe('');
     });
 
+    it('should insert a key with the value typed in the new row', async () => {
+      await connection.applyChanges({
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:new:value', value: 'hello world', ttl: null }] }
+        ],
+        updates: [],
+        deletes: []
+      });
+
+      const result = await connection.executeQuery('GET test:new:value');
+      expect(result[0].rows[0].result).toBe('hello world');
+    });
+
+    it('should insert a list key from a JSON array value', async () => {
+      await connection.applyChanges({
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:new:list', value: '["a","b","c"]' }] }
+        ],
+        updates: [],
+        deletes: []
+      });
+
+      const type = await connection.executeQuery('TYPE test:new:list');
+      expect(type[0].rows[0].result).toBe('list');
+
+      const items = await connection.executeQuery('LRANGE test:new:list 0 -1');
+      expect(items[0].rows.map(r => r.result)).toEqual(['a', 'b', 'c']);
+    });
+
+    it('should apply the TTL typed in the new row', async () => {
+      await connection.applyChanges({
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:new:ttl', value: 'v', ttl: '300' }] }
+        ],
+        updates: [],
+        deletes: []
+      });
+
+      const ttl = await connection.executeQuery('TTL test:new:ttl');
+      expect(ttl[0].rows[0].result).toBeGreaterThan(0);
+      expect(ttl[0].rows[0].result).toBeLessThanOrEqual(300);
+    });
+
     it('should update key values via applyChanges', async () => {
       await connection.executeQuery('SET test:update "old value"');
 
