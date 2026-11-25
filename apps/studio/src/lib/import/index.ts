@@ -4,7 +4,16 @@ import { BasicDatabaseClient } from '../db/clients/BasicDatabaseClient';
 import { TableOrView } from '../db/models';
 const log = rawLog.scope('import-file')
 
+export function betterColumnName(cName: string): string {
+  if (!cName) return ''
+  return cName
+    .replace(/[\s.]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase()
+}
+
 export default class Import {
+  static betterColumnName = betterColumnName;
   fileName: string;
   options: any;
   connection: BasicDatabaseClient<any>;
