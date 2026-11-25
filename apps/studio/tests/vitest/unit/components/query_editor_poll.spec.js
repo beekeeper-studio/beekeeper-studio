@@ -10,18 +10,27 @@ function queryActions() {
   };
 }
 
+function withDestroyHooks(ctx) {
+  ctx.rootBindings = [];
+  ctx.unregisterHandlers = vi.fn();
+  ctx.split = null;
+  ctx.connection = { releaseConnection: vi.fn() };
+  ctx.containerResizeObserver = { disconnect: vi.fn() };
+  ctx.removeTransactionTimeoutListener = vi.fn();
+  return ctx;
+}
+
 describe("saved query polling", () => {
   it("does not start polling when the tab is destroyed during load", async () => {
     const ctx = {
-      _isDestroyed: false,
-      _isBeingDestroyed: false,
+      editorClosed: false,
       tab: { queryId: 7, isLoading: false },
       $set(obj, key, value) {
         obj[key] = value;
       },
       $store: {
         dispatch: vi.fn(async () => {
-          ctx._isDestroyed = true;
+          TabQueryEditor.beforeDestroy.call(withDestroyHooks(ctx));
           return { id: 7, text: "select 1", title: "q" };
         }),
       },
@@ -32,15 +41,15 @@ describe("saved query polling", () => {
 
     await TabQueryEditor.mounted.call(ctx);
 
+    expect(ctx.editorClosed).toBe(true);
     expect(ctx.maybePollOriginalText).not.toHaveBeenCalled();
     expect(ctx.initializeQueries).not.toHaveBeenCalled();
     expect(ctx.tab.isLoading).toBe(false);
   });
 
-  it("does not start polling from a destroyed editor", () => {
+  it("does not start polling from a closed editor", () => {
     const ctx = {
-      _isDestroyed: true,
-      _isBeingDestroyed: false,
+      editorClosed: true,
       active: true,
       isCloud: true,
       tab: { queryId: 1 },
@@ -53,11 +62,25 @@ describe("saved query polling", () => {
     expect(ctx.pollInterval).toBeNull();
   });
 
+  it("marks the editor closed and clears an existing poll", () => {
+    vi.useFakeTimers();
+    const ctx = withDestroyHooks({
+      editorClosed: false,
+      tab: { id: 1 },
+      pollInterval: setInterval(() => {}, 10000),
+    });
+
+    TabQueryEditor.beforeDestroy.call(ctx);
+
+    expect(ctx.editorClosed).toBe(true);
+    expect(ctx.pollInterval).toBeNull();
+    vi.useRealTimers();
+  });
+
   it("starts polling for an open cloud query", () => {
     vi.useFakeTimers();
     const ctx = {
-      _isDestroyed: false,
-      _isBeingDestroyed: false,
+      editorClosed: false,
       active: true,
       isCloud: true,
       tab: { queryId: 1 },
