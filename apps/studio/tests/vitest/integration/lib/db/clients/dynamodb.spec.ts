@@ -265,6 +265,95 @@ describe('DynamoDB', () => {
     })
   })
 
+  describe('typed cell edits', () => {
+    // The table editor sends edited cells as text. They must land in DynamoDB with
+    // the attribute's type (N, M, ...) rather than as a String.
+    const tableName = `TypedEdits_${Date.now()}`
+
+    async function rawItem(id: string) {
+      const { GetItemCommand } = await import('@aws-sdk/client-dynamodb')
+      const out = await (connection as any).raw.send(new GetItemCommand({
+        TableName: tableName,
+        Key: { id: { S: id } },
+      }))
+      return out.Item
+    }
+
+    beforeAll(async () => {
+      await connection.createTable({ table: tableName })
+      await connection.applyChanges({
+        inserts: [{ table: tableName, data: [{ id: 'p1', age: 21, meta: { city: 'Paris', n: 1 } }] }],
+        updates: [],
+        deletes: [],
+      })
+    })
+
+    afterAll(async () => {
+      await connection.dropElement(tableName, DatabaseElement.TABLE).catch(() => {})
+    })
+
+    it('keeps an edited Number as a Number', async () => {
+      await connection.applyChanges({
+        inserts: [],
+        updates: [{
+          table: tableName,
+          column: 'age',
+          columnType: 'Number',
+          value: '99',
+          primaryKeys: [{ column: 'id', value: 'p1' }],
+        }],
+        deletes: [],
+      })
+      expect((await rawItem('p1')).age).toStrictEqual({ N: '99' })
+    })
+
+    it('keeps an edited Map as a Map', async () => {
+      await connection.applyChanges({
+        inserts: [],
+        updates: [{
+          table: tableName,
+          column: 'meta',
+          columnType: 'Map',
+          value: '{"city":"Lyon","n":280,"extra":[1,2]}',
+          primaryKeys: [{ column: 'id', value: 'p1' }],
+        }],
+        deletes: [],
+      })
+      expect((await rawItem('p1')).meta).toStrictEqual({
+        M: {
+          city: { S: 'Lyon' },
+          n: { N: '280' },
+          extra: { L: [{ N: '1' }, { N: '2' }] },
+        },
+      })
+    })
+
+    it('types the values of a new row typed into the grid', async () => {
+      await connection.applyChanges({
+        inserts: [{ table: tableName, data: [{ id: 'p2', age: '5', meta: '{"city":"Nice"}' }] }],
+        updates: [],
+        deletes: [],
+      })
+      const item = await rawItem('p2')
+      expect(item.age).toStrictEqual({ N: '5' })
+      expect(item.meta).toStrictEqual({ M: { city: { S: 'Nice' } } })
+    })
+
+    it('rejects text that is not a valid Number', async () => {
+      await expect(connection.applyChanges({
+        inserts: [],
+        updates: [{
+          table: tableName,
+          column: 'age',
+          columnType: 'Number',
+          value: 'abc',
+          primaryKeys: [{ column: 'id', value: 'p1' }],
+        }],
+        deletes: [],
+      })).rejects.toThrow(/not a valid Number/)
+    })
+  })
+
   describe('pagination', () => {
     const tableName = `Paginated_${Date.now()}`
 
