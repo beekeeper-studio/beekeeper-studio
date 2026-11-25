@@ -202,16 +202,17 @@ export class MySqlConnector extends DatabaseConnector<mysql.PoolConnection> {
       return authService.configDB(server, config);
     }
 
-    if (server.config.socketPathEnabled) {
+    // With an SSH tunnel the socket lives on the far side, and connectTunnel
+    // forwards it to localHost:localPort, so the driver always dials that.
+    // Without a tunnel, socket mode means a socket on this machine.
+    if (server.sshTunnel) {
+      config.host = server.config.localHost;
+      config.port = server.config.localPort;
+    } else if (server.config.socketPathEnabled) {
       config.socketPath = server.config.socketPath;
       config.host = null;
       config.port = null;
       return config;
-    }
-
-    if (server.sshTunnel) {
-      config.host = server.config.localHost;
-      config.port = server.config.localPort;
     }
 
     if (server.config.iamAuthOptions?.iamAuthenticationEnabled) {

@@ -118,6 +118,27 @@ function maybeBuildFilteringAgent(
 const log = rawLog.scope('db:tunnel');
 const logger = () => log;
 
+// The socket path is resolved on the far side of the tunnel, so it has to be
+// absolute in POSIX terms -- `path.join` would use `\` on Windows.
+//
+// PostgreSQL follows libpq's convention: a host that names a directory has
+// `/.s.PGSQL.<port>` appended. The socket field accepts either the directory or
+// the full socket path, so normalise the directory form here.
+function remoteSocketPath(config: IDbConnectionServerConfig): string {
+  const socketPath = config.socketPath;
+  if (!socketPath) {
+    throw new Error('Socket path is required for a socket connection');
+  }
+  const isPostgres = config.client === 'postgresql' || config.client === 'greengage';
+  if (!isPostgres) return socketPath;
+
+  const trimmed = socketPath.replace(/\/+$/, '');
+  const name = trimmed.slice(trimmed.lastIndexOf('/') + 1);
+  if (name.startsWith('.s.PGSQL.')) return trimmed;
+  const port = Number(config.port) || 5432;
+  return `${trimmed}/.s.PGSQL.${port}`;
+}
+
 export default function connectTunnel(config: IDbConnectionServerConfig): Promise<IDbSshTunnel> {
   logger().debug('setting up ssh tunnel')
 
@@ -212,13 +233,21 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         console.log("tunnel/ GOT TUNNEL PORT", localPort)
         // workaround for `getPortPromise` not releasing the port quickly enough
         await new Promise(resolve => setTimeout(resolve, 500));
-        const tunnelConfig = {
-          fromPort: localPort,
-          toPort: config.port || 22,
-          toHost: config.host
-        }
+        // A socket connection forwards the socket on the far side to a local
+        // port; a TCP connection forwards host:port. Either way the driver
+        // connects to localHost:localPort.
+        const remoteSocket = config.socketPathEnabled ? remoteSocketPath(config) : undefined
+        const tunnelConfig = remoteSocket
+          ? { fromPort: localPort, socketPath: remoteSocket }
+          : { fromPort: localPort, toPort: config.port || 22, toHost: config.host }
         console.log("tunnel config: ", tunnelConfig)
-        const tunnel = await connection.forward(tunnelConfig)
+        const tunnel = remoteSocket
+          ? await connection.forwardSocket({ fromPort: localPort, socketPath: remoteSocket })
+          : await connection.forward({
+              fromPort: localPort,
+              toPort: config.port || 22,
+              toHost: config.host,
+            })
         logger().debug('tunnel created!')
         const result = {
           connection: connection,

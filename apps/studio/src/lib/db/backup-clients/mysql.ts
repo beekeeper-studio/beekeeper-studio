@@ -119,7 +119,7 @@ export class MySqlBackupClient extends BaseCommandClient {
       ]
     });
 
-    if (BaseCommandClient.socketPathEnabled) {
+    if (BaseCommandClient.usesSocket) {
       command.options.push(...[
         `--protocol=SOCKET`,
         `--socket=${BaseCommandClient.socket}`
