@@ -1,6 +1,7 @@
 import { BeeCursor, TableColumn } from "@/lib/db/models";
 import rawLog from '@bksLogger'
 import { waitFor } from "@/lib/db/clients/base/wait"
+import { convertValueByType } from "./valueConverter"
 
 const log = rawLog.scope('cassandra:cursor');
 
@@ -39,8 +40,8 @@ export class CassandraCursor extends BeeCursor {
             classThis.stream = this
             let row
             while ( (row = this.read()) !== null ) {
-              const keys = row['keys']()
-              const rowData = keys.map(k => row[k])
+              // __columns is the driver's per-row column metadata (name and type)
+              const rowData = row['__columns'].map((c) => convertValueByType(row[c.name], c.type))
               classThis.rowBuffer.push(rowData)
             }
 
