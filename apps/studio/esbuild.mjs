@@ -113,7 +113,7 @@ const utilityArgs = {
 
 // The bks command. It runs under plain node (or the app binary with
 // ELECTRON_RUN_AS_NODE), so it is a self-contained bundle with no externals,
-// and it must never pull in electron or the rest of the app: src/cli and cli-client
+// and it must never pull in electron or the rest of the app: src/cli and apps/cli
 // talks to the running app over its socket and nothing else.
 function cliBoundaryPlugin() {
   return {

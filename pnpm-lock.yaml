@@ -183,7 +183,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
 
-  apps/cli-client:
+  apps/cli:
     dependencies:
       markdown-table:
         specifier: ^3.0.2
@@ -228,9 +228,9 @@ importers:
       '@beekeeperstudio/bks-er-diagram':
         specifier: ^1.1.2
         version: 1.1.2
-      '@beekeeperstudio/cli-client':
+      '@beekeeperstudio/cli':
         specifier: workspace:*
-        version: link:../cli-client
+        version: link:../cli
       '@beekeeperstudio/knex-snowflake-dialect':
         specifier: ^0.5.1
         version: 0.5.1(knex@2.5.1(better-sqlite3@13.0.3)(mysql2@3.23.1(@types/node@22.19.11))(pg@8.18.0)(supports-color@8.1.1)(tedious@19.2.1(@azure/core-client@1.10.1(supports-color@8.1.1))(supports-color@8.1.1)))(snowflake-sdk@3.4.1(asn1.js@5.4.1)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))

@@ -15,7 +15,7 @@ import {
   CliError,
   CliCreateTabRequest,
   CliTabSummary,
-} from '@beekeeperstudio/cli-client'
+} from '@beekeeperstudio/cli'
 import { serializeBigInt } from '@/services/plugin/utils'
 
 async function createSqliteClient(): Promise<SqliteClient> {

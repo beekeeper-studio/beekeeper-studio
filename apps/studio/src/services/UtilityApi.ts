@@ -50,7 +50,7 @@ import {
   StructureResult,
   SwitchTabParams,
   SwitchTabResult,
-} from "@beekeeperstudio/cli-client";
+} from "@beekeeperstudio/cli";
 import { uuidv4 } from "@/lib/uuid";
 import {
   CliAccessRequest,

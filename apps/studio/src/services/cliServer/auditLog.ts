@@ -1,5 +1,5 @@
 import { redactMessage } from '@/lib/log/redact'
-import { CliRequest, CliResponse } from '@beekeeperstudio/cli-client'
+import { CliRequest, CliResponse } from '@beekeeperstudio/cli'
 import { clientInfo } from './commands'
 
 /** What the socket server reports after answering one request. */

@@ -28,7 +28,7 @@ import {
   isCliError,
   defaultCliSocketPath,
   DEFAULT_CLI_TIMEOUT,
-} from "@beekeeperstudio/cli-client";
+} from "@beekeeperstudio/cli";
 import { detectClientName } from "./clientName";
 
 /**

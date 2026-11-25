@@ -48,7 +48,7 @@
 import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import CliAccessForm from "./CliAccessForm.vue";
-import type { CliAccess } from "@beekeeperstudio/cli-client";
+import type { CliAccess } from "@beekeeperstudio/cli";
 
 interface AccessRequest {
   requestId: string;

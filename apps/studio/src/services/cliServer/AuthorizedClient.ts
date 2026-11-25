@@ -1,4 +1,4 @@
-import type { CliAccess } from "@beekeeperstudio/cli-client";
+import type { CliAccess } from "@beekeeperstudio/cli";
 
 export class AuthorizedClient {
   constructor(

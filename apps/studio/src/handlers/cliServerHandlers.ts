@@ -3,7 +3,7 @@ import {
   RendererResponse,
 } from "@/services/cliServer/rendererRequests";
 import { state } from "@/handlers/handlerState";
-import type { CliAccess } from "@beekeeperstudio/cli-client";
+import type { CliAccess } from "@beekeeperstudio/cli";
 
 export interface AuthorizedCliClient {
   name: string;

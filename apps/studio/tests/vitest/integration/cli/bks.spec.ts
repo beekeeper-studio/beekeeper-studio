@@ -22,7 +22,7 @@ import {
   CliError,
   CliCreateTabRequest,
   CliTabSummary,
-} from "@beekeeperstudio/cli-client";
+} from "@beekeeperstudio/cli";
 
 const socketPath =
   process.platform === "win32"

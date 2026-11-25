@@ -10,7 +10,7 @@ import {
   CliEntityType,
   CliErrorPayload,
   isCliError,
-} from "@beekeeperstudio/cli-client";
+} from "@beekeeperstudio/cli";
 
 export const ENTITY_TYPE_ALIASES = {
   table: "table",

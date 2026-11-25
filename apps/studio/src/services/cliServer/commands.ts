@@ -15,7 +15,7 @@ import {
   CliEntityType,
   StatementResult,
   CliClientInfo,
-} from "@beekeeperstudio/cli-client";
+} from "@beekeeperstudio/cli";
 
 /** Who made a request, and whether they are still waiting for the answer. */
 export interface CliCallContext {

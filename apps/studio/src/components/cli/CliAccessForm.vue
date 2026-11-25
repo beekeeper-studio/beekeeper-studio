@@ -73,7 +73,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import type { CliAccess, CliQueryPermission } from "@beekeeperstudio/cli-client";
+import type { CliAccess, CliQueryPermission } from "@beekeeperstudio/cli";
 
 const WRITE_TYPES: CliQueryPermission[] = ["update", "delete", "alter", "anything"];
 

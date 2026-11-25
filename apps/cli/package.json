@@ -1,5 +1,5 @@
 {
-  "name": "@beekeeperstudio/cli-client",
+  "name": "@beekeeperstudio/cli",
   "description": "Client for the Beekeeper Studio CLI socket",
   "private": true,
   "version": "0.0.0",

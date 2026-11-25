@@ -1,4 +1,4 @@
-import { CliError, CliErrorCode } from '@beekeeperstudio/cli-client'
+import { CliError, CliErrorCode } from '@beekeeperstudio/cli'
 
 /** What the approval dialog shows. */
 export interface CliAccessRequest {

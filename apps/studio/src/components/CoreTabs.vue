@@ -386,7 +386,7 @@ import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
 import rawLog from '@bksLogger'
-import type { CliCreateTabRequest, CliTabSummary } from '@beekeeperstudio/cli-client'
+import type { CliCreateTabRequest, CliTabSummary } from '@beekeeperstudio/cli'
 
 const log = rawLog.scope('CoreTabs.vue')
 
