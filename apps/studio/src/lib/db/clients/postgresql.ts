@@ -880,7 +880,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return keys.length === 1 ? keys[0].columnName : null
   }
 
-  async getPrimaryKeys(table: string, schema: string = this._defaultSchema): Promise<PrimaryKeyColumn[]> {
+  async getPrimaryKeys(table: string, schema: string = this._defaultSchema, options: { connection?: PoolClient } = {}): Promise<PrimaryKeyColumn[]> {
     const tablename = PD.escapeString(this.tableName(table, schema), true)
     const query = `
       SELECT
@@ -894,7 +894,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         AND    i.indisprimary
       ORDER BY a.attnum
     `
-    const data = await this.driverExecuteSingle(query)
+    const data = await this.driverExecuteSingle(query, options)
     if (data.rows) {
       return data.rows.map((r) => ({
         columnName: r.column_name,
@@ -1088,13 +1088,17 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false): Promise<string | string[]> {
+  async getImportSQL(importedData: any[], tableName: string, schema: string = null, runAsUpsert = false, importOptions?: ImportFuncOptions): Promise<string | string[]> {
     let setRunAsUpsert = runAsUpsert
     if ( setRunAsUpsert ) {
       setRunAsUpsert = this.version.number >= 90500
     }
     const queries = []
-    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema)
+    // CockroachDB creates the new table inside the import transaction, so only that transaction sees it
+    const connection = this.connectionType === 'cockroachdb' && importOptions?.storeValues?.createNewTable
+      ? importOptions.executeOptions?.connection
+      : undefined
+    const primaryKeysPromise = await this.getPrimaryKeys(tableName, schema, { connection })
     const primaryKeys = primaryKeysPromise.map(v => v.columnName)
     queries.push(buildInsertQueries(this.knex, importedData, { runAsUpsert: setRunAsUpsert, primaryKeys }).join(';'))
     return joinQueries(queries)

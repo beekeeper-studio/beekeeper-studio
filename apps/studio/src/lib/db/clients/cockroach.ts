@@ -1,5 +1,5 @@
 import pg from "pg";
-import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn, BksField } from "../models";
+import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn, BksField, ImportFuncOptions } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
@@ -8,6 +8,13 @@ import { CockroachConnector } from "./cockroach/CockroachConnector";
 
 export class CockroachClient extends PostgresClient {
   connector = new CockroachConnector({ server: this.server, database: this.database });
+
+  // An open CockroachDB transaction can't see a table that another session
+  // created after it began, so the table is created inside the import
+  // transaction. It is rolled back with the rows if the import fails.
+  async importCreateTableCommand(_table: TableOrView, createTableSql: string, importOptions: ImportFuncOptions): Promise<any> {
+    return await this.rawExecuteQuery(createTableSql, { connection: importOptions.executeOptions.connection });
+  }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {

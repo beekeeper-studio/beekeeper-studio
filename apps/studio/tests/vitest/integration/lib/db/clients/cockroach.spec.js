@@ -3,6 +3,8 @@ import { DockerComposeEnvironment } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from './all';
 import { runSshTests } from './ssh/commonSshTests';
+import path from 'path'
+import CsvImporter from '@commercial/backend/lib/import/formats/csv'
 
 describe("CockroachDB Tests", () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
@@ -67,6 +69,43 @@ describe("CockroachDB Tests", () => {
     expect(indexes.find((idx) => idx.name === 'expression_with_comma').columns.length).toBe(1)
     expect(indexes.find((idx) => idx.name === 'expression_with_double_quote').columns.length).toBe(1)
     expect(indexes.find((idx) => idx.name === 'expression_with_jsonb_operator').columns.length).toBe(1)
+  })
+
+  describe("Import into a table created from the import file", () => {
+    it("should create the table and import the rows", async () => {
+      const table = { schema: 'public', name: 'new_people', entityType: 'table' }
+      const columns = ['id', 'name', 'city', 'age', 'joined']
+      const importer = new CsvImporter(path.join(__dirname, '../../../../../fixtures/new_people.csv'), {
+        columnDelimeter: ',', quoteCharacter: '"', escapeCharacter: '"', newlineCharacter: '',
+        useHeaders: true, trimWhitespaces: true, nullableValues: [],
+        importMap: columns.map((c) => ({ fileColumn: c, tableColumn: c })),
+        createNewTable: true, truncateTable: false, runAsUpsert: false
+      }, util.connection, table)
+
+      await importer.importFile('CREATE TABLE public.new_people (id int PRIMARY KEY, name text, city text, age int, joined date)')
+
+      const rows = await util.knex('new_people').select('name', 'city').orderBy('id')
+      expect(rows.map((r) => r.city)).toEqual(['Paris', 'Berlin', 'Rome, IT', 'Oslo'])
+    })
+
+    it("should not leave the table behind when the import fails", async () => {
+      const table = { schema: 'public', name: 'import_aborted_table', entityType: 'table' }
+      const importScriptOptions = {
+        executeOptions: { multiple: false },
+        storeValues: { createNewTable: true, truncateTable: false, runAsUpsert: false }
+      }
+      // inserts like the CSV reader, then aborts
+      const read = async (_options, executeOptions) => {
+        const lineOptions = { ...importScriptOptions, executeOptions: { multiple: true, ...executeOptions } }
+        const importSQL = await util.connection.getImportSQL([{ table: table.name, schema: table.schema, data: [{ id: 1, hat: 'fez' }] }], table.name, table.schema, false, lineOptions)
+        await util.connection.importLineReadCommand(table, importSQL, lineOptions)
+        return { aborted: true, error: 'forced abort' }
+      }
+      const createTableSql = 'CREATE TABLE public.import_aborted_table (id int PRIMARY KEY, hat text)'
+      await expect(util.connection.importFile(table, importScriptOptions, read, createTableSql)).rejects.toThrow('forced abort')
+
+      expect(await util.knex.schema.hasTable('import_aborted_table')).toBe(false)
+    })
   })
 })
 
