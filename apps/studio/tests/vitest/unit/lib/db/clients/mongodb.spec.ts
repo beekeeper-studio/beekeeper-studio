@@ -252,3 +252,241 @@ describe("MongoDBClient ObjectIds", () => {
     })
   })
 })
+
+describe("MongoDBClient.updateValues", () => {
+  it("emits dotted-path $set for changed fields and leaves untouched BSON Date sibling intact", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+    const initialDate = new Date("2023-01-15T12:00:00.000Z")
+
+    const existingDoc = {
+      _id: docId,
+      meta: {
+        created_at: initialDate,
+        author: "alice",
+        version: 1,
+      },
+    }
+
+    const mockCollection = {
+      findOne: vi.fn().mockResolvedValue(existingDoc),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        value: {
+          ...existingDoc,
+          meta: {
+            ...existingDoc.meta,
+            author: "bob",
+          },
+        },
+      }),
+    }
+
+    const mockDb = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "posts",
+      column: "meta",
+      value: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        author: "bob",
+        version: 1,
+      },
+      oldValue: {
+        created_at: initialDate,
+        author: "alice",
+        version: 1,
+      },
+      primaryKeys: [
+        { column: "_id", value: docId },
+      ],
+    }
+
+    await client.updateValues([update as any], mockDb)
+
+    expect(mockCollection.findOne).toHaveBeenCalledWith(
+      { _id: docId },
+      { projection: { meta: 1 } }
+    )
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: docId },
+      {
+        $set: {
+          "meta.author": "bob",
+        },
+      },
+      { returnDocument: "after" }
+    )
+  })
+
+  it("restores modified date string to a native BSON Date instance in $set", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+    const initialDate = new Date("2023-01-15T12:00:00.000Z")
+    const newDateStr = "2023-01-20T15:30:00.000Z"
+
+    const existingDoc = {
+      _id: docId,
+      meta: {
+        created_at: initialDate,
+        author: "alice",
+      },
+    }
+
+    const mockCollection = {
+      findOne: vi.fn().mockResolvedValue(existingDoc),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        value: {
+          ...existingDoc,
+          meta: {
+            ...existingDoc.meta,
+            created_at: new Date(newDateStr),
+          },
+        },
+      }),
+    }
+
+    const mockDb = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "posts",
+      column: "meta",
+      value: {
+        created_at: newDateStr,
+        author: "alice",
+      },
+      oldValue: {
+        created_at: initialDate,
+        author: "alice",
+      },
+      primaryKeys: [
+        { column: "_id", value: docId },
+      ],
+    }
+
+    await client.updateValues([update as any], mockDb)
+
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    const callArgs = mockCollection.findOneAndUpdate.mock.calls[0]
+    expect(callArgs[1]).toEqual({
+      $set: {
+        "meta.created_at": new Date(newDateStr),
+      },
+    })
+  })
+
+  it("updates top-level primitive columns directly with $set", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+
+    const existingDoc = {
+      _id: docId,
+      name: "old_name",
+    }
+
+    const mockCollection = {
+      findOne: vi.fn().mockResolvedValue(existingDoc),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        value: {
+          ...existingDoc,
+          name: "updated_name",
+        },
+      }),
+    }
+
+    const mockDb = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "users",
+      column: "name",
+      value: "updated_name",
+      oldValue: "old_name",
+      primaryKeys: [
+        { column: "_id", value: docId },
+      ],
+    }
+
+    await client.updateValues([update as any], mockDb)
+
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: docId },
+      {
+        $set: {
+          name: "updated_name",
+        },
+      },
+      { returnDocument: "after" }
+    )
+  })
+
+  it("emits $unset when a subdocument field is deleted", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+
+    const existingDoc = {
+      _id: docId,
+      meta: {
+        created_at: new Date("2023-01-15T12:00:00.000Z"),
+        author: "alice",
+        version: 1,
+      },
+    }
+
+    const mockCollection = {
+      findOne: vi.fn().mockResolvedValue(existingDoc),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        value: {
+          _id: docId,
+          meta: {
+            created_at: existingDoc.meta.created_at,
+            version: 2,
+          },
+        },
+      }),
+    }
+
+    const mockDb = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "posts",
+      column: "meta",
+      value: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        version: 2,
+      },
+      oldValue: {
+        created_at: existingDoc.meta.created_at,
+        author: "alice",
+        version: 1,
+      },
+      primaryKeys: [
+        { column: "_id", value: docId },
+      ],
+    }
+
+    await client.updateValues([update as any], mockDb)
+
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: docId },
+      {
+        $unset: {
+          "meta.author": "",
+        },
+        $set: {
+          "meta.version": 2,
+        },
+      },
+      { returnDocument: "after" }
+    )
+  })
+})
