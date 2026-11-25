@@ -12,11 +12,17 @@ vi.mock("sql-query-identifier", async (importOriginal) => {
   };
 });
 
-function initializeEditor(editor: SqlTextEditor, initialValue?: string) {
+function initializeEditor(
+  editor: SqlTextEditor,
+  initialValue?: string,
+  languageId?: "redis"
+) {
   const parent = document.createElement("div");
-  editor.initialize({ parent, initialValue });
+  editor.initialize({ parent, initialValue, languageId });
   return editor;
 }
+
+const redisScript = "GET user:1:name\nGET user:2:name\nGET user:1:email";
 
 describe("querySelection", () => {
   it("should call onQuerySelectionChange when clicking into a query", () => {
@@ -197,5 +203,91 @@ describe("querySelection", () => {
     expect(params.selectedQuery.text).toBe("SELECT 1 WHERE");
 
     editor.destroy();
+  });
+
+  describe("redis", () => {
+    it("should select the command on the cursor's line", () => {
+      const onQuerySelectionChange = vi.fn();
+      const editor = initializeEditor(
+        new SqlTextEditor({ onQuerySelectionChange }),
+        redisScript,
+        "redis"
+      );
+
+      // Cursor on line 1
+      editor.view.dispatch({ selection: EditorSelection.cursor(3) });
+      expect(onQuerySelectionChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          selectedQuery: expect.objectContaining({ text: "GET user:1:name" }),
+        })
+      );
+
+      // Cursor on line 2
+      editor.view.dispatch({ selection: EditorSelection.cursor(20) });
+      expect(onQuerySelectionChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          selectedQuery: expect.objectContaining({ text: "GET user:2:name" }),
+        })
+      );
+
+      const params = onQuerySelectionChange.mock.calls[0][0];
+      expect(params.queries.map((q) => q.text)).toEqual([
+        "GET user:1:name",
+        "GET user:2:name",
+        "GET user:1:email",
+      ]);
+
+      editor.destroy();
+    });
+
+    it("should skip blank and comment lines and keep offsets into the text", () => {
+      const onQuerySelectionChange = vi.fn();
+      const text = "# users\n\n  GET user:1:name  \nGET user:2:name";
+      const editor = initializeEditor(
+        new SqlTextEditor({ onQuerySelectionChange }),
+        text,
+        "redis"
+      );
+
+      editor.view.dispatch({ selection: EditorSelection.cursor(0) });
+
+      const { queries, selectedQuery } = onQuerySelectionChange.mock.calls[0][0];
+      expect(queries.map((q) => q.text)).toEqual([
+        "GET user:1:name",
+        "GET user:2:name",
+      ]);
+      for (const query of queries) {
+        expect(text.slice(query.start, query.end + 1)).toBe(query.text);
+      }
+      // A cursor on the comment selects the next command, as with SQL
+      expect(selectedQuery.text).toBe("GET user:1:name");
+
+      editor.destroy();
+    });
+
+    it("should switch to one command per line when the language changes to redis", () => {
+      const onQuerySelectionChange = vi.fn();
+      const editor = initializeEditor(
+        new SqlTextEditor({ onQuerySelectionChange }),
+        redisScript
+      );
+
+      editor.view.dispatch({ selection: EditorSelection.cursor(20) });
+      expect(onQuerySelectionChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          selectedQuery: expect.objectContaining({ text: redisScript }),
+        })
+      );
+
+      // Reported straight away, without waiting for the cursor to move
+      editor.setLanguageId("redis");
+      expect(onQuerySelectionChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          selectedQuery: expect.objectContaining({ text: "GET user:2:name" }),
+        })
+      );
+
+      editor.destroy();
+    });
   });
 });

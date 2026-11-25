@@ -604,7 +604,7 @@
   import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
   import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue"
-  import { divider, type Entity } from "@beekeeperstudio/ui-kit";
+  import { divider, splitRedisCommands, type Entity } from "@beekeeperstudio/ui-kit";
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import QueryEditHistory from '@/components/editor/QueryEditHistory.vue'
@@ -1698,7 +1698,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return await this.submitQuery(this.currentlySelectedQuery.text)
         }
 
-        const { queries, error } = safelyIdentify(this.unsavedText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        // Like SQL, this falls back to the first query
+        const { queries, error } = this.splitQuery(this.unsavedText)
 
         // this should not theoretically be possible as there probably would have been a queryselection error,
         // but if we somehow manage to get here, we need to panic
@@ -1894,11 +1895,18 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.tab.isRunning = false
         }
       },
+      // Redis runs one command per line, so it is split by line instead of by statement
+      splitQuery(text: string) {
+        if (this.dialect === 'redis') {
+          return { queries: splitRedisCommands(text), error: null }
+        }
+        return safelyIdentify(text, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+      },
       initializeQueries() {
         const { originalText, editorText } = resolveEditorText(this.tab, this.query?.text)
         if (editorText) {
           // The run methods should catch any errors, so we don't need to do that here
-          const { queries } = safelyIdentify(editorText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          const { queries } = this.splitQuery(editorText)
           if (queries.length > 0) {
             this.individualQueries = queries
             this.currentlySelectedQuery = queries[0]
