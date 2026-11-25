@@ -397,6 +397,7 @@
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
+        @clipboardHtml="clipboardHtml"
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
         @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
@@ -1516,6 +1517,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         // eslint-disable-next-line
         // @ts-ignore
         const data = this.$refs.table.clipboard('md')
+      },
+      clipboardHtml() {
+        // eslint-disable-next-line
+        // @ts-ignore
+        const data = this.$refs.table.clipboard('html')
       },
       selectEditor() {
         // The assignment is a no-op if intent was already 'text-editor', so

@@ -429,3 +429,28 @@ export function isNumericDataType (dataType) {
 
   return numericStarts.some(t => base.startsWith(t))
 }
+
+export function toHtmlTable(
+  headers: string[] | null | undefined,
+  rows: (string | number | boolean | null | undefined | any)[][]
+): string {
+  const escape = (val: any) => {
+    if (val === null || val === undefined) return ""
+    const str = typeof val === "object" ? JSON.stringify(val) : String(val)
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+  }
+
+  const headerHtml = headers && headers.length > 0
+    ? `<thead><tr>${headers.map((h) => `<th>${escape(h)}</th>`).join("")}</tr></thead>`
+    : ""
+  const rowsHtml = rows
+    .map((row) => `<tr>${row.map((cell) => `<td>${escape(cell)}</td>`).join("")}</tr>`)
+    .join("")
+
+  return `<table>${headerHtml}<tbody>${rowsHtml}</tbody></table>`
+}

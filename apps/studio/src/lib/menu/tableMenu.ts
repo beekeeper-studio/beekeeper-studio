@@ -8,7 +8,7 @@ import {
 import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
-import { stringifyRangeData, rowHeaderField, isNumericDataType } from "@/common/utils";
+import { stringifyRangeData, rowHeaderField, isNumericDataType, toHtmlTable } from "@/common/utils";
 import { defaultEscapeString } from "@shared/lib/dialects/models";
 import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
@@ -136,7 +136,7 @@ export function createMenuSectionLabel(label: string) {
 export async function buildCopyText(
   rangeData: RangeData,
   options: {
-    type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
+    type: "plain" | "tsv" | "json" | "markdown" | "html" | "sql" | "columnName" | "asIn";
     table?: string;
     schema?: string;
     escapeString?: (s: string, quote?: boolean) => string;
@@ -177,6 +177,15 @@ export async function buildCopyText(
         headers,
         ...stringifiedRangeData.map((item) => Object.values(item)),
       ]);
+      break;
+    }
+    case "html": {
+      const headers = Object.keys(stringifiedRangeData[0]);
+      const rows = stringifiedRangeData.map((item) => Object.values(item));
+      text = toHtmlTable(
+        (window as any).bksConfig?.ui?.export?.htmlIncludeHeaders === false ? null : headers,
+        rows
+      );
       break;
     }
     case "asIn": {
@@ -425,6 +434,10 @@ export function copyActionsMenu(options: {
     {
       label: createMenuItem("Copy as Markdown"),
       action: () => tabulator.copyRanges({ type: "markdown" }),
+    },
+    {
+      label: createMenuItem("Copy as HTML"),
+      action: () => tabulator.copyRanges({ type: "html" }),
     },
     {
       label: createMenuItem("Copy as SQL"),
