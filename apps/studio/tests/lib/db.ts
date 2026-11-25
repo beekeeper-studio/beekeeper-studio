@@ -1214,6 +1214,8 @@ export class DBTestUtil {
       postgresql: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
       greengage: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
       mysql: "create table `test_table` (`id` int unsigned not null, primary key (`id`)); alter table `test_table` modify column `id` int unsigned not null auto_increment",
+      // TiDB can't add auto_increment with `alter table ... modify column`, so it's set inline
+      tidb: "create table `test_table` (`id` int unsigned auto_increment not null, primary key (`id`))",
       sqlite: "create table `test_table` (`id` integer not null primary key autoincrement, unique (`id`))",
       sqlserver: "CREATE TABLE [test_table] ([id] int identity(1,1) not null, CONSTRAINT [test_table_pkey] PRIMARY KEY ([id]))",
       cockroachdb: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,

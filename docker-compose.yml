@@ -24,6 +24,7 @@ volumes:
   greengage7:
   starrocks:
   surreal:
+  tidb:
 
 services:
   anywhere:
@@ -371,3 +372,13 @@ services:
       - starrocks:/data/deploy/starrocks
       - ./dev/docker_starrocks/init.sh:/init.sh:ro
     command: ["bash", "/init.sh"]
+
+  tidb:
+    image: pingcap/tidb:v8.5.1
+    platform: linux/amd64
+    ports:
+      - 4000:4000
+      - 10080:10080
+    volumes:
+      - tidb:/data/tidb
+    command: --store=unistore --path=/data/tidb
