@@ -78,6 +78,17 @@ class TableCompiler_StarRocks extends TableCompiler_MySQL {
     return ` primary key (${this.formatter.columnize(columns)})`;
   }
 
+  // The mysql compiler pushes `alter table ... modify column ... int unsigned
+  // not null auto_increment` for increments columns. On create the key and
+  // BIGINT auto_increment are already emitted by createQuery() and the column
+  // compiler, and StarRocks rejects that alter, so skip it.
+  primary(columns, constraintName) {
+    if (this.method === "create" || this.method === "createIfNot") {
+      return;
+    }
+    return super.primary(columns, constraintName);
+  }
+
   // StarRocks has no foreign-key constraints; drop them silently.
   foreign() {
     return "";

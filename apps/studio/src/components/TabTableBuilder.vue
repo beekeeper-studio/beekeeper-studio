@@ -166,10 +166,11 @@ export default Vue.extend({
     },
     async create() {
       this.error = undefined
-      const sql = await this.$util.send('generator/build', { schema: this.schema });
+      let sql: string
 
       try {
         this.running = true
+        sql = await this.$util.send('generator/build', { schema: this.schema });
         const runningQuery: CancelableQuery = await this.connection.query(sql);
         await runningQuery.execute();
         this.success = true
