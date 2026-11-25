@@ -64,6 +64,14 @@ export class FirebirdChangeBuilder extends ChangeBuilderBase {
     return `DROP ${this.wrapIdentifier(column)}`
   }
 
+  setComment(column: string, newComment: string | null) {
+    const target = `COMMENT ON COLUMN ${this.tableName}.${this.wrapIdentifier(column)}`
+    if (newComment == null || newComment === '') {
+      return `${target} IS NULL`
+    }
+    return `${target} IS ${this.escapeString(newComment)}`
+  }
+
   reorderColumns(oldColumnOrder: TableColumn[], newColumnOrder: TableColumn[]): string {
     const newOrder = newColumnOrder.reduce((acc, NCO, index) => {
       if ( oldColumnOrder.length < index + 1) return acc
