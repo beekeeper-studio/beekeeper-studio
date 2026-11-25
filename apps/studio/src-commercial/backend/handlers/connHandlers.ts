@@ -63,6 +63,7 @@ export interface IConnectionHandlers {
   'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<string[]>,
   'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
   'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
+  'conn/updatePassword': ({ password, sId }: { password: string, sId: string }) => Promise<void>,
   'conn/getServerConfig': ({ sId }: { sId: string }) => Promise<IDbConnectionServerConfig>,
 
   // DB Metadata ****************************************************************
@@ -305,6 +306,16 @@ export const ConnHandlers: IConnectionHandlers = {
     s.usedConfig = null;
     s.database = null;
     s.generator = null;
+  },
+  'conn/updatePassword': async function({ password, sId }: { password: string, sId: string }) {
+    const s = state(sId);
+    if (!s) return;
+    if (s.server?.config) {
+      s.server.config.password = password;
+    }
+    if (s.usedConfig) {
+      s.usedConfig.password = password;
+    }
   },
   'conn/getServerConfig': async function({ sId }: { sId: string }) {
     return state(sId).server.getServerConfig();

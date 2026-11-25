@@ -30,6 +30,13 @@
           Disconnect
         </button>
         <button
+          class="btn btn-secondary"
+          type="button"
+          @click.prevent="updatePassword"
+        >
+          Update Password
+        </button>
+        <button
           class="btn btn-primary"
           type="button"
           @click.prevent="connect"
@@ -72,6 +79,12 @@ export default Vue.extend({
         this.$modal.hide(this.modalName);
       } catch (e) {
         this.$noty.error(e.message ?? e);
+      }
+    },
+    async updatePassword() {
+      const reconnected = await this.$store.dispatch('promptUpdatePasswordAndReconnect');
+      if (reconnected) {
+        this.$modal.hide(this.modalName);
       }
     },
     async disconnect() {

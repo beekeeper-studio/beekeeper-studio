@@ -34,6 +34,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/connect', {});
   }
 
+  async updatePassword(password: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/updatePassword', { password });
+  }
+
   async disconnect(): Promise<void> {
     return await Vue.prototype.$util.send('conn/disconnect', {});
   }

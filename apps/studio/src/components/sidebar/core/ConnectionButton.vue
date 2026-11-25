@@ -31,6 +31,11 @@
         >
           <x-label><i class="material-icons">replay</i>Reconnect</x-label>
         </x-menuitem>
+        <x-menuitem
+          @click.prevent="promptUpdatePassword"
+        >
+          <x-label><i class="material-icons">vpn_key</i>Update Password</x-label>
+        </x-menuitem>
         <x-menuitem @click.prevent="$modal.show('config-save-modal')">
           <x-label v-if="config.id">
             <i class="material-icons">edit</i>Edit Connection
@@ -290,6 +295,9 @@ export default {
         this.$modal.hide('running-exports-modal')
         this.$store.dispatch('reconnect')
       }
+    },
+    async promptUpdatePassword() {
+      await this.$store.dispatch('promptUpdatePasswordAndReconnect')
     },
 
     async syncDatabase() {
