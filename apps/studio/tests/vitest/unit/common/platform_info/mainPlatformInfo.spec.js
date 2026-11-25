@@ -1,8 +1,17 @@
-import { describe, it, expect } from "vitest"
-import { resolveAppVersion } from "@/common/platform_info/mainPlatformInfo"
-
-
-
+import { describe, it, expect, vi } from "vitest"
+import { resolveAppVersion, mainPlatformInfo } from "@/common/platform_info/mainPlatformInfo"
+vi.mock('electron', () => {
+  const app = {
+    isPackaged: false,
+    getLocale: () => 'en',
+    getVersion: () => '1.0.0',
+    getPath: (name) => {
+      if (name === 'downloads') throw new Error("Failed to get 'downloads' path")
+      return '/fake/' + name
+    },
+  }
+  return { default: { app }, app }
+})
 
 describe("mainPlatformInfo", () => {
   const testCases = [
@@ -19,4 +28,9 @@ describe("mainPlatformInfo", () => {
     })
   })
 
+  it('falls back to the home directory when the downloads path cannot be resolved', () => {
+    delete process.env.TEST_MODE
+    const info = mainPlatformInfo()
+    expect(info.downloadsDirectory).toBe('/fake/home')
+  })
 })
