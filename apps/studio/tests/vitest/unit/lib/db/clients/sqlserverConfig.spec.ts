@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, onTestFinished, vi } from 'vitest'
+import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
+import { mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import { withSqlServerHostPortHint } from '@/lib/db/clients/sqlserver/SqlServerConnector'
 import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints, sqlServerLoginMessage } from '@/lib/db/clients/sqlserver'
-import { IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
+import { AzureAuthType, IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 
@@ -102,6 +107,122 @@ describe('configDatabase - certificate trust', () => {
 
     const untrusted = await buildConfig({ trustServerCertificate: false })
     expect(untrusted.options.trustServerCertificate).toBe(false)
+  })
+})
+
+describe('configDatabase - certificate trust with SSL enabled', () => {
+  // The ssl branch rebuilds options from scratch. It used to carry the checkbox over only
+  // when CA, cert and key were all set, so "Enable SSL" on a stock (self-signed) server failed
+  // with the checkbox ticked -- and the hint told the user to tick it.
+  it('keeps the Trust Server Certificate checkbox when no certificate files are given', async () => {
+    const trusted = await buildConfig({ ssl: true, trustServerCertificate: true })
+    expect(trusted.options.encrypt).toBe(true)
+    expect(trusted.options.trustServerCertificate).toBe(true)
+
+    const untrusted = await buildConfig({ ssl: true, trustServerCertificate: false })
+    expect(untrusted.options.trustServerCertificate).toBe(false)
+  })
+
+  it('keeps the checkbox together with a named instance', async () => {
+    const config = await buildConfig({ host: 'localhost\\SQL2019', ssl: true, trustServerCertificate: true })
+    expect(config.options.trustServerCertificate).toBe(true)
+    expect(config.options.instanceName).toBe('SQL2019')
+  })
+
+  it('lets Reject Unauthorized decide once a certificate file is given', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bks-mssql-ssl-'))
+    const ca = join(dir, 'ca.pem')
+    writeFileSync(ca, 'not a real certificate')
+    try {
+      // A CA file means "validate against this CA", whatever the checkbox defaulted to.
+      const validating = await buildConfig({
+        ssl: true, sslCaFile: ca, sslRejectUnauthorized: true, trustServerCertificate: true,
+      })
+      expect(validating.options.trustServerCertificate).toBe(false)
+
+      const trusting = await buildConfig({
+        ssl: true, sslCaFile: ca, sslRejectUnauthorized: false, trustServerCertificate: false,
+      })
+      expect(trusting.options.trustServerCertificate).toBe(true)
+
+      // A config without the field (older or imported) must not read as "trust everything".
+      const missing = await buildConfig({ ssl: true, sslCaFile: ca, sslRejectUnauthorized: undefined })
+      expect(missing.options.trustServerCertificate).toBe(false)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+// The port belongs in the Port field. A pasted `host,port` is split by the form; a typed one
+// is passed through untouched, fails, and the error says where the port goes.
+describe('a port left in the Host field', () => {
+  it('is not read when building the driver config', async () => {
+    const config = await buildConfig({ host: 'localhost,14330', port: 1433 })
+    expect(config.server).toBe('localhost,14330')
+    expect(config.port).toBe(1433)
+  })
+
+  it('is named in the error when the connection fails', async () => {
+    const server = buildServer({ host: 'tcp:localhost,14330', port: 1433 })
+    const client = new SQLServerClient(server, DATABASE)
+    vi.spyOn(client.connector as any, 'doConnect').mockRejectedValue(
+      new Error('Failed to connect to localhost,14330:1433 - getaddrinfo ENOTFOUND localhost,14330')
+    )
+    await expect(client.connector.connect()).rejects.toThrow(
+      'Failed to connect to localhost,14330:1433 - getaddrinfo ENOTFOUND localhost,14330. ' +
+      'The Host field contains a port ("tcp:localhost,14330"). Enter localhost as the Host and 14330 in the Port field.'
+    )
+  })
+
+  it('replaces the SQL Server Browser hint, which would send the user after the wrong problem', () => {
+    const driverError = new Error('Failed to connect to localhost\\SQL2019,14330 in 15000ms')
+    const browserHinted: any = new Error(`${driverError.message}. ${sqlServerConnectHints.browserUnreachable('localhost', 'SQL2019,14330')}`)
+    browserHinted.originalError = driverError
+    browserHinted.connectHint = true
+
+    const err = withSqlServerHostPortHint(browserHinted, 'localhost\\SQL2019,14330')
+    expect(err.message).toBe(
+      'Failed to connect to localhost\\SQL2019,14330 in 15000ms. ' +
+      'The Host field contains a port ("localhost\\SQL2019,14330"). Enter localhost\\SQL2019 as the Host and 14330 in the Port field.'
+    )
+    expect(err.message).not.toMatch(/browser/i)
+  })
+
+  it('leaves errors alone when the host holds no port', () => {
+    const err = new Error('Login failed for user sa.')
+    expect(withSqlServerHostPortHint(err, 'localhost\\SQL2019')).toBe(err)
+  })
+})
+
+describe('configDatabase - Entra ID port', () => {
+  const entra = {
+    authId: 1,
+    azureAuthOptions: { azureAuthEnabled: true, azureAuthType: AzureAuthType.ServicePrincipalSecret, tenantId: 't', clientId: 'c', clientSecret: 's' } as any,
+  }
+
+  async function buildEntraConfig(config: Partial<IDbConnectionServerConfig>) {
+    await TestOrmConnection.connect()
+    onTestFinished(() => TestOrmConnection.disconnect())
+    return await buildConfig({ ...entra, ...config })
+  }
+
+  // A Managed Instance public endpoint listens on 3342; the branch used to leave the port
+  // off entirely, so the driver always dialled 1433.
+  it('uses the Port field', async () => {
+    const config = await buildEntraConfig({ host: 'mi.public.abc.database.windows.net', port: 3342 })
+    expect(config.port).toBe(3342)
+  })
+
+  it('falls back to 1433 when the Port field is blank', async () => {
+    const config = await buildEntraConfig({ host: 'myserver.database.windows.net', port: null })
+    expect(config.port).toBe(1433)
+  })
+
+  it('does not read a port out of the Host field', async () => {
+    const config = await buildEntraConfig({ host: 'myserver.database.windows.net,3342', port: 1433 })
+    expect(config.server).toBe('myserver.database.windows.net,3342')
+    expect(config.port).toBe(1433)
   })
 })
 

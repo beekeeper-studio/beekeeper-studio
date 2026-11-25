@@ -135,6 +135,55 @@ describe('azure token cache', () => {
     })
   })
 
+  // Duplicating a connection copies its authId, and recent connections keep theirs, so
+  // signing out of one deletes a cache another still points at.
+  describe('conn/create, local connections with a deleted cache', () => {
+    it('creates a new cache and relinks the saved connection', async () => {
+      const cache = await new TokenCache().save()
+      const stale = cache.id
+      const { saved, config } = await localSavedConfig({ authId: stale })
+      await cache.remove()
+
+      await create(config)
+
+      const reloaded = await SavedConnection.findOneBy({ id: saved.id })
+      expect(reloaded.authId).not.toBeNull()
+      expect(reloaded.authId).not.toBe(stale)
+      expect(await TokenCache.findOneBy({ id: reloaded.authId })).toBeTruthy()
+      expect(config.authId).toBe(reloaded.authId)
+    })
+
+    it('creates a new cache for an unsaved (recent) connection', async () => {
+      const cache = await new TokenCache().save()
+      const stale = cache.id
+      await cache.remove()
+      const fresh = await AppDbHandlers['appdb/saved/new']({
+        init: { connectionType: 'sqlserver', host: 'local.database.windows.net', port: 1433 }
+      })
+      const config: any = {
+        ...fresh, id: null, workspaceId: LOCAL_WORKSPACE_ID,
+        azureAuthOptions: { azureAuthEnabled: true }, authId: stale,
+      }
+
+      await create(config)
+
+      expect(config.authId).not.toBe(stale)
+      expect(await TokenCache.findOneBy({ id: config.authId })).toBeTruthy()
+    })
+
+    it('does the same when testing the connection', async () => {
+      const cache = await new TokenCache().save()
+      const stale = cache.id
+      const { config } = await localSavedConfig({ authId: stale })
+      await cache.remove()
+
+      await ConnHandlers['conn/test']({ config, osUser: 'tester', sId: SID })
+
+      expect(config.authId).not.toBe(stale)
+      expect(await TokenCache.findOneBy({ id: config.authId })).toBeTruthy()
+    })
+  })
+
   describe('conn/create, workspace connections', () => {
     it('does not touch a local saved connection that shares the id', async () => {
       const { saved: local } = await localSavedConfig()

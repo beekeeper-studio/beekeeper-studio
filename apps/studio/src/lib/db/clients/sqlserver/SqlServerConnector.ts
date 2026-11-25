@@ -8,7 +8,7 @@ import logRaw from "@bksLogger";
 import { AzureAuthService, AzureCliTokenCredential } from "../../authentication/azure";
 import { getEntraOptions } from "../utils";
 import { buildWindowsAuthConnStr } from "../sqlserverWinAuth";
-import { parseSqlServerHost } from "../sqlserverHost";
+import { parseSqlServerHost, sqlServerHostPortHint } from "../sqlserverHost";
 import { bindDriver } from "../sqlserverDriver";
 
 const log = logRaw.scope("SqlServerConnector");
@@ -192,7 +192,24 @@ function withConnectHint(err: any, config: any, serverErrors: SqlServerLoginErro
   const separator = /[.!?]$/.test(message) ? ' ' : '. '
   const decorated: any = new Error(hint ? `${message}${separator}${hint}` : message)
   decorated.originalError = err
+  decorated.connectHint = !!hint
   if (err?.code) decorated.code = err.code
+  return decorated
+}
+
+// A port left in the Host field is never read from there, so the attempt fails -- at DNS, at
+// the SQL Browser, or at the far end of an SSH tunnel. Whatever the driver said, the cause is
+// the same and the driver never names it, so this replaces any other hint.
+export function withSqlServerHostPortHint(err: any, rawHost: string): any {
+  const hint = sqlServerHostPortHint(rawHost)
+  if (!hint || err?.hostPortHint) return err
+  const base = err?.originalError && err?.connectHint ? err.originalError : err
+  const message = ((base instanceof Error && base.message) || flattenErrorText(base) || String(base)).trim()
+  const separator = /[.!?]$/.test(message) ? ' ' : '. '
+  const decorated: any = new Error(`${message}${separator}${hint}`)
+  decorated.originalError = base
+  decorated.hostPortHint = true
+  if (base?.code) decorated.code = base.code
   return decorated
 }
 
@@ -214,6 +231,16 @@ export class SqlServerConnector extends DatabaseConnector<
 
   async transaction(): Promise<Transaction> {
     return await this.getRawConnection({ type: "transaction" }) as Transaction;
+  }
+
+  // Wraps the whole attempt, tunnel included, so a port left in the Host field is named
+  // however the failure surfaced.
+  async connect(options: ConnectOptions = {}): Promise<void> {
+    try {
+      await super.connect(options);
+    } catch (err) {
+      throw withSqlServerHostPortHint(err, this.server.config.host);
+    }
   }
 
   protected async doConnect(options: ConnectOptions): Promise<void> {
@@ -418,6 +445,10 @@ export class SqlServerConnector extends DatabaseConnector<
         encrypt: true
       };
 
+      // 1433 for Azure SQL; a Managed Instance public endpoint listens on 3342.
+      const entraPort = Number(server.config.port);
+      config.port = Number.isFinite(entraPort) && entraPort > 0 ? entraPort : 1433;
+
       return config;
     }
 
@@ -503,11 +534,17 @@ export class SqlServerConnector extends DatabaseConnector<
       }
 
 
-      if (server.config.sslCaFile && server.config.sslCertFile && server.config.sslKeyFile) {
+      if (server.config.sslCaFile || server.config.sslCertFile || server.config.sslKeyFile) {
+        // Certificate files were provided, so Reject Unauthorized decides.
         // trust = !reject
         // mssql driver reverses this setting for no obvious reason
         // other drivers simply pass through to the SSL library.
-        options.trustServerCertificate = !server.config.sslRejectUnauthorized
+        options.trustServerCertificate = server.config.sslRejectUnauthorized === false
+      } else {
+        // No files: Reject Unauthorized does not apply, so the Trust Server Certificate
+        // checkbox still decides -- as it does with SSL off, where the driver encrypts anyway.
+        // Dropping it here fails every self-signed server with the box ticked.
+        options.trustServerCertificate = server.config.trustServerCertificate
       }
 
       config.options = options;

@@ -68,6 +68,33 @@ export function _resetOracleStateForTesting() {
   oracleInitConfigDir = null
 }
 
+// SQL*Plus style `user/password@connect_identifier`. node-oracledb does not read credentials
+// out of the connect string, so they are split off here. `/@connect_identifier` is the
+// SQL*Plus spelling of external (wallet or OS) authentication.
+//
+// Descriptors and URLs are left alone: neither `(DESCRIPTION=...)` nor `tcps://host/service`
+// has a user before the first slash. The split is at the first `@` after the password, so an
+// `@` later in the identifier survives. A password holding `@` or `/` must be double-quoted,
+// as in SQL*Plus -- which also keeps `host/service?wallet_location=/a@b` from being split.
+export interface OracleConnectionStringParts {
+  connectString: string
+  user?: string
+  password?: string
+  externalAuth?: boolean
+}
+
+const ORACLE_CREDENTIALS = /^([^\s@:()=/"]+)\/(?:"([^"]*)"|([^\s@/?"]+))@(.+)$/s
+
+export function splitOracleConnectionString(raw?: string): OracleConnectionStringParts {
+  const value = (raw || '').trim()
+  if (value.startsWith('/@') && value.length > 2) {
+    return { connectString: value.slice(2).trim(), externalAuth: true }
+  }
+  const match = ORACLE_CREDENTIALS.exec(value)
+  if (!match) return { connectString: value }
+  return { connectString: match[4].trim(), user: match[1], password: match[2] ?? match[3] }
+}
+
 const privileges = {
   SYSDBA: oracle.SYSDBA,
   SYSOPER: oracle.SYSOPER,
@@ -87,13 +114,21 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
   instantClientLocation: string
+  // The user read out of the connection string, when the User field was left blank.
+  connectedUser?: string
   version: string
   readOnlyMode: boolean
   transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knexLib({ client: Client_Oracledb }), NoOpContextProvider, server, database);
-    this.defaultSchema = async (): Promise<string> => server.config.user.toUpperCase()
+    this.defaultSchema = async (): Promise<string> => {
+      const user = this.connectedUser || server.config.user
+      if (user) return user.toUpperCase()
+      // No user was entered (external authentication), so ask the session.
+      const rows = await this.driverExecuteSimple("SELECT SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA') AS CURRENT_SCHEMA FROM DUAL")
+      return rows[0]?.CURRENT_SCHEMA
+    }
     this.instantClientLocation = server.config.instantClientLocation
     this.readOnlyMode = server?.config?.readOnlyMode || false
     // Typescript wasn't having it that createUpsertFunc could be either a function or null, so this ended up working
@@ -723,20 +758,42 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       poolMax: BksConfig.db.oracle.maxConnections,
     }
 
+    this.connectedUser = undefined
     if (connectionMethod === 'connectionString') {
+      const parsed = splitOracleConnectionString(this.server.config.options.connectionString)
       poolConfig = {
         ...poolConfig,
-        connectString: this.server.config.options.connectionString,
+        connectString: parsed.connectString,
       }
-      const { user, password } = this.server.config
+      // One source for the pair: the form's fields when either is filled in, otherwise the
+      // credentials in the string. Mixing them would log one user in with another's password.
+      const fromFields = !!(this.server.config.user || this.server.config.password)
+      const user = fromFields ? this.server.config.user : parsed.user
+      const password = fromFields ? this.server.config.password : parsed.password
       if (user) poolConfig['user'] = user
       if (password) poolConfig['password'] = password
+      if (!fromFields) this.connectedUser = parsed.user
+
+      if (!user && !password) {
+        // Both fields blank means external authentication (wallet or OS), which only the
+        // Instant Client supports. Without the flag the driver fails with NJS-101.
+        if (oracle.thin) {
+          throw new Error(
+            'User and Password are required in thin mode. Connecting without them uses external ' +
+            'authentication (wallet or OS), which requires the Oracle Instant Client.'
+          )
+        }
+        poolConfig['externalAuth'] = true
+      }
     } else {
-      const { serviceName, ssl } = this.server.config
+      const { ssl } = this.server.config
+      const serviceName = (this.server.config.serviceName || '').trim()
       const host = this.server.sshTunnel ? this.server.config.localHost : this.server.config.host
       const port = this.server.sshTunnel ? this.server.config.localPort : this.server.config.port
       const scheme = ssl ? 'tcps://' : ''
-      const str = `${scheme}${host}:${port}/${serviceName}`
+      // A blank Service Name is left off so the listener's default service answers, instead
+      // of asking for a service literally called "null".
+      const str = `${scheme}${host}:${port}${serviceName ? `/${serviceName}` : ''}`
       poolConfig = {
         ...poolConfig,
         user: this.server.config.user,
