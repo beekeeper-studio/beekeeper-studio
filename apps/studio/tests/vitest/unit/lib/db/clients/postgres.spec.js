@@ -58,6 +58,15 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(client.parseRowQueryResult(data, command, false)).toStrictEqual(expected)
   })
 
+  it("qualifies a table or view rename with the selected schema", async () => {
+    await expect(client.setElementNameSql('orders', 'purchases', 'TABLE', 'sales'))
+      .resolves.toBe('ALTER TABLE "sales"."orders" RENAME TO "purchases";')
+    await expect(client.setElementNameSql('orders', 'purchases', 'VIEW', 'sales'))
+      .resolves.toBe('ALTER VIEW "sales"."orders" RENAME TO "purchases";')
+    await expect(client.setElementNameSql('sales', 'billing', 'SCHEMA', 'sales'))
+      .resolves.toBe('ALTER SCHEMA "sales" RENAME TO "billing";')
+  })
+
   it("Should generate correct alter table rename statement", async () => {
     const input = {
       table: 'foo',
