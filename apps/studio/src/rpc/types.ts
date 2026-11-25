@@ -6,6 +6,13 @@ import type {
   ThemeSystemErrorCode,
 } from "@/lib/errors";
 
+/** A call to a named handler, posted over a message port. */
+export interface Request {
+  id: string;
+  name: string;
+  args: unknown;
+}
+
 /** The answer to a request, sent back over a message port. */
 export interface Reply {
   id: string,

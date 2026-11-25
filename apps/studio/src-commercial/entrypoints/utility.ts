@@ -42,7 +42,7 @@ import {
   RegistryModule,
   LicenseModule,
 } from '@/services/plugin/modules';
-import type { Reply } from '@/rpc/types';
+import type { Reply, Request } from '@/rpc/types';
 
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
@@ -195,7 +195,7 @@ async function initState(sId: string, port: MessagePortMain) {
 
   state(sId).port = port;
 
-  state(sId).port.on('message', ({ data }) => {
+  state(sId).port.on('message', ({ data }: { data: Request }) => {
     const { id, name, args } = data;
     runHandler(id, name, args);
   })
