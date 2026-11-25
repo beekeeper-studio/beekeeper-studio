@@ -5,7 +5,6 @@ import knexlib from 'knex'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const CassandraKnex = require('cassandra-knex/dist/cassandra_knex.cjs')
 import { BigQueryClient } from '../knex-bigquery'
-import { identify } from 'sql-query-identifier'
 import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import Client_Firebird from '@shared/lib/knex-firebird'
@@ -67,9 +66,12 @@ export class SqlGenerator {
         // TODO: autoincrement makes cassandra just roll over and die Need to remove it from the default values.
         // Other than that, was creating tables pretty ok I think
         let col: Knex.ColumnBuilder;
-        if (column.dataType.match(/autoincrement/i) && ['postgresql', 'greengage'].includes(this.dialect)) {
+        const isAutoIncrement = column.dataType.match(/autoincrement/i);
+        if (isAutoIncrement && ['postgresql', 'greengage'].includes(this.dialect)) {
           col = table.specificType(column.columnName, 'serial')
-        } else if (column.dataType.match(/autoincrement/i)) {
+        } else if (isAutoIncrement && this._connection.dbConfig.client === 'tidb') {
+          col = table.specificType(column.columnName, 'int unsigned auto_increment')
+        } else if (isAutoIncrement) {
           col = table.increments(column.columnName)
         } else {
           col = table.specificType(column.columnName, column.dataType)
