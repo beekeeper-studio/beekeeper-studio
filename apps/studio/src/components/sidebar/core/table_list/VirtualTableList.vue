@@ -323,6 +323,14 @@ export default Vue.extend({
       this.generateItems();
       this.generateDisplayItems();
     },
+    hiddenEntities() {
+      this.generateItems();
+      this.generateDisplayItems();
+    },
+    hiddenSchemas() {
+      this.generateItems();
+      this.generateDisplayItems();
+    },
     minimalMode() {
       this.generateDisplayItems();
     },

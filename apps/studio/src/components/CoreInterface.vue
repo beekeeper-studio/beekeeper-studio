@@ -143,7 +143,10 @@
         immediate: true,
         async handler() {
           if (!this.usedConfig) return
-          await this.$store.dispatch('pins/loadPins');
+          await Promise.all([
+            this.$store.dispatch('pins/loadPins'),
+            this.$store.dispatch('hideEntities/load'),
+          ]);
         }
       },
       initializing() {
@@ -210,7 +213,6 @@
       },
     },
     mounted() {
-      this.$store.dispatch('hideEntities/load')
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
