@@ -339,7 +339,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
-import { dialectFor, formatOptionsFor, TableKey } from '@shared/lib/dialects/models'
+import { dialectFor, formatOptionsFor, isEditableColumnType, TableKey } from '@shared/lib/dialects/models'
 import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType, rowHeaderField, joinFilters } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
@@ -1068,7 +1068,8 @@ export default Vue.extend({
             log.error('Failed to preserve object for', value)
             return true
           },
-          typeHint: column.dataType?.toLowerCase(),
+          // with a list of editable types the backend parses the text itself
+          typeHint: this.dialectData.editableColumnTypes ? undefined : column.dataType?.toLowerCase(),
           bksField: column.bksField,
           binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
         },
@@ -1371,6 +1372,7 @@ export default Vue.extend({
     },
     isEditorMenuDisabled (cell: CellComponent) {
       if (this.isPrimaryKey(cell.getField())) return true
+      if (!isEditableColumnType(this.dialectData, cell.getColumn().getDefinition().dataType)) return true
       return !this.editable && !this.insertionCellCheck(cell)
     },
     getActionValue(cell: CellComponent, s: string) {
@@ -1538,6 +1540,8 @@ export default Vue.extend({
     },
     cellEditCheck(cell: CellComponent) {
       if (this.isGeneratedColumn(cell.getField())) return false;
+
+      if (!isEditableColumnType(this.dialectData, cell.getColumn().getDefinition().dataType)) return false;
 
       if (this.insertionCellCheck(cell)) return true;
 
@@ -2428,6 +2432,7 @@ export default Vue.extend({
       if (!this.editable) return;
 
       const column = this.table.columns.find((c) => c.columnName === key);
+      if (column && !isEditableColumnType(this.dialectData, column.dataType)) return;
       if (column) {
         const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
 

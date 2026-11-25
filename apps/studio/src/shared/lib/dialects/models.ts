@@ -141,6 +141,11 @@ export class ColumnType {
   }
 }
 
+export function isEditableColumnType(dialectData: DialectData, dataType?: string): boolean {
+  const { editableColumnTypes } = dialectData ?? {}
+  return !editableColumnTypes || editableColumnTypes.includes(dataType?.toLowerCase())
+}
+
 export interface DialectData {
   queryDialectOverride?: string,
   columnTypes?: ColumnType[],
@@ -156,6 +161,8 @@ export interface DialectData {
   usesOffsetPagination?: boolean
   requireDataset?: boolean,
   disallowedSortColumns?: string[],
+  /** Only columns of these types can be edited in the table view, when set */
+  editableColumnTypes?: readonly string[],
   rawFilterPlaceholder?: string,
   /** Is it called "sql" or "code" in this dialect? */
   sqlLabel: "SQL" | "code";

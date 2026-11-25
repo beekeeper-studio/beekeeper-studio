@@ -15,12 +15,90 @@ export type CassandraType = {
   info?: any;
 };
 
-const dataTypes = cassandra.types.dataTypes;
+const { dataTypes, BigDecimal, Integer, Long } = cassandra.types;
 
-function convertScalar(value: any, code: number) {
+// Protocol v4 has no duration type code, so the column is described as this custom type
+const durationClassName = 'org.apache.cassandra.db.marshal.DurationType';
+
+function decimalToString(value: any): string {
+  // BigDecimal#toString() assumes a non-negative scale and renders 1.5E+4
+  // (15 with scale -3) as "15.", so use scientific notation for it like cqlsh.
+  const buffer = BigDecimal.toBuffer(value);
+  const scale = buffer.readInt32BE(0);
+  if (scale >= 0) {
+    return value.toString();
+  }
+  const unscaled = Integer.fromBuffer(buffer.subarray(4)).toString();
+  const sign = unscaled.startsWith('-') ? '-' : '';
+  const digits = unscaled.slice(sign.length);
+  const fraction = digits.length > 1 ? `.${digits.slice(1)}` : '';
+  return `${sign}${digits[0]}${fraction}E+${digits.length - 1 - scale}`;
+}
+
+const nanoUnits: [typeof Long.ONE, string][] = [
+  [Long.fromNumber(3600e9), 'h'],
+  [Long.fromNumber(60e9), 'm'],
+  [Long.fromNumber(1e9), 's'],
+  [Long.fromNumber(1e6), 'ms'],
+  [Long.fromNumber(1e3), 'us'],
+  [Long.ONE, 'ns'],
+];
+
+function durationToString(value: any): string {
+  // Same format as cqlsh. Duration#toString() rounds the years, so 18 months
+  // comes out as "2y6mo".
+  const { months, days, nanoseconds } = value;
+  let result = '';
+  const append = (amount: number | typeof Long.ONE, unit: string) => {
+    if (amount.toString() !== '0') {
+      result += `${amount}${unit}`;
+    }
+  };
+
+  append(Math.floor(Math.abs(months) / 12), 'y');
+  append(Math.abs(months) % 12, 'mo');
+  append(Math.abs(days), 'd');
+  let nanos = nanoseconds.isNegative() ? nanoseconds.negate() : nanoseconds;
+  for (const [size, unit] of nanoUnits) {
+    append(nanos.divide(size), unit);
+    nanos = nanos.modulo(size);
+  }
+
+  if (!result) {
+    return '0s';
+  }
+  return months < 0 || days < 0 || nanoseconds.isNegative() ? `-${result}` : result;
+}
+
+function floatToNumber(value: number): number {
+  // The driver decodes a float into a double, so 3.14 arrives as
+  // 3.140000104904175. Use the shortest number that maps back to the same float.
+  if (!Number.isFinite(value)) {
+    return value;
+  }
+  for (let precision = 1; precision <= 9; precision++) {
+    const shorter = Number(value.toPrecision(precision));
+    if (Math.fround(shorter) === value) {
+      return shorter;
+    }
+  }
+  return value;
+}
+
+function convertScalar(value: any, code: number, info?: any) {
   switch (code) {
     case dataTypes.bigint:
+    case dataTypes.varint:
       return String(value);
+    case dataTypes.decimal:
+      // map keys arrive already stringified
+      return typeof value === 'string' ? value : decimalToString(value);
+    case dataTypes.duration:
+      return durationToString(value);
+    case dataTypes.custom:
+      return info === durationClassName ? durationToString(value) : value;
+    case dataTypes.float:
+      return floatToNumber(Number(value));
     case dataTypes.timestamp:
       // Map keys reach us already coerced to strings: the driver builds plain
       // object maps with `map[key] = value`, which stringifies a Date key.
@@ -88,5 +166,5 @@ export function convertValueByType(value: any, type: CassandraType) {
     return Array.from(elements).map((v, i) => convertValueByType(v, info?.[i]));
   }
 
-  return convertScalar(value, code);
+  return convertScalar(value, code, info);
 }
