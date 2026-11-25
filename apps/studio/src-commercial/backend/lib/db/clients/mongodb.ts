@@ -17,7 +17,7 @@ import { QueryLeaf } from '@queryleaf/lib'
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from "@/common/platform_info";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
-import { objectIdsToHex } from './mongodb/utils';
+import { bsonValuesToPlain, restoreBsonTypes } from './mongodb/utils';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
 import { errorMessages } from "@/lib/db/clients/utils";
@@ -462,7 +462,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     const result = await this.buildSelectTopCursor(table, offset, limit, orderBy, filters, selects).toArray();
 
     const fields = this.parseQueryResultColumns(result[0] || {});
-    const rows = await this.serializeQueryResult({ rows: result, columns: [], arrayMode: false }, fields)
+    // ObjectId columns go through MongoDBObjectIdTranscoder, the rest is sent the
+    // same way as query results so edits come back in a shape updateValues knows
+    const transcoded = fields.filter((field) => field.bksType === 'OBJECTID').map((field) => field.name);
+    const plainRows = result.map((doc) => _.mapValues(doc, (value, key) => transcoded.includes(key) ? value : bsonValuesToPlain(value)));
+    const rows = await this.serializeQueryResult({ rows: plainRows, columns: [], arrayMode: false }, fields)
 
     return { result: rows, fields: [] }
   }
@@ -552,7 +556,18 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     const results = [];
     const errors = [];
 
-    for (const update of updates) {
+    // The grid edits plain values, so give BSON types back from the stored
+    // values. Do it for every update first so an invalid one doesn't leave the
+    // others half applied.
+    const values = await Promise.all(updates.map(async (update) => {
+      if (!update.table || !update.primaryKeys?.length) return update.value;
+      const filter = { _id: this.toIdValue(update.primaryKeys[0].value) };
+      // promoteValues: false keeps Int32, Double and Long so they're written back as they were
+      const current = await connection.collection(update.table).findOne(filter, { projection: { [update.column]: 1 }, promoteValues: false });
+      return restoreBsonTypes(update.value, current?.[update.column]);
+    }));
+
+    for (const [index, update] of updates.entries()) {
       try {
         if (!update.table) {
           throw new Error("Missing table name for update operation");
@@ -562,21 +577,12 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           throw new Error(`No primary key provided for update in table ${update.table}`);
         }
 
-        // Safely convert ObjectId string to actual ObjectId
-        let idValue = update.primaryKeys[0].value;
-        try {
-          if (ObjectId.isValid(idValue)) {
-            idValue = new ObjectId(idValue);
-          }
-        } catch (err) {
-          log.error(`Error converting ObjectId ${idValue}:`, err);
-          // Continue with the original value if conversion fails
-        }
-
+        const idValue = this.toIdValue(update.primaryKeys[0].value);
         const filter = { _id: idValue };
+        const fieldValue = values[index];
 
-        // Handle value conversion for special types if needed
-        const fieldValue = update.value;
+        // Get collection
+        const collection = connection.collection(update.table);
 
         // Create the update document
         const updateDoc = {
@@ -584,9 +590,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
             [update.column]: fieldValue
           }
         };
-
-        // Get collection
-        const collection = connection.collection(update.table);
 
         // Perform the update
         const result = await collection.findOneAndUpdate(
@@ -617,6 +620,19 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return results;
   }
 
+  // Safely convert ObjectId string to actual ObjectId
+  private toIdValue(value: any) {
+    try {
+      if (ObjectId.isValid(value)) {
+        return new ObjectId(value);
+      }
+    } catch (err) {
+      log.error(`Error converting ObjectId ${value}:`, err);
+      // Continue with the original value if conversion fails
+    }
+    return value;
+  }
+
   async deleteRows(deletes: TableDelete[], connection: Db) {
     const errors = [];
 
@@ -630,16 +646,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           throw new Error(`No primary key provided for delete in table ${del.table}`);
         }
 
-        // Safely convert ObjectId string to actual ObjectId if needed
-        let idValue = del.primaryKeys[0].value;
-        try {
-          if (ObjectId.isValid(idValue)) {
-            idValue = new ObjectId(idValue);
-          }
-        } catch (err) {
-          log.error(`Error converting ObjectId ${idValue}:`, err);
-          // Continue with the original value if conversion fails
-        }
+        const idValue = this.toIdValue(del.primaryKeys[0].value);
 
         const collection = connection.collection(del.table);
 
@@ -819,7 +826,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         returnResult = false;
       }
 
-      let result = (_.isArray(r) ? r : [r]).map(objectIdsToHex);
+      let result = (_.isArray(r) ? r : [r]).map(bsonValuesToPlain);
       if (!returnResult) result = [];
 
       results.push({
