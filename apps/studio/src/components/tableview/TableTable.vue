@@ -623,6 +623,15 @@ export default Vue.extend({
         return [];
       }
 
+      // Prefer the primary key: it is indexed, so `ORDER BY pk LIMIT n` is an
+      // index scan. Sorting by an arbitrary first column forces a full scan +
+      // sort, which never finishes on very large tables.
+      const columnNames = this.table.columns.map((c) => c.columnName)
+      const primaryKeys = (this.primaryKeys || []).filter((pk) => columnNames.includes(pk))
+      if (primaryKeys.length) {
+        return primaryKeys.map((pk) => ({ column: pk, dir: "asc" }));
+      }
+
       return [{ column: this.table.columns[0].columnName, dir: "asc" }];
     },
     shouldInitialize() {

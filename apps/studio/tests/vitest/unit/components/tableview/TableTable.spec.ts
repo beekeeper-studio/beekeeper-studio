@@ -184,6 +184,66 @@ describe("TableTable.vue — refreshTable re-fetches columns (#4567)", () => {
   });
 });
 
+// Regression coverage for #1417.
+// Sorting by the first column forced a full scan + sort on large tables
+// (no index on that column), so the table never finished loading.
+describe("TableTable.vue — initialSort prefers the primary key (#1417)", () => {
+  const initialSort = (TableTable as any).options.computed.initialSort;
+
+  function makeCtx({
+    columns,
+    primaryKeys = null,
+    disabledFeatures = {},
+  }: {
+    columns: string[];
+    primaryKeys?: string[] | null;
+    disabledFeatures?: Record<string, boolean>;
+  }) {
+    return {
+      table: { name: "t", schema: "public", columns: columns.map((columnName) => ({ columnName })) },
+      primaryKeys,
+      dialectData: { disabledFeatures },
+    };
+  }
+
+  it("sorts by the primary key instead of the first column", () => {
+    const ctx = makeCtx({ columns: ["count_10s", "id", "name"], primaryKeys: ["id"] });
+
+    expect(initialSort.call(ctx)).toEqual([{ column: "id", dir: "asc" }]);
+  });
+
+  it("sorts by every column of a composite primary key", () => {
+    const ctx = makeCtx({ columns: ["value", "a", "b"], primaryKeys: ["a", "b"] });
+
+    expect(initialSort.call(ctx)).toEqual([
+      { column: "a", dir: "asc" },
+      { column: "b", dir: "asc" },
+    ]);
+  });
+
+  it("falls back to the first column when there is no primary key", () => {
+    const ctx = makeCtx({ columns: ["value", "name"], primaryKeys: [] });
+
+    expect(initialSort.call(ctx)).toEqual([{ column: "value", dir: "asc" }]);
+  });
+
+  it("ignores primary keys that are not in the column list", () => {
+    const ctx = makeCtx({ columns: ["value", "name"], primaryKeys: ["missing"] });
+
+    expect(initialSort.call(ctx)).toEqual([{ column: "value", dir: "asc" }]);
+  });
+
+  it("does not sort when the dialect disables the initial sort", () => {
+    const ctx = makeCtx({
+      columns: ["value", "id"],
+      primaryKeys: ["id"],
+      disabledFeatures: { initialSort: true },
+    });
+
+    expect(initialSort.call(ctx)).toEqual([]);
+  });
+});
+
 describe("TableTable.vue — loadPersistence filters by tableId", () => {
   beforeEach(async () => {
     await TestOrmConnection.connect();
