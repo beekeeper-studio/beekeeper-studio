@@ -3,9 +3,10 @@ import { randomUUID } from "crypto";
 import net from "net";
 import {
   CancelError,
+  Message,
+  MethodName,
   CliError,
   ConnectionsResult,
-  Reply,
   EntitiesParams,
   EntitiesResult,
   SchemasParams,
@@ -190,13 +191,16 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
     const socket = net.createConnection(this.socketPath);
     // The request reports its own connection errors
     socket.on("error", () => { });
-    const notification = { name: "$/cancel", args: { id } };
-    socket.end(JSON.stringify(notification) + "\n");
+    const message: Message = {
+      type: "notification",
+      input: { name: "$/cancel", args: { id } },
+    };
+    socket.end(JSON.stringify(message) + "\n");
   }
 
   /** Sends one request and resolves with the reply's data, or throws the CliError it replied with. */
   private async request(
-    name: unknown,
+    name: MethodName,
     args: unknown,
     options: RequestOptions = {},
   ): Promise<unknown> {
@@ -218,7 +222,11 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
         const client = this.options.clientName
           ? { name: this.options.clientName }
           : undefined;
-        socket.write(JSON.stringify({ id, name, args, client }) + "\n");
+        const message: Message = {
+          type: "request",
+          input: { id, name, args, client },
+        };
+        socket.write(JSON.stringify(message) + "\n");
       });
       socket.on("data", (chunk: string) => {
         buffer += chunk;
@@ -253,9 +261,9 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
       throw error;
     }
 
-    let response: Reply;
+    let message: Message;
     try {
-      response = JSON.parse(raw);
+      message = JSON.parse(raw);
     } catch {
       throw new CliError(
         "INTERNAL",
@@ -263,8 +271,19 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
       );
     }
     if (
-      !response ||
-      typeof response !== "object" ||
+      !message ||
+      typeof message !== "object" ||
+      message.type !== "response" ||
+      !message.input ||
+      typeof message.input !== "object"
+    ) {
+      throw new CliError(
+        "INTERNAL",
+        "Beekeeper Studio sent an unexpected reply.",
+      );
+    }
+    const response = message.input;
+    if (
       response.id !== id ||
       (response.type !== "reply" && response.type !== "error")
     ) {

@@ -6,7 +6,10 @@ import type { Method, Notification, Request } from "./types";
 
 /** Thrown by RpcServer.call when nothing is registered under the name. */
 export class UnknownMethodError extends Error {
-  constructor(readonly method: string, readonly methods: string[]) {
+  constructor(
+    readonly method: string,
+    readonly methods: string[],
+  ) {
     super(`Unknown method "${method}".`);
     this.name = "UnknownMethodError";
   }
@@ -23,7 +26,10 @@ function rejectWithReason(
 export class RpcServer<
   MethodMap extends Record<keyof MethodMap, Method> = Record<string, Method>,
 > {
-  private readonly handlers = new Map<keyof MethodMap, MethodMap[keyof MethodMap]>();
+  private readonly handlers = new Map<
+    keyof MethodMap,
+    MethodMap[keyof MethodMap]
+  >();
   private readonly runningRequests = new Map<string, AbortController>();
 
   constructor(private readonly port: ElectronPort | MessagePort) {
@@ -94,9 +100,9 @@ export class RpcServer<
   }
 
   private handleMessage(event: { data: any }): void {
-    if (event.data?.type === "rpc/request") {
+    if (event.data?.type === "request") {
       this.handleRequest(event.data.input);
-    } else if (event.data?.type === "rpc/notify") {
+    } else if (event.data?.type === "notification") {
       this.handleNotify(event.data.input);
     }
   }
@@ -106,7 +112,7 @@ export class RpcServer<
       const name = request.name as keyof MethodMap;
       const data = await this.call(request.id, name, request.args);
       const reply: Reply = { id: request.id, type: "reply", data };
-      this.port.postMessage({ type: "rpc/respond", input: reply });
+      this.port.postMessage({ type: "response", input: reply });
     } catch (e) {
       const reply: Reply = {
         id: request.id,
@@ -115,7 +121,7 @@ export class RpcServer<
         errorName: e?.name,
         errorCode: e?.code,
       };
-      this.port.postMessage({ type: "rpc/respond", input: reply });
+      this.port.postMessage({ type: "response", input: reply });
     }
   }
 

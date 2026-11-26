@@ -84,7 +84,7 @@ export interface ApprovalRequester {
   readOnlyMode: boolean;
 }
 
-export interface ConnectionsParams {}
+export interface ConnectionsParams { }
 
 export interface ConnectionsResult {
   connections: OpenConnection[];
@@ -230,6 +230,18 @@ export interface Request {
   client?: ClientInfo;
 }
 
+/** A one-way message to a named handler. Nothing is sent back. */
+export interface Notification {
+  name: string;
+  args: unknown;
+}
+
+/** What travels over the socket or port: one of these per line or post. */
+export type Message =
+  | { type: "request"; input: Request }
+  | { type: "notification"; input: Notification }
+  | { type: "response"; input: Reply };
+
 export type ErrorCode =
   | "USAGE"
   | "NOT_RUNNING"
@@ -264,7 +276,7 @@ export type Reply = {
   errorHint?: string;
   errorDetail?: unknown;
   stack?: string;
-}
+};
 
 /** Thrown when a request was cancelled before it finished. */
 export class CancelError extends Error {

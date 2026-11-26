@@ -14,9 +14,10 @@ async function fakeApp(result: unknown): Promise<string> {
   const socketPath = path.join(dir, "cli.sock");
   server = net.createServer((socket) => {
     socket.once("data", (chunk) => {
-      const request = JSON.parse(chunk.toString());
-      const reply = { id: request.id, type: "reply", data: result };
-      socket.end(JSON.stringify(reply) + "\n");
+      const message = JSON.parse(chunk.toString());
+      const reply = { id: message.input.id, type: "reply", data: result };
+      const response = { type: "response", input: reply };
+      socket.end(JSON.stringify(response) + "\n");
     });
   });
   await new Promise<void>((resolve) => server!.listen(socketPath, resolve));
@@ -63,18 +64,24 @@ describe("Client cancel", () => {
     server = net.createServer((socket) => {
       socket.once("data", (chunk) => {
         const message = JSON.parse(chunk.toString());
-        if (message.name !== "$/cancel") {
-          pending.set(message.id, socket);
+        if (message.type === "request") {
+          pending.set(message.input.id, socket);
           return;
         }
-        expect(message.id).toBeUndefined();
+        expect(message).toEqual({
+          type: "notification",
+          input: { name: "$/cancel", args: { id: "id-123" } },
+        });
         const reply = {
-          id: message.args.id,
+          id: message.input.args.id,
           type: "error",
           error: "The request was cancelled.",
           errorName: "CancelError",
         };
-        pending.get(message.args.id)?.end(JSON.stringify(reply) + "\n");
+        const response = { type: "response", input: reply };
+        pending
+          .get(message.input.args.id)
+          ?.end(JSON.stringify(response) + "\n");
         socket.end();
       });
     });

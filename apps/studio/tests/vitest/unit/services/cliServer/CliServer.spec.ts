@@ -45,9 +45,12 @@ function sendRawString(text: string, { end = false } = {}): Promise<string> {
   });
 }
 
-/** Sends one request line and parses the reply. */
+/** Sends one request message and returns the reply inside the response. */
 async function send(request: object): Promise<object> {
-  return JSON.parse(await sendRawString(JSON.stringify(request) + "\n"));
+  const message = { type: "request", input: request };
+  const line = await sendRawString(JSON.stringify(message) + "\n");
+  const response = JSON.parse(line);
+  return response.input;
 }
 
 beforeEach(() => {
@@ -80,19 +83,28 @@ describe("CliServer", () => {
     await server.start();
 
     await expect(
-      sendRawString('{"id":"1","name":"method1","args":{}}\n'),
+      sendRawString(
+        '{"type":"request","input":{"id":"1","name":"method1","args":{}}}\n',
+      ),
     ).resolves.toBe(
-      '{"id":"1","type":"reply","data":{"big":"9007199254740993"}}\n',
-    );
-    await expect(sendRawString('{"name":"method2"}\n')).resolves.toBe(
-      '{"id":null,"type":"error","error":"nope","errorName":"CliError",' +
-        '"errorCode":"NOT_FOUND","errorHint":"look elsewhere"}\n',
+      '{"type":"response","input":' +
+      '{"id":"1","type":"reply","data":{"big":"9007199254740993"}}}\n',
     );
     await expect(
-      sendRawString('{"name":"method3","args":{}}\n'),
+      sendRawString('{"type":"request","input":{"name":"method2"}}\n'),
     ).resolves.toBe(
+      '{"type":"response","input":' +
+      '{"id":null,"type":"error","error":"nope","errorName":"CliError",' +
+      '"errorCode":"NOT_FOUND","errorHint":"look elsewhere"}}\n',
+    );
+    await expect(
+      sendRawString(
+        '{"type":"request","input":{"name":"method3","args":{}}}\n',
+      ),
+    ).resolves.toBe(
+      '{"type":"response","input":' +
       '{"id":null,"type":"error","error":"boom","errorName":"Error",' +
-        '"errorCode":"INTERNAL"}\n',
+      '"errorCode":"INTERNAL"}}\n',
     );
   });
 
@@ -120,14 +132,36 @@ describe("CliServer", () => {
 
     await expect(sendRawString("not json\n")).resolves.toBe(
       JSON.stringify({
-        id: null,
-        type: "error",
-        error: "Malformed CLI request: expected one JSON object per line.",
-        errorCode: "USAGE",
+        type: "response",
+        input: {
+          id: null,
+          type: "error",
+          error: "Malformed CLI request: expected one JSON object per line.",
+          errorCode: "USAGE",
+        },
       }) + "\n",
     );
     expect(events).toHaveLength(1);
     expect(events[0].request).toBeNull();
+  });
+
+  it("answers a line that is not a request message", async () => {
+    const server = createServer();
+    server.register("method1", async () => ({}));
+    await server.start();
+
+    const line = JSON.stringify({ id: "1", name: "method1" }) + "\n";
+    await expect(sendRawString(line)).resolves.toBe(
+      JSON.stringify({
+        type: "response",
+        input: {
+          id: null,
+          type: "error",
+          error: "Malformed CLI request: expected a request message.",
+          errorCode: "USAGE",
+        },
+      }) + "\n",
+    );
   });
 
   it("answers a client that half-closes without a trailing newline", async () => {
@@ -136,10 +170,15 @@ describe("CliServer", () => {
     await server.start();
 
     await expect(
-      sendRawString(JSON.stringify({ name: "method1" }), { end: true }),
+      sendRawString(
+        JSON.stringify({ type: "request", input: { name: "method1" } }),
+        { end: true },
+      ),
     ).resolves.toBe(
-      JSON.stringify({ id: null, type: "reply", data: { pong: true } }) +
-        "\n",
+      JSON.stringify({
+        type: "response",
+        input: { id: null, type: "reply", data: { pong: true } },
+      }) + "\n",
     );
   });
 
@@ -187,7 +226,9 @@ describe("CliServer", () => {
     const server = createServer();
     const hungUp = new Promise<void>((resolve) => {
       server.register("method1", async (_params, context) => {
-        await new Promise((done) => context.signal.addEventListener("abort", done));
+        await new Promise((done) =>
+          context.signal.addEventListener("abort", done),
+        );
         resolve();
         return {};
       });
@@ -196,7 +237,8 @@ describe("CliServer", () => {
 
     const socket = net.createConnection(socketPath);
     socket.on("connect", () => {
-      socket.write(JSON.stringify({ name: "method1" }) + "\n");
+      const message = { type: "request", input: { name: "method1" } };
+      socket.write(JSON.stringify(message) + "\n");
       setTimeout(() => socket.destroy(), 20);
     });
     await hungUp;
@@ -204,14 +246,16 @@ describe("CliServer", () => {
 
   it("cancels a running request on a $/cancel notification", async () => {
     const server = createServer();
-    server.register("method1", () => new Promise(() => {}));
+    server.register("method1", () => new Promise(() => { }));
     await server.start();
 
     const reply = send({ id: "id-123", name: "method1" });
     await new Promise((resolve) => setTimeout(resolve, 20));
-    await sendRawString(
-      JSON.stringify({ name: "$/cancel", args: { id: "id-123" } }) + "\n",
-    );
+    const notification = {
+      type: "notification",
+      input: { name: "$/cancel", args: { id: "id-123" } },
+    };
+    await sendRawString(JSON.stringify(notification) + "\n");
 
     await expect(reply).resolves.toEqual({
       id: "id-123",

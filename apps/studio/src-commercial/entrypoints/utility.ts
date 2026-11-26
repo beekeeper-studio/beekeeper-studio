@@ -215,7 +215,7 @@ async function initState(sId: string, port: MessagePortMain) {
 
   state(sId).port.on('message', ({ data }: { data: Request }) => {
     // RpcClient handles these itself
-    if ((data as { type?: string }).type === 'rpc/respond') {
+    if ((data as { type?: string }).type === 'response') {
       return;
     }
     const { id, name, args } = data;

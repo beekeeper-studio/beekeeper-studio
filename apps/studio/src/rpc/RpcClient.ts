@@ -1,10 +1,5 @@
 import { uuidv4 } from "@/lib/uuid";
-import type {
-  Method,
-  Notification,
-  RequestOptions,
-  Request,
-} from "./types";
+import type { Method, Notification, RequestOptions, Request } from "./types";
 import { CancelError } from "@beekeeperstudio/cli";
 import type { Reply } from "@beekeeperstudio/cli";
 import type { MessagePortMain as ElectronPort } from "electron";
@@ -34,7 +29,7 @@ export class RpcClient<
         !(
           typeof event.data === "object" &&
           "type" in event.data &&
-          event.data.type === "rpc/respond"
+          event.data.type === "response"
         )
       ) {
         return;
@@ -74,7 +69,7 @@ export class RpcClient<
     options.signal?.addEventListener("abort", onAbort, { once: true });
 
     const request: Request = { id, name, args };
-    this.port.postMessage({ type: "rpc/request", input: request });
+    this.port.postMessage({ type: "request", input: request });
 
     return promise;
   }
@@ -82,7 +77,7 @@ export class RpcClient<
   /** Runs the handler registered under `name` without waiting for a reply. */
   notify(name: string, args?: unknown): void {
     const notification: Notification = { name, args };
-    this.port.postMessage({ type: "rpc/notify", input: notification });
+    this.port.postMessage({ type: "notification", input: notification });
   }
 
   /** Asks the server to abort the handler. The server's reply settles it. */
