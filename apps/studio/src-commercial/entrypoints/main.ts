@@ -28,7 +28,6 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
-import { appImageRelaunchOptions } from '@/background/lib/electron/appImageRelaunchOptions'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -383,10 +382,8 @@ ipcMain.handle('clipboard:read', async () => {
 })
 
 ipcMain.on('app:restart', async () => {
-  // same AppImage case as NativeMenuActionHandlers.restart()
-  const options = appImageRelaunchOptions()
-  if (options) {
-    app.relaunch(options);
+  if (platformInfo.isAppImage && process.env.APPIMAGE) {
+    app.relaunch({ execPath: process.env.APPIMAGE, args: process.argv.slice(1) });
   } else {
     app.relaunch();
   }

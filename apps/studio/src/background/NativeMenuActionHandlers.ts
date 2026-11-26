@@ -3,7 +3,6 @@ import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows, OpenOptions, setConfirmWindowClose } from './WindowBuilder'
 import { app, dialog, shell } from 'electron'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
-import { appImageRelaunchOptions } from './lib/electron/appImageRelaunchOptions'
 import platformInfo from '../common/platform_info'
 import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
@@ -156,9 +155,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   restart(): void {
-    const options = appImageRelaunchOptions()
-    if (options) {
-      app.relaunch(options);
+    if (platformInfo.isAppImage && process.env.APPIMAGE) {
+      app.relaunch({ execPath: process.env.APPIMAGE, args: process.argv.slice(1) });
     } else {
       app.relaunch();
     }
