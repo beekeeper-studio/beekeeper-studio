@@ -28,22 +28,33 @@ let electron = null
 /** @type {fs.FSWatcher[]} */
 const configWatchers = {}
 
-// Debounced because the main and utility builds run as separate esbuild
-// contexts (different @bksLogger alias each); their onEnd hooks both
-// call this, and 500ms is enough to coalesce their finish into one
-// electron restart.
+// Debounce the separate main and utility build completions so closely timed
+// onEnd hooks can share one Electron restart.
 const restartElectron = _.debounce(() => {
-  if (electron) {
-    process.kill(electron.pid, 'SIGINT')
+  const previousElectron = electron
+  electron = null
+  if (previousElectron) {
+    previousElectron.kill('SIGINT')
   }
-  // start electron again
-  electron = spawn(electronBin, ['.'], { stdio: 'inherit' })
-  electron.on('exit', (code, signal) => {
-    console.log('electron exited', code, signal)
-    if (!signal) process.exit()
-  })
-  console.log('spawned electron, pid: ', electron.pid)
 
+  const nextElectron = spawn(electronBin, ['.'], { stdio: 'inherit' })
+  electron = nextElectron
+  nextElectron.on('error', (error) => {
+    console.error('electron process error', error)
+    if (electron === nextElectron) {
+      electron = null
+      process.exit(1)
+    }
+  })
+  nextElectron.on('exit', (code, signal) => {
+    const wasReplaced = electron !== nextElectron
+    console.log('electron exited', { pid: nextElectron.pid, code, signal, wasReplaced })
+    if (wasReplaced) return
+
+    electron = null
+    if (!signal) process.exit(code ?? 1)
+  })
+  console.log('spawned electron, pid: ', nextElectron.pid)
 }, 500)
 
 function watchConfig(file) {
