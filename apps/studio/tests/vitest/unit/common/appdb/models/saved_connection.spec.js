@@ -72,6 +72,30 @@ describe("Saved Connection", () => {
     const testCases = {
       "one:123": {host: 'one', port: 123},
       "postgresql://host:123": {connectionType: 'postgresql', host: 'host', port: 123},
+      "postgresql://user:password@localhost:5432/mydb?sslmode=verify-full&SslCertFile=%2Ftmp%2Fclient%20cert.pem&SslCaFile=%2Ftmp%2Fca%26root.pem&SslKeyFile=%2Ftmp%2Fclient%23100%25.key": {
+        connectionType: "postgresql",
+        host: "localhost",
+        port: 5432,
+        username: "user",
+        password: "password",
+        defaultDatabase: "mydb",
+        ssl: true,
+        sslCertFile: "/tmp/client cert.pem",
+        sslCaFile: "/tmp/ca&root.pem",
+        sslKeyFile: "/tmp/client#100%.key"
+      },
+      "mysql://user:password@localhost:3306/mydb?sslmode=require&sslcertfile=C%3A%5Ccerts%5Cclient%20cert.pem&sslcafile=C%3A%5Ccerts%5Cca%2Broot.pem&sslkeyfile=C%3A%5Ccerts%5Cclient%2520key.pem": {
+        connectionType: "mysql",
+        host: "localhost",
+        port: 3306,
+        username: "user",
+        password: "password",
+        defaultDatabase: "mydb",
+        ssl: true,
+        sslCertFile: "C:\\certs\\client cert.pem",
+        sslCaFile: "C:\\certs\\ca+root.pem",
+        sslKeyFile: "C:\\certs\\client%20key.pem"
+      },
       "user:password@host:12345": {host: 'host', port: 12345, username: 'user', password: 'password'},
       "superduperhost.db": {defaultDatabase: 'superduperhost.db', connectionType: 'sqlite'},
       "some/path.sqlite3": {connectionType: 'sqlite', defaultDatabase: 'some/path.sqlite3'},
@@ -172,7 +196,7 @@ describe("Saved Connection", () => {
       subject.host = "anotherhost"
       subject.connectionType = "unknown"
 
-      subject.parse(url)
+      expect(subject.parse(url)).toBe(true)
       Object.keys(expected).forEach(key => {
         expect(subject[key]).toStrictEqual(expected[key])
       })
