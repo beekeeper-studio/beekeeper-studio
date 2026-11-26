@@ -314,32 +314,36 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
+    const project = this.config.projectId
+    const dataset = this.db
+    const tableLiteral = escapeString(table)
+    const datasetLiteral = escapeString(dataset)
+    // Each side is one row. Joining first and grouping `table_name` is
+    // ambiguous, and aggregating the key list again repeats it once per column.
     const sql = `
-      SELECT CONCAT('CREATE TABLE ', '${this.db}.${table}', ' (',
-                   STRING_AGG(column_definition, ', '),
-                   IF(pk.constraint_name IS NOT NULL, CONCAT(', PRIMARY KEY (', STRING_AGG(pk.column_list), ')'), ''),
+      SELECT CONCAT('CREATE TABLE ', '${datasetLiteral}.${tableLiteral}', ' (',
+                   IFNULL(cols.definitions, ''),
+                   IF(pk.column_list IS NULL, '', CONCAT(', PRIMARY KEY (', pk.column_list, ') NOT ENFORCED')),
                    ')') AS createtable
       FROM (
-        SELECT
-          table_name,
-          CONCAT(column_name, ' ', data_type,
-                 IF(IS_NULLABLE = 'NO', ' NOT NULL', '')) AS column_definition
-        FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.COLUMNS\`
-        WHERE table_name = ${table}
-      ) AS column_definitions
+        SELECT STRING_AGG(
+                 CONCAT(column_name, ' ', data_type,
+                        IF(IS_NULLABLE = 'NO', ' NOT NULL', '')),
+                 ', ' ORDER BY ordinal_position
+               ) AS definitions
+        FROM \`${project}.${dataset}.INFORMATION_SCHEMA.COLUMNS\`
+        WHERE table_name = '${tableLiteral}'
+      ) AS cols
       LEFT JOIN (
-        SELECT
-          c.table_name,
-          c.constraint_name,
-          STRING_AGG(cu.column_name, ', ') AS column_list
-        FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS\` c
-        JOIN \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE\` cu
-        ON c.constraint_name = cu.constraint_name
+        SELECT STRING_AGG(cu.column_name, ', ' ORDER BY cu.ordinal_position) AS column_list
+        FROM \`${project}.${dataset}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS\` c
+        JOIN \`${project}.${dataset}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE\` cu
+          ON c.constraint_name = cu.constraint_name
+          AND c.table_name = cu.table_name
         WHERE c.constraint_type = 'PRIMARY KEY'
-        GROUP BY c.table_name, c.constraint_name
+          AND c.table_name = '${tableLiteral}'
       ) AS pk
-      ON column_definitions.table_name = pk.table_name
-      GROUP BY table_name, pk.constraint_name
+      ON TRUE
     `;
 
     const data = await this.driverExecuteSingle(sql);

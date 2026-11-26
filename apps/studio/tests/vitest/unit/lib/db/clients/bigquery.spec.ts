@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { parseRowData } from '@/lib/db/clients/bigquery'
+import { describe, it, expect, vi } from "vitest";
+import { BigQueryClient, parseRowData } from '@/lib/db/clients/bigquery'
 
 describe("BigQuery unit tests", () => {
   describe("parseRowData", () => {
@@ -65,5 +65,42 @@ describe("BigQuery unit tests", () => {
     it("should return an empty array for empty input", () => {
       expect(parseRowData([])).toEqual([])
     })
+  })
+})
+
+describe("BigQuery getTableCreateScript", () => {
+  function makeClient(dataset = "dataset") {
+    const server = { config: { readOnlyMode: false } }
+    const database = { database: dataset }
+    const client = new BigQueryClient(server as any, database as any)
+    client.config.projectId = "proj"
+    client.driverExecuteSingle = vi.fn().mockResolvedValue({
+      rows: [{ createtable: "CREATE TABLE dataset.users (id INT64)" }],
+    })
+    return client
+  }
+
+  it("compares the table name as a string", async () => {
+    const client = makeClient()
+    await client.getTableCreateScript("users")
+    const sql = client.driverExecuteSingle.mock.calls[0][0]
+    expect(sql).toContain("WHERE table_name = 'users'")
+    expect(sql).toContain("AND c.table_name = 'users'")
+    expect(sql).toContain("CONCAT('CREATE TABLE ', 'dataset.users', ' (',")
+    expect(sql).toContain("STRING_AGG(cu.column_name, ', ' ORDER BY cu.ordinal_position)")
+    expect(sql).toContain("AND c.table_name = cu.table_name")
+    expect(sql).toContain(") NOT ENFORCED")
+    expect(sql).not.toContain("GROUP BY")
+    expect(sql).not.toContain("STRING_AGG(pk.column_list)")
+  })
+
+  it("escapes a single quote in the table name", async () => {
+    const client = makeClient("da'ta")
+    await client.getTableCreateScript("o'brien")
+    const sql = client.driverExecuteSingle.mock.calls[0][0]
+    expect(sql).toContain("WHERE table_name = 'o''brien'")
+    expect(sql).toContain("AND c.table_name = 'o''brien'")
+    expect(sql).toContain("CONCAT('CREATE TABLE ', 'da''ta.o''brien', ' (',")
+    expect(sql).not.toContain("table_name = o'brien")
   })
 })
