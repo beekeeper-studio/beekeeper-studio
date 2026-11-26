@@ -80,16 +80,16 @@ describe("CliServer", () => {
     await server.start();
 
     await expect(
-      sendRawString('{"id":"1","method":"method1","params":{}}\n'),
+      sendRawString('{"id":"1","name":"method1","args":{}}\n'),
     ).resolves.toBe(
       '{"id":"1","type":"reply","data":{"big":"9007199254740993"}}\n',
     );
-    await expect(sendRawString('{"method":"method2"}\n')).resolves.toBe(
+    await expect(sendRawString('{"name":"method2"}\n')).resolves.toBe(
       '{"id":null,"type":"error","error":"nope","errorName":"CliError",' +
         '"errorCode":"NOT_FOUND","errorHint":"look elsewhere"}\n',
     );
     await expect(
-      sendRawString('{"method":"method3","params":{}}\n'),
+      sendRawString('{"name":"method3","args":{}}\n'),
     ).resolves.toBe(
       '{"id":null,"type":"error","error":"boom","errorName":"Error",' +
         '"errorCode":"INTERNAL"}\n',
@@ -102,7 +102,7 @@ describe("CliServer", () => {
     await server.start();
 
     for (const method of ["missing", "toString", "__proto__"]) {
-      await expect(send({ method, params: {} })).resolves.toEqual({
+      await expect(send({ name: method, args: {} })).resolves.toEqual({
         id: null,
         type: "error",
         error: `Unknown method "${method}".`,
@@ -136,7 +136,7 @@ describe("CliServer", () => {
     await server.start();
 
     await expect(
-      sendRawString(JSON.stringify({ method: "method1" }), { end: true }),
+      sendRawString(JSON.stringify({ name: "method1" }), { end: true }),
     ).resolves.toBe(
       JSON.stringify({ id: null, type: "reply", data: { pong: true } }) +
         "\n",
@@ -153,7 +153,7 @@ describe("CliServer", () => {
     await server.start();
 
     await expect(
-      send({ method: "method1", params: { sql: "x".repeat(200) } }),
+      send({ name: "method1", args: { sql: "x".repeat(200) } }),
     ).resolves.toEqual({
       id: null,
       type: "error",
@@ -171,12 +171,12 @@ describe("CliServer", () => {
     });
     await server.start();
 
-    await expect(send({ method: "method1" })).resolves.toEqual({
+    await expect(send({ name: "method1" })).resolves.toEqual({
       id: null,
       type: "reply",
       data: {},
     });
-    await expect(send({ method: "method1" })).resolves.toEqual({
+    await expect(send({ name: "method1" })).resolves.toEqual({
       id: null,
       type: "reply",
       data: {},
@@ -196,7 +196,7 @@ describe("CliServer", () => {
 
     const socket = net.createConnection(socketPath);
     socket.on("connect", () => {
-      socket.write(JSON.stringify({ method: "method1" }) + "\n");
+      socket.write(JSON.stringify({ name: "method1" }) + "\n");
       setTimeout(() => socket.destroy(), 20);
     });
     await hungUp;
@@ -207,10 +207,10 @@ describe("CliServer", () => {
     server.register("method1", () => new Promise(() => {}));
     await server.start();
 
-    const reply = send({ id: "id-123", method: "method1" });
+    const reply = send({ id: "id-123", name: "method1" });
     await new Promise((resolve) => setTimeout(resolve, 20));
     await sendRawString(
-      JSON.stringify({ method: "$/cancel", params: { id: "id-123" } }) + "\n",
+      JSON.stringify({ name: "$/cancel", args: { id: "id-123" } }) + "\n",
     );
 
     await expect(reply).resolves.toEqual({
@@ -247,7 +247,7 @@ describe("CliServer", () => {
       const server = createServer();
       server.register("method1", async () => ({}));
       await server.start();
-      await expect(send({ method: "method1" })).resolves.toEqual({
+      await expect(send({ name: "method1" })).resolves.toEqual({
         id: null,
         type: "reply",
         data: {},
@@ -269,7 +269,7 @@ describe("CliServer", () => {
       );
       expect(error?.code).toBe("EADDRINUSE");
       await second.stop();
-      await expect(send({ method: "method1" })).resolves.toEqual({
+      await expect(send({ name: "method1" })).resolves.toEqual({
         id: null,
         type: "reply",
         data: { from: "first" },

@@ -190,14 +190,14 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
     const socket = net.createConnection(this.socketPath);
     // The request reports its own connection errors
     socket.on("error", () => { });
-    const notification = { method: "$/cancel", params: { id } };
+    const notification = { name: "$/cancel", args: { id } };
     socket.end(JSON.stringify(notification) + "\n");
   }
 
   /** Sends one request and resolves with the reply's data, or throws the CliError it replied with. */
   private async request(
-    method: unknown,
-    params: unknown,
+    name: unknown,
+    args: unknown,
     options: RequestOptions = {},
   ): Promise<unknown> {
     const id = options.id ?? randomUUID();
@@ -218,7 +218,7 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
         const client = this.options.clientName
           ? { name: this.options.clientName }
           : undefined;
-        socket.write(JSON.stringify({ id, method, params, client }) + "\n");
+        socket.write(JSON.stringify({ id, name, args, client }) + "\n");
       });
       socket.on("data", (chunk: string) => {
         buffer += chunk;

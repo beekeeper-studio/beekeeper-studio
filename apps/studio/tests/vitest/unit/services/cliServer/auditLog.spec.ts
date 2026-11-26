@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { CLI_AUDIT_SQL_MAX_CHARS, CliAuditLog, buildAuditEntry, createElectronLogSink, summarizeResult } from '@/services/cliServer/auditLog'
 import { Request, Reply } from '@beekeeperstudio/cli'
 
-function request(method: Request['method'], params: Request['params'] = {}): Request {
-  return { method, params }
+function request(name: Request['name'], args: Request['args'] = {}): Request {
+  return { name, args }
 }
 
 const now = new Date('2026-10-30T12:00:00.000Z')

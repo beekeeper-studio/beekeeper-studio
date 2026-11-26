@@ -74,8 +74,8 @@ export function summarizeResult(method: string | null, result: any): Record<stri
 }
 
 function auditParams(request: Request | null): Record<string, unknown> | null {
-  if (!request?.params || typeof request.params !== 'object') return null
-  const params: Record<string, unknown> = { ...request.params }
+  if (!request?.args || typeof request.args !== 'object') return null
+  const params: Record<string, unknown> = { ...request.args }
   if (typeof params.sql === 'string' && params.sql.length > CLI_AUDIT_SQL_MAX_CHARS) {
     params.sqlLength = params.sql.length
     params.sql = params.sql.slice(0, CLI_AUDIT_SQL_MAX_CHARS)
@@ -85,7 +85,7 @@ function auditParams(request: Request | null): Record<string, unknown> | null {
 }
 
 export function buildAuditEntry(event: CliRequestEvent, now: Date = new Date()): CliAuditEntry {
-  const method = typeof event.request?.method === 'string' ? event.request.method : null
+  const method = typeof event.request?.name === 'string' ? event.request.name : null
   const entry: CliAuditEntry = {
     time: now.toISOString(),
     method,

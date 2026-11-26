@@ -63,18 +63,18 @@ describe("Client cancel", () => {
     server = net.createServer((socket) => {
       socket.once("data", (chunk) => {
         const message = JSON.parse(chunk.toString());
-        if (message.method !== "$/cancel") {
+        if (message.name !== "$/cancel") {
           pending.set(message.id, socket);
           return;
         }
         expect(message.id).toBeUndefined();
         const reply = {
-          id: message.params.id,
+          id: message.args.id,
           type: "error",
           error: "The request was cancelled.",
           errorName: "CancelError",
         };
-        pending.get(message.params.id)?.end(JSON.stringify(reply) + "\n");
+        pending.get(message.args.id)?.end(JSON.stringify(reply) + "\n");
         socket.end();
       });
     });

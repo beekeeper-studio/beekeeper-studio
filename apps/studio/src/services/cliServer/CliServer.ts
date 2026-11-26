@@ -227,9 +227,9 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
       return
     }
 
-    if (request && request.id === undefined && request.method === '$/cancel') {
-      const params = request.params as { id: string }
-      this.cancel(params?.id)
+    if (request && request.id === undefined && request.name === '$/cancel') {
+      const args = request.args as { id: string }
+      this.cancel(args?.id)
       socket.end()
       return
     }
@@ -251,7 +251,7 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
   private async dispatch(request: Request, context: CliCallContext): Promise<Reply> {
     const id = request?.id ?? null
     try {
-      const data = await this.call(request?.id ?? uuidv4(), request?.method, request?.params || {}, context)
+      const data = await this.call(request?.id ?? uuidv4(), request?.name, request?.args || {}, context)
       return { id, type: 'reply', data }
     } catch (error) {
       if (error instanceof UnknownMethodError) {
