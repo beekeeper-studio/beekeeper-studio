@@ -197,6 +197,21 @@ export function entityId(schema: string, entity?: TableOrView | Routine) {
   return `schema.${schema}`;
 }
 
+/** Determines if a table in the sidebar corresponds to the currently active tab */
+export function isTableActiveInTab(
+  table: { name?: string; schema?: string | null } | null | undefined,
+  activeTab: any
+): boolean {
+  if (!table?.name || !activeTab) return false;
+  if (!['table', 'table-properties'].includes(activeTab.tabType)) return false;
+
+  const activeName = activeTab.tableName || activeTab.table?.name;
+  const activeSchema = activeTab.schemaName ?? activeTab.table?.schema ?? null;
+  const thisSchema = table.schema ?? null;
+
+  return activeName === table.name && activeSchema === thisSchema;
+}
+
 export function isFile(e: DragEvent) {
     const dt = e.dataTransfer;
     for (let i = 0; i < dt.types.length; i++) {

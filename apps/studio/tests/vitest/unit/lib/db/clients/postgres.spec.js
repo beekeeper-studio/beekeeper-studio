@@ -58,6 +58,15 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(client.parseRowQueryResult(data, command, false)).toStrictEqual(expected)
   })
 
+  it("qualifies a table or view rename with the selected schema", async () => {
+    await expect(client.setElementNameSql('orders', 'purchases', 'TABLE', 'sales'))
+      .resolves.toBe('ALTER TABLE "sales"."orders" RENAME TO "purchases";')
+    await expect(client.setElementNameSql('orders', 'purchases', 'VIEW', 'sales'))
+      .resolves.toBe('ALTER VIEW "sales"."orders" RENAME TO "purchases";')
+    await expect(client.setElementNameSql('sales', 'billing', 'SCHEMA', 'sales'))
+      .resolves.toBe('ALTER SCHEMA "sales" RENAME TO "billing";')
+  })
+
   it("Should generate correct alter table rename statement", async () => {
     const input = {
       table: 'foo',
@@ -127,6 +136,35 @@ describe("Postgres UNIT tests (no connection required)", () => {
     const result = await client.alterTableSql(input)
     const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "a" int NOT NULL, DROP COLUMN "c", ALTER COLUMN "b" TYPE char;COMMENT ON COLUMN "public"."foo"."d" IS \'comment!\';'
     expect(result).toBe(expected);
+  })
+
+  it("clears a column comment instead of storing the word null", async () => {
+    const cleared = await client.alterTableSql({
+      table: 'foo',
+      schema: 'public',
+      alterations: [
+        { columnName: 'd', changeType: 'comment', newValue: null }
+      ]
+    })
+    expect(cleared).toBe('COMMENT ON COLUMN "public"."foo"."d" IS NULL;')
+
+    const empty = await client.alterTableSql({
+      table: 'foo',
+      schema: 'public',
+      alterations: [
+        { columnName: 'd', changeType: 'comment', newValue: '' }
+      ]
+    })
+    expect(empty).toBe('COMMENT ON COLUMN "public"."foo"."d" IS \'\';')
+
+    const literal = await client.alterTableSql({
+      table: 'foo',
+      schema: 'public',
+      alterations: [
+        { columnName: 'd', changeType: 'comment', newValue: 'null' }
+      ]
+    })
+    expect(literal).toBe('COMMENT ON COLUMN "public"."foo"."d" IS \'null\';')
   })
 
   it("Should handle read-only permission errors gracefully and still return relations", async () => {
@@ -250,6 +288,22 @@ describe("Postgres UNIT tests (no connection required)", () => {
         fromColumn: ["ref_id1", "ref_id2"],
         toColumn: ["parent_id1", "parent_id2"],
       })
+    })
+  })
+
+  describe("buildSelectTopQueries selects", () => {
+    const build = (selects) => client.buildSelectTopQueries({
+      table: 'users', schema: 'public', selects, filters: [], orderBy: [],
+      limit: 100, offset: 0, version: { number: 160000 }, inlineParams: true,
+    }).query.replace(/\s+/g, ' ').trim()
+
+    it("keeps * unquoted", () => {
+      expect(build(['*'])).toBe('SELECT * FROM "public"."users" LIMIT 100 OFFSET 0')
+    })
+
+    it("quotes column names so mixed case and reserved words work", () => {
+      expect(build(['id', 'UserName', 'order']))
+        .toBe('SELECT "id", "UserName", "order" FROM "public"."users" LIMIT 100 OFFSET 0')
     })
   })
 

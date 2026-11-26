@@ -20,10 +20,6 @@ description: "Use a MongoDB shell or SQL editor to run queries against MongoDB b
 - Backup/Restore
 - Schema editing
 - Read only mode
-
-
-## Still TBD
-
 - SSH tunneling
 
 ## Kerberos (GSSAPI) Authentication

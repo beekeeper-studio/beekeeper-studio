@@ -54,6 +54,7 @@
         :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
         :markers="markers"
         :replace-extensions="replaceExtensions"
+        :read-only="readOnly"
         :line-wrapping="wrapText"
         :line-gutters="lineGutters"
         :line-numbers="false"
@@ -82,6 +83,7 @@ import {
   findValueInfo,
   createExpandableTextDecoration,
   createTruncatableTextDecoration,
+  createShowLessTextDecoration,
   deepFilterObjectProps,
   eachPath,
   binaryBufferOf,
@@ -301,6 +303,29 @@ export default Vue.extend({
           log.warn(e);
         }
       })
+      _.forEach(this.restoredTruncatedPaths, (path) => {
+        if (this.expandablePaths.includes(path)) {
+          return
+        }
+        try {
+          const line = findKeyPosition(this.text, path.split("."));
+          if (line === -1 || !this.lines[line]) return
+          const info = findValueInfo(this.lines[line]);
+          if (!info) return
+          const onClick = async () => {
+            this.restoredTruncatedPaths = this.restoredTruncatedPaths.filter((p) => p !== path)
+          }
+          markers.push({
+            type: "custom",
+            from: { line, ch: info.to },
+            to: { line, ch: info.to },
+            decoration: createShowLessTextDecoration(onClick),
+          });
+        } catch (e) {
+          log.warn("Failed to mark restored truncated path", path);
+          log.warn(e);
+        }
+      })
       _.forEach(this.editableRangeErrors, ({ error, from, to }) => {
         markers.push({
           type: "error",
@@ -326,6 +351,14 @@ export default Vue.extend({
         lineGutters.push({ line, type });
       })
       return lineGutters;
+    },
+    /**
+     * Nothing can be edited without editable ranges (e.g. query results, or a
+     * table view that isn't editable). Read-only hides the search panel's
+     * Replace / Replace All, which would otherwise show but do nothing.
+     */
+    readOnly() {
+      return this.editableRanges.length === 0
     },
     editableRanges() {
       const editablePaths = this.editablePaths

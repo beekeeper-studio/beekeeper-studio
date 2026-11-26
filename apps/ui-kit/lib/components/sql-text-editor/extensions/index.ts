@@ -8,6 +8,7 @@ import { Options } from "sql-query-identifier";
 
 export { applyEntities } from "./customSql";
 export { applyDialect } from "./removeQueryQuotes";
+export { applySplitQueriesByLine } from "./querySelection";
 export { type ColumnsGetter } from "./sqlContextComplete";
 export type { QuerySelectionChangeParams };
 export type { KeywordCasing, IdentifierQuoting } from "./vendor/@codemirror/lang-sql/src/complete";
@@ -16,6 +17,8 @@ export type SQLExtensionsConfig = SQLConfig & {
   identiferDialect?: Options["dialect"];
   paramTypes?: Options["paramTypes"];
   onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void
+  /** One query per line instead of per statement (Redis scripts) */
+  splitQueriesByLine?: boolean;
 }
 
 /**
@@ -28,6 +31,11 @@ export function extensions(config: SQLExtensionsConfig) {
     removeQueryQuotesExtension(),
     sqlContextComplete(),
     config.columnsGetter ? sqlCompletionSource(config.columnsGetter) : [],
-    querySelection(config.identiferDialect, config.paramTypes, config.onQuerySelectionChange),
+    querySelection(
+      config.identiferDialect,
+      config.paramTypes,
+      config.onQuerySelectionChange,
+      config.splitQueriesByLine
+    ),
   ];
 }

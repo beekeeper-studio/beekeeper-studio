@@ -248,6 +248,17 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const commands = this.identifyCommands(queryText);
 
+    // The driver runs one CQL statement per call, so statements joined with
+    // `;` (e.g. several ALTER TABLE changes) must be sent one at a time.
+    if (commands.length > 1) {
+      const results: NgQueryResult[] = [];
+      for (const command of commands) {
+        const data = await this.driverExecuteSingle(command.text, options);
+        results.push(this.parseRowQueryResult(data, command));
+      }
+      return results;
+    }
+
     const data = await this.driverExecuteSingle(queryText, options);
     return [this.parseRowQueryResult(data, commands[0])];
   }
@@ -694,7 +705,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
     const { filterString, filterParams } = this.buildFilterString(filters, { inlineParams })
 
-    const selectSQL = `SELECT ${selects.join(', ')}`
+    const selectSQL = `SELECT ${selects.map((s) => this.wrapIdentifier(s)).join(', ')}`
     const baseSQL = `
       FROM ${this.fqTableName(options.table, options.schema)}
       ${filterString}

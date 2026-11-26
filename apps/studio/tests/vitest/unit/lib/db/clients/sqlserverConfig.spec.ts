@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints } from '@/lib/db/clients/sqlserver'
+import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints, sqlServerLoginMessage } from '@/lib/db/clients/sqlserver'
 import { IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
@@ -134,6 +134,83 @@ describe('sqlServerConnectHint', () => {
     expect(hint).toContain('Port field')
   })
 
+  it('never blames SQL Browser when the named instance answered and rejected the login', () => {
+    // A login rejection comes from the instance itself, so the browser lookup succeeded.
+    const config = { server: '192.168.0.170', options: { instanceName: 'CLIENTSQLSERVER' } }
+    const expected = sqlServerConnectHints.loginRejected('192.168.0.170', 'CLIENTSQLSERVER')
+
+    const tedious: any = new Error("Login failed for user 'sa'.")
+    tedious.code = 'ELOGIN'
+    expect(sqlServerConnectHint(tedious, config)).toBe(expected)
+    // The ODBC driver (integrated auth) reports SQL Server's error number as a numeric code,
+    // so the wording -- which follows the server's language -- does not matter.
+    const odbc: any = new Error('[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Fehler bei der Anmeldung.')
+    odbc.code = 18456
+    expect(sqlServerConnectHint(odbc, config)).toBe(expected)
+    // Text is the last resort when an error arrives with no code at all.
+    expect(sqlServerConnectHint(new Error("Login failed for user 'CORP\\me'."), config)).toBe(expected)
+
+    expect(expected).not.toMatch(/browser|1434/i)
+    expect(expected).toContain('Default Database')
+    // Must not pick up the frontend's SQL Browser docs link either.
+    const help = FriendlyErrorHelper.getHelpText('sqlserver', new Error(`Login failed for user 'sa'. ${expected}`))
+    expect(help?.link ?? '').not.toContain('sql-server-browser')
+  })
+
+  it('names the Default Database field when the server cannot open the requested database', () => {
+    const login: any = new Error("Login failed for user 'sa'.")
+    login.code = 'ELOGIN'
+    const expected = sqlServerConnectHints.databaseUnavailable('nope')
+    expect(expected).toContain('Default Database')
+
+    // Error 4060 is exact, whatever language the server words its message in.
+    const localized = [{ number: 4060, message: 'Die von der Anmeldung angeforderte Datenbank "nope" kann nicht geoeffnet werden.' }]
+    expect(sqlServerConnectHint(login, { server: 'localhost', database: 'nope', options: {} }, localized))
+      .toBe(expected)
+    // More specific than the generic instance rejection.
+    expect(sqlServerConnectHint(login, {
+      server: '192.168.0.170', database: 'nope', options: { instanceName: 'CLIENTSQLSERVER' },
+    }, localized)).toBe(expected)
+    // The ODBC driver (integrated auth) puts the number on the error itself, which mssql
+    // re-wraps -- shape captured from ODBC Driver 18 against a real server.
+    const odbc: any = new Error('[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Die Datenbank kann nicht geoeffnet werden.')
+    odbc.code = 4060
+    expect(sqlServerConnectHint(odbc, { server: 'localhost', database: 'nope', options: { trustedConnection: true } }))
+      .toBe(expected)
+    // Text is the last resort when an error arrives with no number at all.
+    expect(sqlServerConnectHint(
+      new Error('Cannot open database "nope" requested by the login. The login failed.'),
+      { server: 'localhost', database: 'nope', options: {} }
+    )).toBe(expected)
+
+    // A plain bad password (18456) is not a database problem.
+    expect(sqlServerConnectHint(login, { server: 'localhost', database: 'nope', options: {} }, [
+      { number: 18456, message: "Login failed for user 'sa'." },
+    ])).toBeNull()
+  })
+
+  it("asks for a Default Database when the login's own default cannot be opened", () => {
+    const expected = sqlServerConnectHints.defaultDatabaseUnavailable
+    expect(expected).toContain('Default Database')
+    const blank = { server: 'localhost', options: {} }
+
+    // tedious: the number arrives on the collected login ERROR tokens.
+    const login: any = new Error("Login failed for user 'app'.")
+    login.code = 'ELOGIN'
+    expect(sqlServerConnectHint(login, blank, [
+      { number: 4064, message: 'Standarddatenbank des Benutzers kann nicht geoeffnet werden.' },
+      { number: 18456, message: "Login failed for user 'app'." },
+    ])).toBe(expected)
+    // ODBC: the number is the error's numeric code.
+    const odbc: any = new Error('[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Standarddatenbank kann nicht geoeffnet werden.')
+    odbc.code = 4064
+    expect(sqlServerConnectHint(odbc, blank)).toBe(expected)
+    // Text is the last resort.
+    expect(sqlServerConnectHint(new Error('Cannot open user default database. Login failed.'), blank)).toBe(expected)
+    // More specific than the generic instance rejection.
+    expect(sqlServerConnectHint(odbc, { server: 'db1', options: { instanceName: 'SQL2019' } })).toBe(expected)
+  })
+
   it('leaves the frontend helper adding a docs link and no second copy of the advice', () => {
     // Only one layer states the remedy. These failures are classified here because the
     // frontend only ever sees a flat message (UtilityConnection rebuilds errors as
@@ -159,5 +236,21 @@ describe('sqlServerConnectHint', () => {
       port: 14330,
       options: {},
     })).toBeNull()
+  })
+})
+
+describe('sqlServerLoginMessage', () => {
+  it("puts the server's earlier login errors in front of the generic one", () => {
+    expect(sqlServerLoginMessage("Login failed for user 'sa'.", [
+      'Cannot open database "nope" requested by the login. The login failed.',
+      "Login failed for user 'sa'.",
+    ])).toBe('Cannot open database "nope" requested by the login. The login failed. Login failed for user \'sa\'.')
+  })
+
+  it('leaves the message alone when the server sent nothing more', () => {
+    expect(sqlServerLoginMessage("Login failed for user 'sa'.", [])).toBe("Login failed for user 'sa'.")
+    expect(sqlServerLoginMessage("Login failed for user 'sa'.", ["Login failed for user 'sa'."]))
+      .toBe("Login failed for user 'sa'.")
+    expect(sqlServerLoginMessage("Login failed for user 'sa'.")).toBe("Login failed for user 'sa'.")
   })
 })

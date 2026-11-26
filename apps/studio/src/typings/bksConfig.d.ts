@@ -519,6 +519,11 @@ declare interface IBksConfig {
         lockMode: string;
         minPinLength: number;
     };
+    themeSystem: {
+        autoUpdate: boolean;
+        communityDisabled: boolean;
+        unlistedDisabled: boolean;
+    };
     ui: {
         connectionSidebar: {
             recentConnectionsLimit: number;
@@ -547,10 +552,19 @@ declare interface IBksConfig {
             primaryQueryAction: string;
             secondaryQueryAction: string;
         };
+        resultTable: {
+            dataTypeColors: boolean;
+        };
+        table: {
+            default: {
+                dataTypeColors: boolean;
+            };
+        };
         tableList: {
             itemHeight: number;
         };
         tableTable: {
+            dataTypeColors: boolean;
             defaultColumnWidth: number;
             editTrigger: string;
             largeFieldWidth: number;

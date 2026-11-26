@@ -5,6 +5,7 @@ import { URL } from 'url'
 import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 import bksConfig from "@/common/bksConfig";
+import { ThemeProtocol } from "./ThemeProtocol";
 
 const log = rawLog.scope('ProtocolBuilder')
 
@@ -137,5 +138,8 @@ export const ProtocolBuilder = {
         respond(response);
       })
     });
-  }
-}
+  },
+  createThemeProtocol: () => {
+    new ThemeProtocol().register();
+  },
+};

@@ -142,19 +142,23 @@ Tumekufunika, soma [mwongozo wetu wa dakika 10 wa kuchangia bila kuandika code](
 
 Unataka kuandika code na kuboresha Beekeeper Studio? Kuweka mazingira ni rahisi kwenye Mac, Linux, au Windows.
 
-```bash
-# Kwanza: Sakinisha NodeJS 20, NPM, na Yarn
-# ...
+Tunatumia [mise](https://mise.jdx.dev/) kusimamia matoleo ya zana.
 
+```bash
 # 1. Fanya fork ya repo ya Beekeeper Studio (bofya kitufe cha fork juu kulia mwa skrini hii)
 # 2. Clone fork yako:
 git clone git@github.com:<jina-lako>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
-yarn install # sakinisha dependencies
+
+# Tumia mise kusakinisha zana
+mise install # Inasakinisha node 24 na pnpm 12
+
+pnpm install # sakinisha dependencies
+
 
 
 # Sasa unaweza kuanzisha programu:
-yarn run electron:serve ## programu itaanza
+pnpm run bks:dev ## programu itaanza
 ```
 
 **Ukipata `error:03000086:digital envelope routines::initialization error`, utahitaji ku-update openssl.**

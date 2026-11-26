@@ -21,17 +21,17 @@ jobs:
   build-docs:
     runs-on: ubuntu-latest
 
+    env:
+      MISE_ENABLE_TOOLS: python
+
     steps:
     - uses: actions/checkout@v5
 
     - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.13.7'
-        cache: 'pip'
+      uses: jdx/mise-action@v5
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: python -m pip install -r requirements.txt
 
     - name: Build site with mkdocs (strict)
-      run: mkdocs build --strict
+      run: python -m mkdocs build --strict

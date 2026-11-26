@@ -20,6 +20,11 @@ The [Beekeeper Studio Plugin SDK](sdk.md) ([GitHub](https://github.com/beekeeper
     yarn add @beekeeperstudio/plugin
     ```
 
+=== "pnpm"
+    ```bash
+    pnpm add @beekeeperstudio/plugin
+    ```
+
 ## Debugging
 
 ### setDebugComms

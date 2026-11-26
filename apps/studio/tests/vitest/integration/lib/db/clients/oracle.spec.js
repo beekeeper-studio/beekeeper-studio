@@ -50,9 +50,11 @@ function testWith(info) {
         }])
         .withHealthCheck({
           test: ["CMD-SHELL", "sqlplus -s beekeeper/password@//localhost/BEEKEEPER <<< \"select * from actor;\" | grep 'no rows'"],
-          interval: 10000,
+          // the container is only marked healthy on an interval tick, so a
+          // long interval adds up to that much dead time to every run
+          interval: 2000,
           timeout: 10000,
-          retries: 12, // 2 minutes
+          retries: 60, // 2 minutes
           startPeriod: 60000
         })
         .withWaitStrategy(Wait.forHealthCheck())

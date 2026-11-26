@@ -21,7 +21,7 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
-import { ThemeModule } from './modules/ThemeModule'
+import { ThemesModule } from './modules/themes'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 
 import { SmartLocalStorage } from '@/common/LocalStorage'
@@ -142,7 +142,7 @@ const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
     settings: SettingStoreModule,
-    theme: ThemeModule,
+    themes: ThemesModule,
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,

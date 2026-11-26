@@ -1,15 +1,14 @@
 // (Original) Copyright (c) 2015 The SQLECTRON Team
 
-import { readFileSync } from 'fs';
 
-import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
+import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolClient } from 'pg';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, isListFilter, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import { VersionInfo } from './postgresql/types'
@@ -23,7 +22,6 @@ import { defaultCreateScript, foreignKeyColumnsSql, postgres10CreateScript } fro
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
-import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { PsqlConnector } from './postgresql/PsqlConnector';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
@@ -993,9 +991,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     let sql = ''
 
     if (typeOfElement === DatabaseElement.TABLE) {
-      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName};`
+      sql = `ALTER TABLE ${schema}.${elementName} RENAME TO ${newElementName};`
     } else if (typeOfElement === DatabaseElement.VIEW) {
-      sql = `ALTER VIEW ${elementName} RENAME TO ${newElementName};`
+      sql = `ALTER VIEW ${schema}.${elementName} RENAME TO ${newElementName};`
     } else if (typeOfElement === DatabaseElement.SCHEMA) {
       sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName};`
     }
@@ -1277,7 +1275,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       })
     }
 
-    const selectSQL = `SELECT ${selects.join(', ')}`
+    const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(', ')}`
     const baseSQL = `
       FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
       ${filterString}

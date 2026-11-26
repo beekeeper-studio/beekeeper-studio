@@ -151,7 +151,7 @@ export default Vue.extend({
   gap: 0.5rem;
   padding: 0.35rem 0.5rem;
   border: var(--input-border);
-  border-radius: 4px;
+  border-radius: var(--input-border-radius);
   background: var(--input-bg);
 }
 

@@ -32,6 +32,7 @@ export default class NativeMenuBuilder {
     } else {
       this.electron.Menu.setApplicationMenu(null)
     }
+    this.buildDockMenu()
     this.listenForClicks()
     this.listenForToggleConnectionMenuItems();
     this.listenForPluginMenuChanges();
@@ -134,6 +135,17 @@ export default class NativeMenuBuilder {
         this.rebuildMenu();
       }
     });
+  }
+
+  private buildDockMenu(): void {
+    // The Dock only exists on macOS
+    if (!platformInfo.isMac) {
+      return
+    }
+    const dockMenu = this.electron.Menu.buildFromTemplate([
+      { label: 'New Window', click: () => this.handler.newWindow() },
+    ])
+    this.electron.app.dock?.setMenu(dockMenu)
   }
 
   private getMenuItems(label: string) {

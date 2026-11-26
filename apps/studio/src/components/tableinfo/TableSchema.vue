@@ -234,7 +234,9 @@ export default Vue.extend({
           cssClass: this.customColumnCssClass('renameColumn'),
           cellClick: this.columnNameCellClick.bind(this),
           frozen: true,
-          minWidth: 100,
+          minWidth: 200,
+          widthGrow: 2,
+          resizable: true,
         },
         {
           title: 'Type',
@@ -523,7 +525,7 @@ export default Vue.extend({
         columnDefaults: {
           title: '',
           tooltip: true,
-          resizable: false,
+          resizable: 'header',
           headerSort: false,
         },
         data: this.tableData,

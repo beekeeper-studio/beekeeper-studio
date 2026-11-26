@@ -275,6 +275,13 @@ $cell-padding:           $gutter-w;
         flex-grow: 1;
       }
     }
+
+    &.text-right {
+      .cell-link-wrapper {
+        justify-content: flex-end;
+        text-align: right;
+      }
+    }
   }
 
   &.copied {
@@ -348,6 +355,9 @@ $cell-padding:           $gutter-w;
     font-size: 14px;
   }
   &:hover {
+    .tabulator-cell.text-right > .cell-link-wrapper:has(i.fk-link) {
+      padding-right: 16px;
+    }
     i.fk-link {
       display: inline-block;
       &:hover {
@@ -761,8 +771,8 @@ $cell-padding:           $gutter-w;
   background: var(--menu-bg);
   color: var(--menu-fg);
   box-shadow: var(--panel-shadow);
-  border: none;
-  border-radius: 6px;
+  border: var(--menu-border);
+  border-radius: var(--menu-border-radius);
   min-width: 150px;
   padding: 0.3rem 0;
 

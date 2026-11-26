@@ -143,19 +143,23 @@ Beekeeper Studioアプリを使用するだけで、Beekeeper Studioのコード
 
 コードを書いてBeekeeper Studioを改善したいですか？Mac、Linux、Windowsでセットアップは簡単です。
 
-```bash
-# まず：NodeJS 20、NPM、Yarnをインストール
-# ...
+ツールのバージョン管理には[mise](https://mise.jdx.dev/)を使用しています。
 
+```bash
 # 1. Beekeeper Studioリポジトリをフォーク（画面右上のforkボタンをクリック）
 # 2. フォークをチェックアウト：
 git clone git@github.com:<あなたのユーザー名>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
-yarn install # 依存関係をインストール
+
+# miseでツールチェーンをインストール
+mise install # node 24とpnpm 12をインストール
+
+pnpm install # 依存関係をインストール
+
 
 
 # これでアプリを起動できます：
-yarn run electron:serve ## アプリが起動します
+pnpm run bks:dev ## アプリが起動します
 ```
 
 **`error:03000086:digital envelope routines::initialization error`が出た場合は、opensslを更新する必要があります。**

@@ -2,7 +2,9 @@
   <portal to="modals">
     <modal
       :name="modalName"
+      :click-to-close="isReadOnly"
       class="beekeeper-modal vue-dialog editor-dialog"
+      @mousedown.native="keepFocusInEditor"
       @opened="onOpen"
       @before-close="onBeforeClose"
     >
@@ -211,6 +213,11 @@ export default Vue.extend({
   },
 
   methods: {
+    keepFocusInEditor(event: MouseEvent) {
+      if (!this.isReadOnly && !(event.target as Element).closest('[role="dialog"]')) {
+        event.preventDefault()
+      }
+    },
     openModal(content: any, language: LanguageData, eventParams?: any) {
       if (content === null) {
         content = ""
@@ -227,7 +234,7 @@ export default Vue.extend({
         this.content = content
       }
       this.eventParams = eventParams
-      this.isReadOnly = eventParams?.isReadOnly
+      this.isReadOnly = eventParams?.isReadOnly ?? false
       this.wrapText = language.wrapTextByDefault ?? false
       this.$modal.show(this.modalName)
     },

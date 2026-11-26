@@ -54,8 +54,18 @@ export abstract class ChangeBuilderBase {
     return `RENAME COLUMN ${this.wrapIdentifier(column)} TO ${this.wrapIdentifier(newName)}`
   }
 
-  setComment(column: string, newComment: string) {
-    return `COMMENT ON COLUMN ${this.tableName}.${this.wrapIdentifier(column)} IS '${this.escapeString(newComment)}'`
+  setComment(column: string, newComment: string | null): string | null {
+    const target = `COMMENT ON COLUMN ${this.tableName}.${this.wrapIdentifier(column)}`
+    if (newComment == null) {
+      // Oracle drops a comment with an empty literal. Snowflake's COMMENT
+      // statement requires a string literal, so an empty literal clears the text.
+      const cleared = this.dialect === 'oracle' || this.dialect === 'snowflake' ? "''" : 'NULL'
+      return `${target} IS ${cleared}`
+    }
+    if (newComment === '') {
+      return `${target} IS ''`
+    }
+    return `${target} IS '${this.escapeString(newComment)}'`
   }
 
   dropColumn(column: string) {
@@ -92,8 +102,9 @@ export abstract class ChangeBuilderBase {
   alterComments(items: SchemaItemChange[]): string[] {
     if (this.dialectData.disabledFeatures?.comments) return []
     return items.filter((i) => i.changeType === 'comment').map((item) => {
-      return this.setComment(item.columnName, item.newValue.toString())
-    })
+      const value = item.newValue == null ? null : String(item.newValue)
+      return this.setComment(item.columnName, value)
+    }).filter((sql) => !!sql)
   }
 
   get disabledAlter() {

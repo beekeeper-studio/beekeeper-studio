@@ -743,7 +743,7 @@ export default Vue.extend({
       await this.$store.dispatch('tabs/save', this.tab)
     },
     pendingChangesCount() {
-      this.tab.unsavedChanges = this.pendingChangesCount > 0
+      this.$set(this.tab, 'unsavedChanges', this.pendingChangesCount > 0)
     },
     minimalMode() {
       // Auto resize the columns when the tab is active (not hidden in the DOM)
@@ -767,6 +767,7 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
+    this.$set(this.tab, 'unsavedChanges', this.pendingChangesCount > 0)
     if (this.shouldInitialize) {
       await this.$nextTick()
       await this.initialize()
@@ -999,7 +1000,9 @@ export default Vue.extend({
         cssClass += ' primary-key';
       } else if (hasKeyDatas) {
         cssClass += ' foreign-key';
-      } else if (isNumericDataType(column.dataType) || isDateDataType(column.dataType)) {
+      }
+
+      if (isNumericDataType(column.dataType) || isDateDataType(column.dataType)) {
         cssClass += ' text-right'
       }
 
@@ -1017,6 +1020,7 @@ export default Vue.extend({
         fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
         isPK: isPK,
         binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+        bksType: this.$bksConfig.ui.tableTable.dataTypeColors ? column.bksField?.bksType : undefined,
       }
 
       const result = {
@@ -1582,9 +1586,9 @@ export default Vue.extend({
       }
 
       // reflect changes in the detail view
-      if (this.positionRowOf(cell.getRow()) === this.selectedRowIndex) {
+      if (this.selectedRow === cell.getRow() || this.positionRowOf(cell.getRow()) === this.selectedRowPosition) {
         cell.getRow().invalidateForeignCache(cell.getField())
-        this.updateJsonViewer()
+        this.updateJsonViewer({ row: cell.getRow() })
       }
 
       // Dont handle cell edit if made on a pending insert
@@ -1687,6 +1691,7 @@ export default Vue.extend({
       this.tabulator.addRow({}, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
+        this.updateJsonViewer({ row })
       })
     },
     async handlePasteAsNewRows() {
@@ -1811,6 +1816,15 @@ export default Vue.extend({
 
       // the component doesn't really matter, tabulator just throws if you don't pass one
       this.tabulator.modules.history.action('queuePendingDelete', nullComponent, rows)
+
+      if (this.selectedRow && (rows.includes(this.selectedRow) || this.selectedRow.getElement()?.classList?.contains('deleted'))) {
+        this.selectedRow = null
+        this.selectedRowPosition = null
+        this.selectedRowData = {}
+        this.selectedRowIndex = null
+        this.expandablePaths = []
+        this.updateJsonViewerSidebar()
+      }
     },
     removeRowsFromPendingDeletes(rows: RowComponent[]) {
       rows.forEach((row) => {
@@ -1830,6 +1844,7 @@ export default Vue.extend({
         updates: [],
         deletes: []
       }
+      this.$set(this.tab, 'unsavedChanges', false)
     },
     async copyToSql() {
       this.saveError = null
@@ -1907,6 +1922,11 @@ export default Vue.extend({
           if (replaceData) {
             const niceChanges = this.$pluralize('change', this.pendingChangesCount, true);
             this.$noty.success(`${niceChanges} successfully applied`)
+            this.selectedRow = null
+            this.selectedRowPosition = null
+            this.selectedRowData = {}
+            this.selectedRowIndex = null
+            this.expandablePaths = []
             this.tabulator.replaceData()
           }
 
@@ -1944,6 +1964,14 @@ export default Vue.extend({
     discardChanges() {
       this.saveError = null
       this.addedCol = false
+
+      if (this.selectedRow && this.pendingChanges.inserts.some(insert => insert.row === this.selectedRow)) {
+        this.selectedRow = null
+        this.selectedRowPosition = null
+        this.selectedRowData = {}
+        this.selectedRowIndex = null
+        this.expandablePaths = []
+      }
 
       this.pendingChanges.inserts.forEach(insert => this.tabulator.deleteRow(insert.row))
 
@@ -2205,18 +2233,21 @@ export default Vue.extend({
     positionRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
-    updateJsonViewer(options: { range?: RangeComponent } = {}) {
+    updateJsonViewer(options: { range?: RangeComponent, row?: RowComponent } = {}) {
       const range = options.range ?? this.tabulator.getRanges()[0]
-      const row = range.getRows()[0]
-      if (!row) {
+      const row = options.row ?? range?.getRows?.()?.[0]
+      if (!row || row.getElement()?.classList?.contains('deleted')) {
         this.selectedRow = null
         this.selectedRowPosition = null
         this.selectedRowData = {}
+        this.selectedRowIndex = null
+        this.expandablePaths = []
+        this.updateJsonViewerSidebar()
         return
       }
       const position = this.positionRowOf(row)
       const data = row.getData("withForeignData")
-      const cachedExpandablePaths = row.getExpandablePaths()
+      const cachedExpandablePaths = row.getExpandablePaths ? row.getExpandablePaths() : []
       this.selectedRow = row
 
       // Clean the data first
@@ -2226,17 +2257,17 @@ export default Vue.extend({
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
       this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
       this.expandablePaths = this.rawTableKeys
-        .filter((key) => !row.hasForeignData([key.fromColumn]))
+        .filter((key) => !row.hasForeignData || !row.hasForeignData([key.fromColumn]))
         .map((key) => ({
           path: [key.fromColumn],
           tableKey: key,
         }))
-      this.expandablePaths.push(...cachedExpandablePaths)
+      this.expandablePaths.push(...(cachedExpandablePaths || []))
       this.updateJsonViewerSidebar()
     },
     updateJsonViewerSidebar() {
       const updatedData: UpdateOptions = {
-        dataId: this.selectedRowIndex,
+        dataId: this.selectedRowIndex || (this.selectedRowPosition !== null ? String(this.selectedRowPosition) : -1),
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
         signs: this.selectedRowDataSigns,

@@ -49,7 +49,7 @@
   <i
     v-else
     class="material-icons item-icon"
-  >{{ tabTypeConfig?.icon || 'new_releases' }}</i>
+  >{{ tabTypeConfig?.icon || 'extension' }}</i>
 </template>
 <script lang="ts">
 import Vue, { PropType } from 'vue'

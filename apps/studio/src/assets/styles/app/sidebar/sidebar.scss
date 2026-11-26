@@ -147,7 +147,7 @@
       display: flex;
       align-items: center;
       border: var(--input-border);
-      border-radius: 4px;
+      border-radius: var(--input-border-radius);
       background: var(--input-bg);
 
       &:has(input:focus) {

@@ -1,4 +1,5 @@
 [tools]
 node = "24"
+pnpm = "12"
 python = "3.12"
-yarn = "1"
+jq = "1.7"
