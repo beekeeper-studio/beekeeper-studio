@@ -5,9 +5,9 @@ import type {
   RequestOptions,
   Request,
 } from "./types";
+import { CancelError } from "@beekeeperstudio/cli";
 import type { Reply } from "@beekeeperstudio/cli";
 import type { MessagePortMain as ElectronPort } from "electron";
-import { CancelError } from "./RpcServer";
 
 /**
  * Calls the methods a RpcServer registered, over any port that reaches

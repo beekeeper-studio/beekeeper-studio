@@ -21,10 +21,10 @@ bks create-tab query "select id, email from users order by id limit 5"
 A client has to be approved before it can use a connection. Until then every command fails with `NOT_APPROVED` and prints the command that asks for approval:
 
 ```bash
-bks request-approval --connection "Local Postgres" --timeout 0
+bks request-approval --connection "Local Postgres"
 ```
 
-`request-approval` opens a dialog in the window that holds the connection and waits for your answer, for as long as `--timeout` allows (30 seconds by default). If it gives up, the dialog closes and nothing is approved. Pass `--timeout 0` to wait until you answer. If the client is already approved it returns right away with the current access.
+`request-approval` opens a dialog in the window that holds the connection and waits for your answer. If `bks` is stopped while it waits, the dialog closes and nothing is approved. If the client is already approved it returns right away with the current access.
 
 The dialog shows the client's name and lets you choose what it may do:
 
@@ -97,8 +97,6 @@ Options:
   -v, --version                 Output the version number
   --socket <path>               Socket the app listens on. (default: the app's
                                 socket, env: BKS_CLI_SOCKET)
-  --timeout <ms>                Stop waiting for the app after this many
-                                milliseconds (0 waits forever) (default: 30000)
   -h, --help                    display help for command
 
 Commands:
@@ -165,7 +163,6 @@ bks saved-queries update 12 "select * from orders where total > 5000"
 
 | Option | Description |
 | ------ | ------- |
-| `--timeout <ms>` | Give up after this many milliseconds (default `30000`). `0` waits forever. Giving up during `request-approval` closes the dialog |
 | `--socket <path>` | Socket the app listens on. Defaults to `BKS_CLI_SOCKET` or the app's socket |
 | `-h, --help` | Prints usage |
 
@@ -362,8 +359,8 @@ Give your agent the CLI instead of a connection string. Add a note to the projec
 ```text
 The database for this project is open in Beekeeper Studio. Inspect it with
 `bks tables`, `bks structure <table>` and `bks query "<sql>"`. If a command
-fails with NOT_APPROVED, run the request-approval command it prints with
---timeout 0 and wait for me to approve it. If it fails with NOT_PERMITTED, tell me what it needs
+fails with NOT_APPROVED, run the request-approval command it prints and
+wait for me to approve it. If it fails with NOT_PERMITTED, tell me what it needs
 so I can reconnect and approve it again with that access.
 ```
 

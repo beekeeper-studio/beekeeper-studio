@@ -1,9 +1,9 @@
 import { state } from "@/handlers/handlerState";
-import type { CliAccess } from "@beekeeperstudio/cli";
+import type { Access } from "@beekeeperstudio/cli";
 
 export interface AuthorizedClientSnapshot {
   name: string;
-  access: CliAccess;
+  access: Access;
 }
 
 export interface ICliServerHandlers {

@@ -387,7 +387,7 @@ import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matche
 import { wait } from '@/shared/lib/wait'
 import rawLog from '@bksLogger'
 import { CliError } from '@beekeeperstudio/cli'
-import type { CliCreateTabRequest } from '@beekeeperstudio/cli'
+import type { CreateTabRequest } from '@beekeeperstudio/cli'
 
 const log = rawLog.scope('CoreTabs.vue')
 
@@ -1315,7 +1315,7 @@ export default Vue.extend({
 
       this.addTab(tab);
     },
-    async createTabFromCli(params: CliCreateTabRequest) {
+    async createTabFromCli(params: CreateTabRequest) {
       const tab = await this.createTab(this.queryConfig)
       if (params.sql) {
         await this.updateTab({ ...tab, unsavedQueryText: params.sql })

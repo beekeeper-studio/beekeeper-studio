@@ -1,7 +1,6 @@
 import {
   Argument,
   Command,
-  InvalidArgumentError,
   Option,
   OutputConfiguration,
 } from "@commander-js/extra-typings";
@@ -27,7 +26,6 @@ import {
   isConnectError,
   isCliError,
   defaultCliSocketPath,
-  DEFAULT_CLI_TIMEOUT,
 } from "@beekeeperstudio/cli";
 import { detectClientName } from "./clientName";
 import { toMarkdown } from "./markdown";
@@ -61,22 +59,6 @@ export function createProgram(options: {
         .env("BKS_CLI_SOCKET")
         .default(defaultCliSocketPath(), "the app's socket"),
     )
-    .addOption(
-      new Option(
-        "--timeout <ms>",
-        "Stop waiting for the app after this many milliseconds (0 waits forever)",
-      )
-        .argParser((value) => {
-          const timeout = Number(value);
-          if (!Number.isInteger(timeout) || timeout < 0) {
-            throw new InvalidArgumentError(
-              "Expected a whole number of milliseconds.",
-            );
-          }
-          return timeout;
-        })
-        .default(DEFAULT_CLI_TIMEOUT),
-    )
     .addHelpText(
       "after",
       `
@@ -99,7 +81,6 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     const globals = program.opts();
     client = new Client({
       socketPath: globals.socket,
-      timeout: globals.timeout,
       clientName: options.clientName ?? detectClientName(),
     });
     client.on("error", (error) => {

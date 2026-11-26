@@ -8,12 +8,12 @@ import { CliCallContext, connectionDisplayName, formatQueryResult, UNKNOWN_CLIEN
 import { AuthorizedClient } from '@/services/cliServer/AuthorizedClient'
 import { UtilityApi } from '@/services/UtilityApi'
 import {
-  CLI_MAX_QUERY_ROWS,
-  CLI_METHODS,
+  MAX_QUERY_ROWS,
+  METHODS,
   ApprovalRequester,
-  CliAccess,
+  Access,
   CliError,
-  CliCreateTabRequest,
+  CreateTabRequest,
 } from '@beekeeperstudio/cli'
 import { serializeBigInt } from '@/services/plugin/utils'
 
@@ -37,9 +37,9 @@ function openConnection(id: string, client: SqliteClient, config: Record<string,
   return { id, client, database: ':memory:', config: config as any }
 }
 
-const READ_ONLY_ACCESS: CliAccess = { queryTypes: ['select'], savedQueriesRead: false, savedQueriesWrite: false, openTabs: true }
+const READ_ONLY_ACCESS: Access = { queryTypes: ['select'], savedQueriesRead: false, savedQueriesWrite: false, openTabs: true }
 
-function access(patch: Partial<CliAccess> = {}): CliAccess {
+function access(patch: Partial<Access> = {}): Access {
   return { ...READ_ONLY_ACCESS, ...patch }
 }
 
@@ -52,7 +52,7 @@ function context(name = 'Claude Code'): CliCallContext & { hangUp(): void } {
  * `answer` is what the user picks in the approval dialog. Unless a test passes
  * `approved: false`, the default clients also start out approved with it.
  */
-function backendFor(connections: FakeConnection[], answer: CliAccess | null = READ_ONLY_ACCESS): FakeParts {
+function backendFor(connections: FakeConnection[], answer: Access | null = READ_ONLY_ACCESS): FakeParts {
   const asked: ApprovalRequester[] = []
   return {
     asked,
@@ -71,10 +71,10 @@ function backendFor(connections: FakeConnection[], answer: CliAccess | null = RE
 interface FakeParts {
   /** Every approval dialog shown. */
   asked: ApprovalRequester[]
-  answer: CliAccess | null
+  answer: Access | null
   openConnections(): FakeConnection[]
-  askRendererForAccess(connectionState: State, request: ApprovalRequester, signal: AbortSignal): Promise<CliAccess | null>
-  askRendererToCreateTab(connectionState: State, request: CliCreateTabRequest): Promise<number>
+  askRendererForAccess(connectionState: State, request: ApprovalRequester, signal: AbortSignal): Promise<Access | null>
+  askRendererToCreateTab(connectionState: State, request: CreateTabRequest): Promise<number>
   askRendererToSwitchTab(connectionState: State, tabId: number): Promise<void>
 }
 
@@ -106,7 +106,7 @@ class TestUtilityApi extends UtilityApi {
     return this.fake.askRendererForAccess(connectionState, request, signal)
   }
 
-  protected askRendererToCreateTab(connectionState: State, request: CliCreateTabRequest) {
+  protected askRendererToCreateTab(connectionState: State, request: CreateTabRequest) {
     return this.fake.askRendererToCreateTab(connectionState, request)
   }
 
@@ -248,7 +248,7 @@ describe('UtilityApi', () => {
     })
 
     it('shows one dialog for requests that arrive while it is open', async () => {
-      let answer: (access: CliAccess) => void = () => undefined
+      let answer: (access: Access) => void = () => undefined
       const fake = backendFor([primary])
       fake.askRendererForAccess = async (_connection, request) => {
         fake.asked.push(request)
@@ -263,7 +263,7 @@ describe('UtilityApi', () => {
     })
 
     it('closes the dialog once every caller waiting on it has hung up', async () => {
-      let answer: (access: CliAccess) => void = () => undefined
+      let answer: (access: Access) => void = () => undefined
       let dialog: AbortSignal | null = null
       const fake = backendFor([primary])
       fake.askRendererForAccess = async (_connection, request, signal) => {
@@ -381,7 +381,7 @@ describe('UtilityApi', () => {
 
   describe('openTab', () => {
     function recording() {
-      const created: { connectionState: State; request: CliCreateTabRequest }[] = []
+      const created: { connectionState: State; request: CreateTabRequest }[] = []
       const methods = new TestUtilityApi({
         ...backend,
         askRendererToCreateTab: async (connectionState, request) => {
@@ -400,7 +400,7 @@ describe('UtilityApi', () => {
     })
 
     it('needs permission to open tabs', async () => {
-      const created: CliCreateTabRequest[] = []
+      const created: CreateTabRequest[] = []
       const api = new TestUtilityApi({
         ...backendFor([primary], access({ openTabs: false })),
         askRendererToCreateTab: async (_connectionState, request) => {
@@ -433,7 +433,7 @@ describe('UtilityApi', () => {
         { id: 1, email: 'a@example.com', name: 'Ann' },
         { id: 2, email: 'b@example.com', name: null },
       ])
-      expect(first).toMatchObject({ rowCount: 2, totalRowCount: 2, truncated: false, maxRows: CLI_MAX_QUERY_ROWS })
+      expect(first).toMatchObject({ rowCount: 2, totalRowCount: 2, truncated: false, maxRows: MAX_QUERY_ROWS })
     })
 
     it('keeps duplicate column names apart', async () => {
@@ -449,14 +449,14 @@ describe('UtilityApi', () => {
 
     it('caps results at the row limit', async () => {
       const extra = 5
-      const sql = `with recursive seq(n) as (select 1 union all select n + 1 from seq where n < ${CLI_MAX_QUERY_ROWS + extra}) select n from seq`
+      const sql = `with recursive seq(n) as (select 1 union all select n + 1 from seq where n < ${MAX_QUERY_ROWS + extra}) select n from seq`
       const result = await call(new TestUtilityApi(backend).runQuery({ sql }))
       const [first] = result.results
-      expect(first.rowCount).toBe(CLI_MAX_QUERY_ROWS)
-      expect(first.rows).toHaveLength(CLI_MAX_QUERY_ROWS)
-      expect(first.totalRowCount).toBe(CLI_MAX_QUERY_ROWS + extra)
+      expect(first.rowCount).toBe(MAX_QUERY_ROWS)
+      expect(first.rows).toHaveLength(MAX_QUERY_ROWS)
+      expect(first.totalRowCount).toBe(MAX_QUERY_ROWS + extra)
       expect(first.truncated).toBe(true)
-      expect(first.rows[CLI_MAX_QUERY_ROWS - 1].n).toBe(CLI_MAX_QUERY_ROWS)
+      expect(first.rows[MAX_QUERY_ROWS - 1].n).toBe(MAX_QUERY_ROWS)
     }, 30000)
 
     it('serializes binary and large integer values', async () => {
@@ -619,7 +619,7 @@ describe('saved queries', () => {
 describe('getCliApis', () => {
   it('has a command for every CLI method', () => {
     const commands = new UtilityApi().getCliApis()
-    expect(commands.map((command) => command.name)).toEqual([...CLI_METHODS])
+    expect(commands.map((command) => command.name)).toEqual([...METHODS])
     for (const command of commands) {
       expect(typeof command.func).toBe('function')
     }

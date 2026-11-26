@@ -1,5 +1,6 @@
 import { RpcClient } from "@/rpc/RpcClient";
-import { CancelError, RpcServer } from "@/rpc/RpcServer";
+import { CancelError } from "@beekeeperstudio/cli";
+import { RpcServer } from "@/rpc/RpcServer";
 import { afterEach, beforeEach, describe, it } from "vitest";
 
 describe("Basic RPC Tests", () => {

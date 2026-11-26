@@ -7,8 +7,8 @@ import {
   Option,
 } from "@commander-js/extra-typings";
 import {
-  CliEntityType,
-  CliErrorPayload,
+  EntityType,
+  ErrorPayload,
   isCliError,
 } from "@beekeeperstudio/cli";
 
@@ -28,13 +28,13 @@ export const ENTITY_TYPE_ALIASES = {
   functions: "routine",
   procedure: "routine",
   procedures: "routine",
-} as const satisfies Record<string, CliEntityType>;
+} as const satisfies Record<string, EntityType>;
 
 export type EntityTypeAlias = keyof typeof ENTITY_TYPE_ALIASES;
 
 export function resolveEntityTypes(
   aliases: EntityTypeAlias[] | undefined,
-): CliEntityType[] | undefined {
+): EntityType[] | undefined {
   if (!aliases) {
     return undefined;
   }
@@ -159,7 +159,7 @@ export function notRunningMessage(socketPath: string): string {
   ].join("\n");
 }
 
-export function formatErrorPayload(error: CliErrorPayload): string {
+export function formatErrorPayload(error: ErrorPayload): string {
   const lines = [`Error (${error.code}): ${error.message}`];
   if (error.hint) {
     lines.push(error.hint);

@@ -16,12 +16,12 @@ import {
   connectionDisplayName,
 } from "./cliServer/commands";
 import {
-  CLI_QUERY_PERMISSIONS,
-  CLI_WRITE_QUERY_PERMISSIONS,
-  CliAccess,
+  QUERY_PERMISSIONS,
+  WRITE_QUERY_PERMISSIONS,
+  Access,
   OpenConnection,
-  CliSavedQuery,
-  CliSavedQuerySummary,
+  SavedQuery,
+  SavedQuerySummary,
   CreateSavedQueryParams,
   RequestApprovalParams,
   RequestApprovalResult,
@@ -30,15 +30,15 @@ import {
   SavedQueryParams,
   SavedQueryResult,
   UpdateSavedQueryParams,
-  CLI_ENTITY_TYPES,
-  CLI_TAB_TYPES,
-  CliCreateTabRequest,
+  ENTITY_TYPES,
+  TAB_TYPES,
+  CreateTabRequest,
   Entity,
   CliError,
   ConnectionsParams,
   ConnectionsResult,
-  CreateTabParams,
-  CreateTabResult,
+  OpenTabParams,
+  OpenTabResult,
   EntitiesParams,
   EntitiesResult,
   QueryParams,
@@ -70,7 +70,7 @@ const PERMISSION_LABELS: Record<Permission, string> = {
   savedQueriesWrite: "write saved queries",
 };
 
-function toSavedQuerySummary(query: FavoriteQuery): CliSavedQuerySummary {
+function toSavedQuerySummary(query: FavoriteQuery): SavedQuerySummary {
   return {
     id: query.id,
     title: query.title,
@@ -82,7 +82,7 @@ function toSavedQuerySummary(query: FavoriteQuery): CliSavedQuerySummary {
 
 /** An open approval dialog and how many callers still wait on it. */
 interface PendingApproval {
-  answer: Promise<CliAccess | null>;
+  answer: Promise<Access | null>;
   cancel: AbortController;
   waiting: number;
 }
@@ -158,15 +158,15 @@ export class UtilityApi {
     context: CliCallContext = NO_CONTEXT,
   ): Promise<EntitiesResult> {
     for (const type of params.entityTypes || []) {
-      if (!(CLI_ENTITY_TYPES as readonly string[]).includes(type)) {
+      if (!(ENTITY_TYPES as readonly string[]).includes(type)) {
         throw new CliError("USAGE", `Unknown entity type "${type}".`, {
-          hint: `Entity types: ${CLI_ENTITY_TYPES.join(", ")}.`,
+          hint: `Entity types: ${ENTITY_TYPES.join(", ")}.`,
         });
       }
     }
     const state = await this.findState(context, params.connection);
     const warnings: string[] = [];
-    const types = params.entityTypes || [...CLI_ENTITY_TYPES];
+    const types = params.entityTypes || [...ENTITY_TYPES];
     const filter = { schema: params.schema ?? null };
     const all: Entity[] = [];
     if (types.includes("table")) {
@@ -321,7 +321,7 @@ export class UtilityApi {
       );
     }
     const canWrite = access.queryTypes.some((type) =>
-      CLI_WRITE_QUERY_PERMISSIONS.includes(type),
+      WRITE_QUERY_PERMISSIONS.includes(type),
     );
     let results: NgQueryResult[];
     try {
@@ -369,19 +369,19 @@ export class UtilityApi {
   }
 
   async openTab(
-    params: CreateTabParams,
+    params: OpenTabParams,
     context: CliCallContext = NO_CONTEXT,
-  ): Promise<CreateTabResult> {
+  ): Promise<OpenTabResult> {
     const tab = params.tab;
-    if (!(CLI_TAB_TYPES as readonly string[]).includes(tab)) {
+    if (!(TAB_TYPES as readonly string[]).includes(tab)) {
       throw new CliError("USAGE", `Unknown tab type "${tab}".`, {
-        hint: `Tab types: ${CLI_TAB_TYPES.join(", ")}.`,
+        hint: `Tab types: ${TAB_TYPES.join(", ")}.`,
       });
     }
     const state = await this.findState(context, params.connection);
     const access = state.cliClients.get(context.client.name).access;
     this.require(access, "openTabs", context);
-    const request: CliCreateTabRequest = { tab, sql: params.sql };
+    const request: CreateTabRequest = { tab, sql: params.sql };
     const tabId = await this.askRendererToCreateTab(state, request);
     return { tabId };
   }
@@ -513,15 +513,15 @@ export class UtilityApi {
           // The renderer's answer may hold unknown permissions, or write
           // permissions on a read only connection.
           const queryTypes = (access.queryTypes || []).filter((type) => {
-            if (!(CLI_QUERY_PERMISSIONS as readonly string[]).includes(type)) {
+            if (!(QUERY_PERMISSIONS as readonly string[]).includes(type)) {
               return false;
             }
             return !(
               selected.readOnlyMode &&
-              CLI_WRITE_QUERY_PERMISSIONS.includes(type)
+              WRITE_QUERY_PERMISSIONS.includes(type)
             );
           });
-          const granted: CliAccess = {
+          const granted: Access = {
             queryTypes: [...new Set(queryTypes)],
             savedQueriesRead: !!access.savedQueriesRead,
             savedQueriesWrite: !!access.savedQueriesWrite,
@@ -547,7 +547,7 @@ export class UtilityApi {
         "ACCESS_DENIED",
         `Access to "${selected.name}" was denied for ${clientName}.`,
         {
-          hint: "Run `bks request-approval --timeout 0` again to ask again.",
+          hint: "Run `bks request-approval` again to ask again.",
         },
       );
     }
@@ -558,7 +558,7 @@ export class UtilityApi {
   private async waitForApproval(
     dialog: PendingApproval,
     signal: AbortSignal,
-  ): Promise<CliAccess | null> {
+  ): Promise<Access | null> {
     dialog.waiting += 1;
     let onAbort: () => void = () => undefined;
     const hungUp = new Promise<never>((_resolve, reject) => {
@@ -610,7 +610,7 @@ export class UtilityApi {
     return query;
   }
 
-  private async loadSavedQuery(id: number): Promise<CliSavedQuery> {
+  private async loadSavedQuery(id: number): Promise<SavedQuery> {
     const query = await this.findSavedQuery(id);
     return { ...toSavedQuerySummary(query), text: query.text };
   }
@@ -624,7 +624,7 @@ export class UtilityApi {
   }
 
   private require(
-    access: CliAccess,
+    access: Access,
     permission: Permission,
     context: CliCallContext,
   ): void {
@@ -642,7 +642,7 @@ export class UtilityApi {
     connectionState: State,
     request: ApprovalRequester,
     signal: AbortSignal,
-  ): Promise<CliAccess | null> {
+  ): Promise<Access | null> {
     try {
       return await this.askRenderer(
         connectionState,
@@ -660,7 +660,7 @@ export class UtilityApi {
 
   protected async askRendererToCreateTab(
     connectionState: State,
-    request: CliCreateTabRequest,
+    request: CreateTabRequest,
   ): Promise<number> {
     return await this.askRenderer(connectionState, "cli/createTab", {
       ...request,
@@ -686,7 +686,7 @@ export class UtilityApi {
         "NOT_APPROVED",
         `${context.client.name} is not approved to use this connection.`,
         {
-          hint: `Run \`bks request-approval --connection "${selected.name}" --timeout 0\`, then approve it in Beekeeper Studio.`,
+          hint: `Run \`bks request-approval --connection "${selected.name}"\`, then approve it in Beekeeper Studio.`,
         },
       );
     }

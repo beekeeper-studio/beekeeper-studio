@@ -9,9 +9,9 @@
  */
 
 /** Hard cap on the number of rows a single `runQuery` result returns. */
-export const CLI_MAX_QUERY_ROWS = 20000;
+export const MAX_QUERY_ROWS = 20000;
 
-export const CLI_METHODS = [
+export const METHODS = [
   "getConnections",
   "getSchemas",
   "getEntities",
@@ -26,26 +26,26 @@ export const CLI_METHODS = [
   "requestApproval",
 ] as const;
 
-export type CliMethodName = (typeof CLI_METHODS)[number];
+export type MethodName = (typeof METHODS)[number];
 
-export const CLI_ENTITY_TYPES = [
+export const ENTITY_TYPES = [
   "table",
   "view",
   "materialized-view",
   "routine",
 ] as const;
 
-export type CliEntityType = (typeof CLI_ENTITY_TYPES)[number];
+export type EntityType = (typeof ENTITY_TYPES)[number];
 
-export const CLI_TAB_TYPES = ["query"] as const;
+export const TAB_TYPES = ["query"] as const;
 
-export type CliTabType = (typeof CLI_TAB_TYPES)[number];
+export type TabType = (typeof TAB_TYPES)[number];
 
 /**
  * Statement kinds a client can be allowed to run. Anything that is not one of
  * the named kinds (INSERT, CREATE, DROP, ...) needs `anything`.
  */
-export const CLI_QUERY_PERMISSIONS = [
+export const QUERY_PERMISSIONS = [
   "select",
   "explain-analyze",
   "update",
@@ -54,10 +54,10 @@ export const CLI_QUERY_PERMISSIONS = [
   "anything",
 ] as const;
 
-export type CliQueryPermission = (typeof CLI_QUERY_PERMISSIONS)[number];
+export type QueryPermission = (typeof QUERY_PERMISSIONS)[number];
 
 /** The query permissions that can change data or schema; a read only connection never grants them. */
-export const CLI_WRITE_QUERY_PERMISSIONS: readonly CliQueryPermission[] = [
+export const WRITE_QUERY_PERMISSIONS: readonly QueryPermission[] = [
   "update",
   "delete",
   "alter",
@@ -65,15 +65,15 @@ export const CLI_WRITE_QUERY_PERMISSIONS: readonly CliQueryPermission[] = [
 ];
 
 /** What the user approved a client to do on one connection. Schemas and structure are always allowed. */
-export interface CliAccess {
-  queryTypes: CliQueryPermission[];
+export interface Access {
+  queryTypes: QueryPermission[];
   savedQueriesRead: boolean;
   savedQueriesWrite: boolean;
   openTabs: boolean;
 }
 
 /** Who is calling, as the bks command detected it. */
-export interface CliClientInfo {
+export interface ClientInfo {
   name: string;
 }
 
@@ -103,7 +103,7 @@ export interface EntitiesParams {
   connection?: string;
   schema?: string;
   /** Defaults to every type. */
-  entityTypes?: CliEntityType[];
+  entityTypes?: EntityType[];
 }
 
 export interface EntitiesResult {
@@ -122,7 +122,7 @@ export interface StructureParams {
 export interface StructureResult {
   schema?: string;
   name: string;
-  entityType: CliEntityType;
+  entityType: EntityType;
   description: string | null;
   columns: Column[];
   primaryKeys: string[];
@@ -140,7 +140,7 @@ export interface StructureResult {
 
 export interface OpenTabParams {
   connection?: string;
-  tab: CliTabType;
+  tab: TabType;
   /** SQL to prefill a query tab with. */
   sql?: string;
 }
@@ -170,14 +170,14 @@ export interface RequestApprovalParams {
 export interface RequestApprovalResult {
   /** False when the client was approved before and no dialog was shown. */
   newlyApproved: boolean;
-  access: CliAccess;
+  access: Access;
 }
 
 export interface SavedQueriesParams {
   connection?: string;
 }
 
-export interface CliSavedQuerySummary {
+export interface SavedQuerySummary {
   id: number;
   title: string;
   excerpt: string;
@@ -185,12 +185,12 @@ export interface CliSavedQuerySummary {
   updatedAt: string | null;
 }
 
-export interface CliSavedQuery extends CliSavedQuerySummary {
+export interface SavedQuery extends SavedQuerySummary {
   text: string;
 }
 
 export interface SavedQueriesResult {
-  savedQueries: CliSavedQuerySummary[];
+  savedQueries: SavedQuerySummary[];
 }
 
 export interface SavedQueryParams {
@@ -199,7 +199,7 @@ export interface SavedQueryParams {
 }
 
 export interface SavedQueryResult {
-  savedQuery: CliSavedQuery;
+  savedQuery: SavedQuery;
 }
 
 export interface CreateSavedQueryParams {
@@ -216,21 +216,21 @@ export interface UpdateSavedQueryParams {
 }
 
 /** What the renderer is asked to open. */
-export interface CliCreateTabRequest {
-  tab: CliTabType;
+export interface CreateTabRequest {
+  tab: TabType;
   sql?: string;
 }
 
-export interface CliRequest {
+export interface Request {
   /** Missing from clients older than ids on the wire. */
   id?: string;
-  method: CliMethodName;
+  method: MethodName | "$/cancel";
   params: unknown;
   /** Missing from clients older than per-client approval. */
-  client?: CliClientInfo;
+  client?: ClientInfo;
 }
 
-export type CliErrorCode =
+export type ErrorCode =
   | "USAGE"
   | "NOT_RUNNING"
   | "NO_OPEN_CONNECTIONS"
@@ -245,8 +245,8 @@ export type CliErrorCode =
   | "QUERY_FAILED"
   | "INTERNAL";
 
-export interface CliErrorPayload {
-  code: CliErrorCode;
+export interface ErrorPayload {
+  code: ErrorCode;
   message: string;
   /** What to do about it. Written for whoever (or whatever) reads the terminal. */
   hint?: string;
@@ -260,19 +260,30 @@ export type Reply = {
   data?: unknown;
   error?: string;
   errorName?: string;
-  errorCode?: CliErrorCode;
+  errorCode?: ErrorCode;
   errorHint?: string;
   errorDetail?: unknown;
   stack?: string;
 }
 
+/** Thrown when a request was cancelled before it finished. */
+export class CancelError extends Error {
+  constructor(
+    readonly requestId: string,
+    message = "The request was cancelled.",
+  ) {
+    super(message);
+    this.name = "CancelError";
+  }
+}
+
 export class CliError extends Error {
-  code: CliErrorCode;
+  code: ErrorCode;
   hint?: string;
   details?: unknown;
 
   constructor(
-    code: CliErrorCode,
+    code: ErrorCode,
     message: string,
     options: { hint?: string; details?: unknown } = {},
   ) {
@@ -283,8 +294,8 @@ export class CliError extends Error {
     this.details = options.details;
   }
 
-  toPayload(): CliErrorPayload {
-    const payload: CliErrorPayload = { code: this.code, message: this.message };
+  toPayload(): ErrorPayload {
+    const payload: ErrorPayload = { code: this.code, message: this.message };
     if (this.hint) payload.hint = this.hint;
     if (this.details !== undefined) payload.details = this.details;
     return payload;
@@ -311,7 +322,7 @@ export interface OpenConnection {
 export interface Entity {
   schema?: string;
   name: string;
-  entityType: CliEntityType;
+  entityType: EntityType;
   /** Routines only: function, procedure, ... */
   routineType?: string;
   returnType?: string;

@@ -18,9 +18,9 @@ import { getConnectedStates, newState, state, State } from "@/handlers/handlerSt
 import { createProgram } from "@/cli/program";
 import {
   ApprovalRequester,
-  CliAccess,
+  Access,
   CliError,
-  CliCreateTabRequest,
+  CreateTabRequest,
 } from "@beekeeperstudio/cli";
 
 const socketPath =
@@ -40,10 +40,10 @@ interface FakeParts {
     connectionState: State,
     request: ApprovalRequester,
     signal: AbortSignal,
-  ): Promise<CliAccess | null>;
+  ): Promise<Access | null>;
   askRendererToCreateTab(
     connectionState: State,
-    request: CliCreateTabRequest,
+    request: CreateTabRequest,
   ): Promise<number>;
   askRendererToSwitchTab(
     connectionState: State,
@@ -77,7 +77,7 @@ class TestUtilityApi extends UtilityApi {
 
   protected askRendererToCreateTab(
     connectionState: State,
-    request: CliCreateTabRequest,
+    request: CreateTabRequest,
   ) {
     return this.fake.askRendererToCreateTab(connectionState, request);
   }
@@ -87,7 +87,7 @@ class TestUtilityApi extends UtilityApi {
   }
 }
 
-const APPROVED: CliAccess = {
+const APPROVED: Access = {
   queryTypes: ["select"],
   savedQueriesRead: false,
   savedQueriesWrite: false,
@@ -105,7 +105,7 @@ const approvals = {
 let client: SqliteClient;
 let server: CliServer;
 let requests = 0;
-const created: CliCreateTabRequest[] = [];
+const created: CreateTabRequest[] = [];
 
 beforeAll(async () => {
   client = new SqliteClient(
@@ -220,18 +220,6 @@ describe("bks approval", () => {
       'bks request-approval --connection "Local Dev"',
     );
     expect(approvals.asked.some((a) => a.clientName === "Fresh Agent")).toBe(false);
-  });
-
-  it("closes the approval dialog when it gives up after --timeout", async () => {
-    approvals.delayMs = 300;
-    const result = await bks("request-approval --timeout 50", "Slow Agent");
-    expect(result.error?.message).toContain("No reply from Beekeeper Studio after 50ms.");
-    await vi.waitFor(() => expect(approvals.dialogs.at(-1)?.aborted).toBe(true));
-
-    // the user approves the stale dialog anyway
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    const again = await bks("schemas", "Slow Agent");
-    expect(again.error?.message).toContain("Error (NOT_APPROVED)");
   });
 
   it("answers r as an alias of request-approval", async () => {

@@ -1,10 +1,10 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import fs from "fs";
 import net from "net";
 import os from "os";
 import path from "path";
 import { Client } from "../src/Client";
-import { OpenConnection } from "../src/protocol";
+import { CancelError, OpenConnection } from "../src/protocol";
 
 let server: net.Server | null = null;
 let dir: string | null = null;
@@ -55,25 +55,40 @@ describe("Client communication", () => {
   });
 });
 
-describe("Client timeout", () => {
-  it("hangs up so the app can stop waiting too", async () => {
+describe("Client cancel", () => {
+  it("sends a cancel notification and rejects when the app replies", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-cli-"));
     const socketPath = path.join(dir, "cli.sock");
-    let hungUp: () => void = () => undefined;
-    const closed = new Promise<void>((resolve) => {
-      hungUp = resolve;
-    });
+    const pending = new Map<string, net.Socket>();
     server = net.createServer((socket) => {
-      socket.resume();
-      socket.on("close", hungUp);
+      socket.once("data", (chunk) => {
+        const message = JSON.parse(chunk.toString());
+        if (message.method !== "$/cancel") {
+          pending.set(message.id, socket);
+          return;
+        }
+        expect(message.id).toBeUndefined();
+        const reply = {
+          id: message.params.id,
+          type: "error",
+          error: "The request was cancelled.",
+          errorName: "CancelError",
+        };
+        pending.get(message.params.id)?.end(JSON.stringify(reply) + "\n");
+        socket.end();
+      });
     });
     await new Promise<void>((resolve) => server!.listen(socketPath, resolve));
 
-    const client = new Client({ socketPath, timeout: 50 });
-    client.on("error", () => undefined);
-    await expect(client.getConnections()).rejects.toThrow(
-      "No reply from Beekeeper Studio after 50ms.",
-    );
-    await closed;
+    const client = new Client({ socketPath });
+    const controller = new AbortController();
+    const request = client.getConnections({
+      id: "id-123",
+      signal: controller.signal,
+    });
+    await vi.waitFor(() => expect(pending.has("id-123")).toBe(true));
+    controller.abort();
+
+    await expect(request).rejects.toBeInstanceOf(CancelError);
   });
 });

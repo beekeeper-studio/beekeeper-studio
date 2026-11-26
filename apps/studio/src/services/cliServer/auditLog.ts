@@ -1,11 +1,11 @@
 import { redactMessage } from '@/lib/log/redact'
-import { CliRequest, Reply } from '@beekeeperstudio/cli'
+import { Request, Reply } from '@beekeeperstudio/cli'
 import { clientInfo } from './commands'
 
 /** What the socket server reports after answering one request. */
 export interface CliRequestEvent {
   /** Null when the request line was not valid JSON. */
-  request: CliRequest | null
+  request: Request | null
   response: Reply
   durationMs: number
   responseBytes: number
@@ -73,7 +73,7 @@ export function summarizeResult(method: string | null, result: any): Record<stri
   }
 }
 
-function auditParams(request: CliRequest | null): Record<string, unknown> | null {
+function auditParams(request: Request | null): Record<string, unknown> | null {
   if (!request?.params || typeof request.params !== 'object') return null
   const params: Record<string, unknown> = { ...request.params }
   if (typeof params.sql === 'string' && params.sql.length > CLI_AUDIT_SQL_MAX_CHARS) {

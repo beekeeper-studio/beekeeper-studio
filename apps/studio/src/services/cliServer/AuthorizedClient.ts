@@ -1,8 +1,8 @@
-import type { CliAccess } from "@beekeeperstudio/cli";
+import type { Access } from "@beekeeperstudio/cli";
 
 export class AuthorizedClient {
   constructor(
     readonly name: string,
-    readonly access: CliAccess
+    readonly access: Access
   ) {}
 }

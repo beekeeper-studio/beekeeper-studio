@@ -40,10 +40,10 @@ import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import CliAccessForm from "./CliAccessForm.vue";
 import { CliError } from "@beekeeperstudio/cli";
-import type { CliAccess } from "@beekeeperstudio/cli";
+import type { Access } from "@beekeeperstudio/cli";
 import type { ApprovalRequester } from "@beekeeperstudio/cli";
 
-function defaultAccess(): CliAccess {
+function defaultAccess(): Access {
   return {
     queryTypes: ["select"],
     savedQueriesRead: false,
@@ -62,7 +62,7 @@ export default Vue.extend({
       access: defaultAccess(),
       denied: false,
       aborted: false,
-      resolvers: null as PromiseWithResolvers<CliAccess> | null,
+      resolvers: null as PromiseWithResolvers<Access> | null,
     };
   },
   computed: {
@@ -74,7 +74,7 @@ export default Vue.extend({
     requestApproval(
       params: ApprovalRequester,
       signal: AbortSignal,
-    ): Promise<CliAccess> {
+    ): Promise<Access> {
       if (this.requester) {
         throw new Error(
           "Cannot request access while another request is pending",

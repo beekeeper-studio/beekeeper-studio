@@ -202,6 +202,25 @@ describe("CliServer", () => {
     await hungUp;
   });
 
+  it("cancels a running request on a $/cancel notification", async () => {
+    const server = createServer();
+    server.register("method1", () => new Promise(() => {}));
+    await server.start();
+
+    const reply = send({ id: "id-123", method: "method1" });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await sendRawString(
+      JSON.stringify({ method: "$/cancel", params: { id: "id-123" } }) + "\n",
+    );
+
+    await expect(reply).resolves.toEqual({
+      id: "id-123",
+      type: "error",
+      error: "The request was cancelled.",
+      errorName: "CancelError",
+    });
+  });
+
   it("refuses to start without a socket path", async () => {
     const server = new CliServer({ socketPath: "" });
     const error = await server.start().then(

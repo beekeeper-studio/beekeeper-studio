@@ -1,18 +1,8 @@
 import { uuidv4 } from "@/lib/uuid";
 import type { MessagePortMain as ElectronPort } from "electron";
+import { CancelError } from "@beekeeperstudio/cli";
 import type { Reply } from "@beekeeperstudio/cli";
 import type { Method, Notification, Request } from "./types";
-
-/** Thrown by RpcServer.call when the request was cancelled before it finished. */
-export class CancelError extends Error {
-  constructor(
-    readonly requestId: string,
-    message = "The request was cancelled.",
-  ) {
-    super(message);
-    this.name = "CancelError";
-  }
-}
 
 /** Thrown by RpcServer.call when nothing is registered under the name. */
 export class UnknownMethodError extends Error {

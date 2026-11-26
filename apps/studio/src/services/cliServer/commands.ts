@@ -8,25 +8,25 @@ import {
   TableColumn,
 } from "@/lib/db/models";
 import {
-  CLI_MAX_QUERY_ROWS,
+  MAX_QUERY_ROWS,
   BinaryValue,
   Column,
   Entity,
-  CliEntityType,
+  EntityType,
   StatementResult,
-  CliClientInfo,
+  ClientInfo,
 } from "@beekeeperstudio/cli";
 
 /** Who made a request, and whether they are still waiting for the answer. */
 export interface CliCallContext {
-  client: CliClientInfo;
+  client: ClientInfo;
   /** Aborted when the caller hangs up, e.g. after its timeout. */
   signal: AbortSignal;
 }
 
 export const UNKNOWN_CLIENT_NAME = "Unknown client";
 
-export function clientInfo(raw: unknown): CliClientInfo {
+export function clientInfo(raw: unknown): ClientInfo {
   const name =
     typeof (raw as any)?.name === "string"
       ? (raw as any).name.trim().slice(0, 100)
@@ -35,7 +35,7 @@ export function clientInfo(raw: unknown): CliClientInfo {
 }
 
 export const CHANGE_ACCESS_HINT =
-  "Access is chosen when the client is approved. Reconnect in Beekeeper Studio, then run `bks request-approval --timeout 0` to choose again.";
+  "Access is chosen when the client is approved. Reconnect in Beekeeper Studio, then run `bks request-approval` to choose again.";
 
 const FILE_BASED_TYPES = ["sqlite", "duckdb", "libsql"];
 
@@ -74,7 +74,7 @@ export async function attempt<T>(
 
 export function toEntity(
   entity: DatabaseEntity,
-  entityType: CliEntityType,
+  entityType: EntityType,
 ): Entity {
   return { schema: entity.schema || undefined, name: entity.name, entityType };
 }
@@ -132,7 +132,7 @@ export function formatQueryResult(result: NgQueryResult): StatementResult {
     fields.map((field) => field.name ?? field.id),
   );
 
-  const limited = rows.slice(0, CLI_MAX_QUERY_ROWS);
+  const limited = rows.slice(0, MAX_QUERY_ROWS);
   const mapped = limited.map((row) => {
     const out: Record<string, unknown> = {};
     fields.forEach((field, index) => {
@@ -152,8 +152,8 @@ export function formatQueryResult(result: NgQueryResult): StatementResult {
     totalRowCount: clientTruncated
       ? (result.totalRowCount ?? rows.length)
       : rows.length,
-    truncated: clientTruncated || rows.length > CLI_MAX_QUERY_ROWS,
-    maxRows: CLI_MAX_QUERY_ROWS,
+    truncated: clientTruncated || rows.length > MAX_QUERY_ROWS,
+    maxRows: MAX_QUERY_ROWS,
     affectedRows: result.affectedRows ?? null,
   };
 }

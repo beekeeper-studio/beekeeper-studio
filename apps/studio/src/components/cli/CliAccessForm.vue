@@ -73,14 +73,14 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import type { CliAccess, CliQueryPermission } from "@beekeeperstudio/cli";
+import type { Access, QueryPermission } from "@beekeeperstudio/cli";
 
-const WRITE_TYPES: CliQueryPermission[] = ["update", "delete", "alter", "anything"];
+const WRITE_TYPES: QueryPermission[] = ["update", "delete", "alter", "anything"];
 
 export default Vue.extend({
   props: {
     value: {
-      type: Object as PropType<CliAccess>,
+      type: Object as PropType<Access>,
       required: true,
     },
     readOnlyMode: Boolean,
@@ -95,7 +95,7 @@ export default Vue.extend({
         { value: "delete", label: "DELETE" },
         { value: "alter", label: "ALTER" },
         { value: "anything", label: "Allow anything" },
-      ] as { value: CliQueryPermission; label: string }[],
+      ] as { value: QueryPermission; label: string }[],
     };
   },
   computed: {
@@ -104,20 +104,20 @@ export default Vue.extend({
     },
   },
   methods: {
-    isBlocked(type: CliQueryPermission): boolean {
+    isBlocked(type: QueryPermission): boolean {
       return this.readOnlyMode && WRITE_TYPES.includes(type);
     },
-    hasQueryType(type: CliQueryPermission): boolean {
+    hasQueryType(type: QueryPermission): boolean {
       if (this.isBlocked(type)) {
         return false;
       }
       return this.allowsAnything || this.value.queryTypes.includes(type);
     },
-    toggleQueryType(type: CliQueryPermission, checked: boolean) {
+    toggleQueryType(type: QueryPermission, checked: boolean) {
       const others = this.value.queryTypes.filter((t) => t !== type);
       this.update({ queryTypes: checked ? [...others, type] : others });
     },
-    update(patch: Partial<CliAccess>) {
+    update(patch: Partial<Access>) {
       this.$emit("input", { ...this.value, ...patch });
     },
   },

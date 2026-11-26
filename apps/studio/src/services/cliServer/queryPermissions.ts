@@ -1,13 +1,13 @@
 import _ from 'lodash'
 import { Dialect as IdentifierDialect } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
-import { CliQueryPermission } from '@beekeeperstudio/cli'
+import { QueryPermission } from '@beekeeperstudio/cli'
 import { safelyIdentify } from '@/lib/db/sql_tools'
 
 export interface StatementPermissions {
   /** The statement as written, for error messages. */
   text: string
-  needs: CliQueryPermission[]
+  needs: QueryPermission[]
 }
 
 const TRANSACTION_CONTROL = ['BEGIN_TRANSACTION', 'COMMIT', 'ROLLBACK', 'TRANSACTION']
@@ -16,13 +16,13 @@ const EXPLAIN_ANALYZE = /^\s*explain\s+(\([^)]*\banaly[sz]e\b[^)]*\)|(verbose\s+
 const EXPLAIN_OPTIONS = /^\s*explain\s+(\([^)]*\)\s*|(analy[sz]e|verbose|buffers|costs|format\s+\w+)\s+)*/i
 
 // A WITH query can carry an INSERT/UPDATE/DELETE in a CTE and still identify as SELECT.
-const CTE_WRITES: [RegExp, CliQueryPermission][] = [
+const CTE_WRITES: [RegExp, QueryPermission][] = [
   [/\bupdate\s+[\w."`[\]]+\s+set\b/i, 'update'],
   [/\bdelete\s+from\b/i, 'delete'],
   [/\b(insert\s+into|merge\s+into)\b/i, 'anything'],
 ]
 
-function statementNeeds(statement: IdentifyResult, dialect: IdentifierDialect): CliQueryPermission[] {
+function statementNeeds(statement: IdentifyResult, dialect: IdentifierDialect): QueryPermission[] {
   const type = statement.type?.toUpperCase() ?? 'UNKNOWN'
   if (TRANSACTION_CONTROL.includes(type)) {
     return []
@@ -71,7 +71,7 @@ export function permissionsFor(sql: string, dialect: IdentifierDialect): Stateme
 export function disallowedStatements(
   sql: string,
   dialect: IdentifierDialect,
-  granted: CliQueryPermission[]
+  granted: QueryPermission[]
 ): StatementPermissions[] {
   if (granted.includes('anything')) {
     return []
