@@ -315,7 +315,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
     const sql = `
-      SELECT CONCAT('CREATE TABLE ', '${this.db}.${table}', ' (',
+      SELECT CONCAT('CREATE TABLE ', '${escapeString(this.db)}.${escapeString(table)}', ' (',
                    STRING_AGG(column_definition, ', '),
                    IF(pk.constraint_name IS NOT NULL, CONCAT(', PRIMARY KEY (', STRING_AGG(pk.column_list), ')'), ''),
                    ')') AS createtable
@@ -325,7 +325,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
           CONCAT(column_name, ' ', data_type,
                  IF(IS_NULLABLE = 'NO', ' NOT NULL', '')) AS column_definition
         FROM \`${this.config.projectId}.${this.db}.INFORMATION_SCHEMA.COLUMNS\`
-        WHERE table_name = ${table}
+        WHERE table_name = '${escapeString(table)}'
       ) AS column_definitions
       LEFT JOIN (
         SELECT
