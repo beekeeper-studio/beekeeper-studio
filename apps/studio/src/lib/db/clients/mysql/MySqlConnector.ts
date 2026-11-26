@@ -98,21 +98,25 @@ export class MySqlConnector extends DatabaseConnector<mysql.PoolConnection> {
     };
 
     if (this.server.config.iamAuthOptions?.iamAuthenticationEnabled) {
-      this.interval = setInterval(async () => {
-        try {
-          this.conn.pool.getConnection(async (err, connection) => {
-            if (err) throw err;
+      this.interval = setInterval(() => {
+        this.conn.pool.getConnection(async (err, connection) => {
+          if (err || !connection) {
+            log.error("Could not refresh token!", err);
+            return;
+          }
+          try {
             connection.config.password = await refreshTokenIfNeeded(
               this.server.config.iamAuthOptions,
               this.server,
               this.server.config.port || 3306
             );
-            connection.release();
             log.info("Token refreshed successfully.");
-          });
-        } catch (err) {
-          log.error("Could not refresh token!");
-        }
+          } catch (refreshErr) {
+            log.error("Could not refresh token!", refreshErr);
+          } finally {
+            connection.release();
+          }
+        });
       }, globals.iamRefreshTime);
     }
 

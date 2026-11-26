@@ -10,7 +10,7 @@ type PluginDataScopeName = "currentConnection" | "currentWorkspace";
 interface IPluginHandlers {
   "plugin/waitForInit": () => Promise<void>,
   "plugin/plugins": () => Promise<PluginSnapshot[]>
-  "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<RegistryMap>
+  "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<{ entries: RegistryMap, errors: string[] }>
   "plugin/repository": ({ id }: { id: string }) => Promise<Partial<ExtensionRepository>>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
@@ -79,7 +79,11 @@ export const PluginHandlers: IPluginHandlers = {
     if (clearCache) {
       context.pluginManager.registry.clearCache();
     }
-    return await context.pluginManager.registry.getEntries();
+    const entries = await context.pluginManager.registry.getEntries();
+    return {
+      entries,
+      errors: Object.values(context.pluginManager.registry.errors),
+    };
   },
   "plugin/repository": async ({ id }) => {
     try {

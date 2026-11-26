@@ -217,25 +217,28 @@
         recordPaidFeatureUse('multi-table-export')
         // Hide any success modal that might be showing already
         this.$modal.hide(`success-modal-${this.tab.id}`);
-        
+
         this.tab.isRunning = true;
-        const exporters = await Promise.all(this.listTables.map(async (exportTable) => {
+        const exporters = [];
+        const pending = this.listTables.map(async (exportTable) => {
           await this.$store.dispatch('updateTableColumns', exportTable.table)
           const exporterId = await this.addExport(exportTable)
+          exporters.push(exporterId)
           this.$util.addListener(`onExportProgress/${exporterId}`, (progress) => {
             this.$store.commit('exports/updateProgressFor', { id: exporterId, progress });
           })
           return exporterId;
-        }))
+        })
 
-        this.exportSteps[2].stepperProps.exportsStarted = true
-        
         try {
-          await this.$util.send('export/batch', { ids: exporters });
-          
+          const ids = await Promise.all(pending)
+          this.exportSteps[2].stepperProps.exportsStarted = true
+
+          await this.$util.send('export/batch', { ids });
+
           // Check for any failed exports
-          const failedExports = await this.checkForFailedExports(exporters);
-          
+          const failedExports = await this.checkForFailedExports(ids);
+
           if (failedExports && failedExports.length > 0) {
             // Show fail modal if any exports failed
             this.$modal.show(`fail-modal-${this.tab.id}`);
@@ -247,6 +250,7 @@
           // Show fail modal on error
           this.$modal.show(`fail-modal-${this.tab.id}`);
         } finally {
+          await Promise.allSettled(pending)
           this.tab.isRunning = false;
           exporters.forEach((id) => {
             this.$util.removeListener(`onExportProgress/${id}`);
