@@ -60,12 +60,22 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     async saveMany(context, items: ICloudSavedConnection[]) {
       // Mark items as pending to protect from poll overwrites
       items.forEach(item => context.commit('addPendingSave', item.id))
+      const previous = items.map((item) => {
+        const existing = context.state.items.find((row) => row.id != null && row.id === item.id)
+        return existing ? _.cloneDeep(existing) : null
+      })
       await context.dispatch('mutate', { type: 'upsert', data: items })
       try {
         return await havingCli(context, async (cli) => {
           const saved = await Promise.all(items.map(item => cli.connections.upsert(item)))
           await context.dispatch('mutate', { type: 'upsert', data: saved })
         })
+      } catch (error) {
+        const restore = previous.filter((row) => row != null)
+        if (restore.length) {
+          await context.dispatch('mutate', { type: 'upsert', data: restore })
+        }
+        throw error
       } finally {
         // Clear pending status
         items.forEach(item => context.commit('removePendingSave', item.id))

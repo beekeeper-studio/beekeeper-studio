@@ -57,6 +57,10 @@
   &.commit-mode-tooltip {
     position: relative;
 
+    &[x-placement^="top"] {
+      margin-bottom: 6px;
+    }
+
     .tooltip-inner {
       padding: 0;
       background: transparent;

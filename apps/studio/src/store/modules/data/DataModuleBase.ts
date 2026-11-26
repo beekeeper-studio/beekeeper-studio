@@ -231,12 +231,24 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
     },
 
     async saveMany(context, items: T[]) {
+      const previous = items.map((item) => {
+        const existing = context.state.items.find((row) => row.id != null && row.id === item.id)
+        return existing ? _.cloneDeep(existing) : null
+      })
       // Optimistic commit so any re-renders during the async saves see correct state
       await context.dispatch('mutate', { type: 'upsert', data: items });
-      const saved = await Promise.all(
-        items.map(item => Vue.prototype.$util.send(`appdb/${type}/save`, { obj: item }))
-      );
-      await context.dispatch('mutate', { type: 'upsert', data: saved });
+      try {
+        const saved = await Promise.all(
+          items.map(item => Vue.prototype.$util.send(`appdb/${type}/save`, { obj: item }))
+        );
+        await context.dispatch('mutate', { type: 'upsert', data: saved });
+      } catch (error) {
+        const restore = previous.filter((row) => row != null)
+        if (restore.length) {
+          await context.dispatch('mutate', { type: 'upsert', data: restore });
+        }
+        throw error
+      }
     },
 
     async remove(context, item: T) {

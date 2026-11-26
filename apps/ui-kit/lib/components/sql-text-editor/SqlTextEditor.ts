@@ -5,9 +5,11 @@ import { Dialect } from "sql-query-identifier";
 import {
   applyDialect,
   applyEntities,
+  applySplitQueriesByLine,
   extensions as sqlExtensions,
   SQLExtensionsConfig,
 } from "./extensions";
+import { LanguageId } from "../text-editor/types";
 import { ExtensionConfiguration } from "@/components";
 import { StandardSQL } from "@codemirror/lang-sql";
 import { langIdToDialect } from "./customDialects";
@@ -48,6 +50,11 @@ export class SqlTextEditor extends TextEditor {
     applyDialect(this.view, dialect);
   }
 
+  setLanguageId(languageId: LanguageId) {
+    super.setLanguageId(languageId);
+    applySplitQueriesByLine(this.view, languageId === "redis");
+  }
+
   // --- Editor Setup ---
 
   /**
@@ -60,6 +67,8 @@ export class SqlTextEditor extends TextEditor {
       sqlExtensions({
         ...this.extensionsConfig,
         dialect: langIdToDialect[config.languageId] || StandardSQL,
+        // Redis scripts run one command per line
+        splitQueriesByLine: config.languageId === "redis",
       }),
     ];
   }

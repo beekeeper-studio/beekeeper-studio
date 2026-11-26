@@ -98,7 +98,7 @@
         ref="toolbar"
       >
         <div
-          class="actions secondary-actions"
+          class="actions secondary-actions inline-scrollable"
           @wheel="scrollSecondaryActions"
         >
           <div v-if="canManageTransactions">
@@ -604,7 +604,7 @@
   import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
   import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue"
-  import { divider, type Entity } from "@beekeeperstudio/ui-kit";
+  import { divider, splitRedisCommands, type Entity } from "@beekeeperstudio/ui-kit";
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import QueryEditHistory from '@/components/editor/QueryEditHistory.vue'
@@ -1699,7 +1699,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return await this.submitQuery(this.currentlySelectedQuery.text)
         }
 
-        const { queries, error } = safelyIdentify(this.unsavedText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        // Like SQL, this falls back to the first query
+        const { queries, error } = this.splitQuery(this.unsavedText)
 
         // this should not theoretically be possible as there probably would have been a queryselection error,
         // but if we somehow manage to get here, we need to panic
@@ -1895,11 +1896,18 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.tab.isRunning = false
         }
       },
+      // Redis runs one command per line, so it is split by line instead of by statement
+      splitQuery(text: string) {
+        if (this.dialect === 'redis') {
+          return { queries: splitRedisCommands(text), error: null }
+        }
+        return safelyIdentify(text, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+      },
       initializeQueries() {
         const { originalText, editorText } = resolveEditorText(this.tab, this.query?.text)
         if (editorText) {
           // The run methods should catch any errors, so we don't need to do that here
-          const { queries } = safelyIdentify(editorText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          const { queries } = this.splitQuery(editorText)
           if (queries.length > 0) {
             this.individualQueries = queries
             this.currentlySelectedQuery = queries[0]
@@ -2325,6 +2333,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
       this.removeTransactionTimeoutListener();
+      this.stopTimer();
       if (!_.isNil(this.pollInterval)) {
         clearInterval(this.pollInterval);
         this.pollInterval = null;
@@ -2393,6 +2402,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     padding: 0.215rem 0.75rem;
     box-shadow: 0 0 6px 0 var(--warning-a11);
     animation: glowAndDrop 0.9s cubic-bezier(0.33, 0, 0.2, 1) forwards;
+    white-space: nowrap;
   }
 
   @keyframes glowAndDrop {
@@ -2450,13 +2460,37 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     white-space: nowrap;
   }
 
-  .query-editor .toolbar .actions.secondary-actions {
-    margin: 0;
+  .inline-scrollable {
+    --scrollbar-height: 1px;
+    --scrollbar-hover-height: 6px;
     overflow-x: auto;
+    overflow-y: hidden;
+    container-type: scroll-state;
+
+    @container scroll-state(scrollable: inline) {
+      > * {
+        // scrollbar sit in the bottom padding
+        margin-bottom: calc(var(--scrollbar-height) * -1);
+      }
+
+      &:hover > * {
+        margin-bottom: calc(var(--scrollbar-hover-height) * -1);
+      }
+    }
 
     &::-webkit-scrollbar {
-      height: 1px;
+      height: var(--scrollbar-height);
     }
+
+    &:hover {
+      &::-webkit-scrollbar {
+        height: var(--scrollbar-hover-height);
+      }
+    }
+  }
+
+  .query-editor .toolbar .actions.secondary-actions {
+    margin: 0;
 
     .btn-group {
       display: flex;
@@ -2474,6 +2508,12 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   .btn.history-btn {
     background-color: transparent;
     box-shadow: none;
+  }
+
+  .toolbar {
+    & > * {
+     padding: 0.4rem 0.8rem;
+    }
   }
 </style>
 

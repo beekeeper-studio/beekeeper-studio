@@ -36,7 +36,10 @@ export class WebHost {
         return Promise.resolve(Array.from(this.plugins.values()));
       }
       if (event === "plugin/entries") {
-        return Promise.resolve({ official: [], community: [] });
+        return Promise.resolve({
+          entries: { official: [], community: [] },
+          errors: [],
+        });
       }
       if (event === "plugin/getPluginSetting") {
         return Promise.resolve(this.pluginSettings[data.id]?.[data.key]);
