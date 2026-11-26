@@ -5,23 +5,31 @@ import net from "net";
 import os from "os";
 import path from "path";
 import {
-  CliServer,
-  CliServerError,
-  CliServerOptions,
-} from "@/services/cliServer/CliServer";
+  SocketPortAdapter,
+  SocketPortAdapterError,
+  SocketPortAdapterOptions,
+} from "@/services/cliServer/SocketPortAdapter";
 import { CliRequestEvent } from "@/services/cliServer/auditLog";
-import { CliError } from "@beekeeperstudio/rpc";
+import { CliError, RpcServer } from "@beekeeperstudio/rpc";
+import type { CallContext } from "@beekeeperstudio/rpc";
 
 const unix = process.platform !== "win32";
 
 let dir: string;
 let socketPath: string;
-let servers: CliServer[];
+let adapters: SocketPortAdapter[];
 
-function createServer(options: Partial<CliServerOptions> = {}): CliServer {
-  const server = new CliServer({ socketPath, ...options });
-  servers.push(server);
-  return server;
+interface App {
+  adapter: SocketPortAdapter;
+  server: RpcServer;
+}
+
+function createApp(options: Partial<SocketPortAdapterOptions> = {}): App {
+  const port = new SocketPortAdapter({ socketPath, ...options });
+  adapters.push(port);
+  const server = new RpcServer(port);
+  server.initialize();
+  return { adapter: port, server };
 }
 
 /** Writes raw text, optionally half-closes, and resolves with everything the server sent back. */
@@ -58,29 +66,29 @@ beforeEach(() => {
   socketPath = unix
     ? path.join(dir, "cli.sock")
     : `\\\\.\\pipe\\bks-cliserver-${process.pid}-${Date.now()}`;
-  servers = [];
+  adapters = [];
 });
 
 afterEach(async () => {
-  for (const server of servers) {
-    await server.stop();
+  for (const adapter of adapters) {
+    await adapter.stop();
   }
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-describe("CliServer", () => {
+describe("SocketPortAdapter", () => {
   it("answers each registered method and turns errors into error replies", async () => {
-    const server = createServer();
-    server.register("method1", async () => {
-      return { big: BigInt("9007199254740993") };
-    });
-    server.register("method2", async () => {
+    const port = new SocketPortAdapter({ socketPath });
+    const server = new RpcServer(port);
+    server.initialize();
+    server.register("method1", () => ({ big: BigInt("9007199254740993")}) );
+    server.register("method2", () => {
       throw new CliError("NOT_FOUND", "nope", { hint: "look elsewhere" });
     });
-    server.register("method3", async () => {
+    server.register("method3", () => {
       throw new Error("boom");
     });
-    await server.start();
+    await port.start();
 
     await expect(
       sendRawString(
@@ -109,9 +117,9 @@ describe("CliServer", () => {
   });
 
   it("rejects a method that is not registered", async () => {
-    const server = createServer();
-    server.register("method1", async () => ({}));
-    await server.start();
+    const server = createApp();
+    server.server.register("method1", async () => ({}));
+    await server.adapter.start();
 
     for (const method of ["missing", "toString", "__proto__"]) {
       await expect(send({ name: method, args: {} })).resolves.toEqual({
@@ -125,10 +133,10 @@ describe("CliServer", () => {
   });
 
   it("answers a malformed line and reports it with no request", async () => {
-    const server = createServer();
+    const server = createApp();
     const events: CliRequestEvent[] = [];
-    server.on("requestHandled", (event) => events.push(event));
-    await server.start();
+    server.adapter.on("requestHandled", (event) => events.push(event));
+    await server.adapter.start();
 
     await expect(sendRawString("not json\n")).resolves.toBe(
       JSON.stringify({
@@ -146,9 +154,9 @@ describe("CliServer", () => {
   });
 
   it("answers a line that is not a request message", async () => {
-    const server = createServer();
-    server.register("method1", async () => ({}));
-    await server.start();
+    const server = createApp();
+    server.server.register("method1", async () => ({}));
+    await server.adapter.start();
 
     const line = JSON.stringify({ id: "1", name: "method1" }) + "\n";
     await expect(sendRawString(line)).resolves.toBe(
@@ -165,9 +173,9 @@ describe("CliServer", () => {
   });
 
   it("answers a client that half-closes without a trailing newline", async () => {
-    const server = createServer();
-    server.register("method1", async () => ({ pong: true }));
-    await server.start();
+    const server = createApp();
+    server.server.register("method1", async () => ({ pong: true }));
+    await server.adapter.start();
 
     await expect(
       sendRawString(
@@ -183,13 +191,13 @@ describe("CliServer", () => {
   });
 
   it("rejects an oversized request before its line ends", async () => {
-    const server = createServer({ maxRequestBytes: 64 });
+    const server = createApp({ maxRequestBytes: 64 });
     let called = false;
-    server.register("method1", async () => {
+    server.server.register("method1", async () => {
       called = true;
       return {};
     });
-    await server.start();
+    await server.adapter.start();
 
     await expect(
       send({ name: "method1", args: { sql: "x".repeat(200) } }),
@@ -203,12 +211,12 @@ describe("CliServer", () => {
   });
 
   it("keeps answering after an observer throws", async () => {
-    const server = createServer();
-    server.register("method1", async () => ({}));
-    server.on("requestHandled", () => {
+    const server = createApp();
+    server.server.register("method1", async () => ({}));
+    server.adapter.on("requestHandled", () => {
       throw new Error("audit log broke");
     });
-    await server.start();
+    await server.adapter.start();
 
     await expect(send({ name: "method1" })).resolves.toEqual({
       id: null,
@@ -223,9 +231,9 @@ describe("CliServer", () => {
   });
 
   it("tells a running method when its caller hangs up", async () => {
-    const server = createServer();
+    const server = createApp();
     const hungUp = new Promise<void>((resolve) => {
-      server.register("method1", async (_params, context) => {
+      server.server.register("method1", async (_params: unknown, context: CallContext) => {
         await new Promise((done) =>
           context.signal.addEventListener("abort", done),
         );
@@ -233,7 +241,7 @@ describe("CliServer", () => {
         return {};
       });
     });
-    await server.start();
+    await server.adapter.start();
 
     const socket = net.createConnection(socketPath);
     socket.on("connect", () => {
@@ -245,9 +253,9 @@ describe("CliServer", () => {
   });
 
   it("cancels a running request on a $/cancel notification", async () => {
-    const server = createServer();
-    server.register("method1", () => new Promise(() => { }));
-    await server.start();
+    const server = createApp();
+    server.server.register("method1", () => new Promise(() => { }));
+    await server.adapter.start();
 
     const reply = send({ id: "id-123", name: "method1" });
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -265,14 +273,29 @@ describe("CliServer", () => {
     });
   });
 
+  it("rejects a request whose id is already running", async () => {
+    const app = createApp();
+    app.server.register("method1", () => new Promise(() => {}));
+    await app.adapter.start();
+
+    send({ id: "id-123", name: "method1" });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await expect(send({ id: "id-123", name: "method1" })).resolves.toEqual({
+      id: null,
+      type: "error",
+      error: "A request with id id-123 is already running.",
+      errorCode: "USAGE",
+    });
+  });
+
   it("refuses to start without a socket path", async () => {
-    const server = new CliServer({ socketPath: "" });
-    const error = await server.start().then(
+    const adapter = new SocketPortAdapter({ socketPath: "" });
+    const error = await adapter.start().then(
       () => null,
       (e) => e,
     );
-    expect(error).toBeInstanceOf(CliServerError);
-    expect(error.code).toBe(CliServerError.SocketPathNotProvided);
+    expect(error).toBeInstanceOf(SocketPortAdapterError);
+    expect(error.code).toBe(SocketPortAdapterError.SocketPathNotProvided);
   });
 
   it.runIf(unix)(
@@ -288,9 +311,9 @@ describe("CliServer", () => {
         fs.writeFileSync(socketPath, "");
       }
 
-      const server = createServer();
-      server.register("method1", async () => ({}));
-      await server.start();
+      const server = createApp();
+      server.server.register("method1", async () => ({}));
+      await server.adapter.start();
       await expect(send({ name: "method1" })).resolves.toEqual({
         id: null,
         type: "reply",
@@ -302,17 +325,17 @@ describe("CliServer", () => {
   it.runIf(unix)(
     "leaves a live instance alone and fails to start",
     async () => {
-      const first = createServer();
-      first.register("method1", async () => ({ from: "first" }));
-      await first.start();
+      const first = createApp();
+      first.server.register("method1", async () => ({ from: "first" }));
+      await first.adapter.start();
 
-      const second = createServer();
-      const error = await second.start().then(
+      const second = createApp();
+      const error = await second.adapter.start().then(
         () => null,
         (e) => e,
       );
       expect(error?.code).toBe("EADDRINUSE");
-      await second.stop();
+      await second.adapter.stop();
       await expect(send({ name: "method1" })).resolves.toEqual({
         id: null,
         type: "reply",
@@ -322,8 +345,8 @@ describe("CliServer", () => {
   );
 
   it.runIf(unix)("only lets the owner connect", async () => {
-    const server = createServer();
-    await server.start();
+    const server = createApp();
+    await server.adapter.start();
     expect(fs.statSync(socketPath).mode & 0o777).toBe(0o600);
   });
 });

@@ -4,7 +4,7 @@ import { getConnectedStates, newState, removeState, state, State } from '@/handl
 import { ConnHandlers } from '@commercial/backend/handlers/connHandlers'
 import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import { SqliteClient } from '@/lib/db/clients/sqlite'
-import { CliCallContext, connectionDisplayName, formatQueryResult, UNKNOWN_CLIENT_NAME } from '@/services/cliServer/commands'
+import { connectionDisplayName, formatQueryResult, UNKNOWN_CLIENT_NAME } from '@/services/cliServer/commands'
 import { AuthorizedClient } from '@/services/cliServer/AuthorizedClient'
 import { UtilityApi } from '@/services/UtilityApi'
 import {
@@ -15,6 +15,7 @@ import {
   CliError,
   CreateTabRequest,
 } from '@beekeeperstudio/rpc'
+import type { CallContext } from '@beekeeperstudio/rpc'
 import { serializeBigInt } from '@/services/plugin/utils'
 
 async function createSqliteClient(): Promise<SqliteClient> {
@@ -43,9 +44,10 @@ function access(patch: Partial<Access> = {}): Access {
   return { ...READ_ONLY_ACCESS, ...patch }
 }
 
-function context(name = 'Claude Code'): CliCallContext & { hangUp(): void } {
+function context(name = 'Claude Code'): CallContext & { hangUp(): void } {
   const caller = new AbortController()
-  return { client: { name }, signal: caller.signal, hangUp: () => caller.abort() }
+  const request = { id: 'test', name: 'test', args: {}, client: { name } }
+  return { signal: caller.signal, request, hangUp: () => caller.abort() }
 }
 
 /**

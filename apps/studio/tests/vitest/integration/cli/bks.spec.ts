@@ -12,7 +12,8 @@ import os from "os";
 import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
-import { CliServer } from "@/services/cliServer/CliServer";
+import { SocketPortAdapter } from "@/services/cliServer/SocketPortAdapter";
+import { RpcServer } from "@beekeeperstudio/rpc";
 import { UtilityApi } from "@/services/UtilityApi";
 import { getConnectedStates, newState, state, State } from "@/handlers/handlerState";
 import { createProgram } from "@/backend/cli/program";
@@ -103,7 +104,7 @@ const approvals = {
 };
 
 let client: SqliteClient;
-let server: CliServer;
+let socket: SocketPortAdapter;
 let requests = 0;
 const created: CreateTabRequest[] = [];
 
@@ -154,21 +155,23 @@ beforeAll(async () => {
       }
     },
   };
-  server = new CliServer({ socketPath });
+  socket = new SocketPortAdapter({ socketPath });
+  const server = new RpcServer(socket);
+  server.initialize();
   const utilityApi = new TestUtilityApi(backend);
   for (const command of utilityApi.getCliApis()) {
     server.register(command.name, command.func);
   }
-  server.on("requestHandled", () => {
+  socket.on("requestHandled", () => {
     requests += 1;
   });
-  await server.start();
+  await socket.start();
   // The client every other test runs as.
   await bks("request-approval");
 });
 
 afterAll(async () => {
-  await server?.stop();
+  await socket?.stop();
   await client?.disconnect();
 });
 

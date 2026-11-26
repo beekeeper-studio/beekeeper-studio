@@ -19,7 +19,7 @@ import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
 import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { CliServerHandlers } from '@/handlers/cliServerHandlers';
-import { RpcClient } from '@beekeeperstudio/rpc';
+import { RpcClient, RpcServer } from '@beekeeperstudio/rpc';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
@@ -56,7 +56,10 @@ import type {
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
-import { CliServer, CliServerError } from '@/services/cliServer/CliServer';
+import {
+  SocketPortAdapter,
+  SocketPortAdapterError,
+} from '@/services/cliServer/SocketPortAdapter';
 import { UtilityApi } from '@/services/UtilityApi';
 import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';
 import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
@@ -255,19 +258,21 @@ async function init() {
 
   const auditSink = createElectronLogSink(rawLog);
   const auditLog = new CliAuditLog(auditSink, (e) => log.warn('Could not write the CLI audit log', e));
-  const cliServer = new CliServer({
+  const cliSocket = new SocketPortAdapter({
     socketPath: platformInfo.cliSocketPath,
   });
+  const cliServer = new RpcServer(cliSocket);
+  cliServer.initialize();
   const utilityApi = new UtilityApi();
   for (const command of utilityApi.getCliApis()) {
     cliServer.register(command.name, command.func);
   }
-  cliServer.on("requestHandled", (event) => auditLog.record(event));
+  cliSocket.on("requestHandled", (event) => auditLog.record(event));
 
   context.utilityApi = utilityApi;
   context.pluginManager = pluginManager;
   context.themeManager = themeManager;
-  context.cliServer = cliServer;
+  context.cliSocket = cliSocket;
 
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
@@ -281,15 +286,15 @@ async function init() {
     log.error("Error initializing driver dep manager", e);
   });
 
-  cliServer
+  cliSocket
     .start()
     .then(() => {
       // FIXME: is cli.log real? dont do it like this
       log.info(`CLI calls are recorded in ${auditSink.filePath() ?? 'cli.log'}`);
     })
     .catch((e) => {
-      if (e instanceof CliServerError) {
-        if (e.code === CliServerError.SocketPathNotProvided) {
+      if (e instanceof SocketPortAdapterError) {
+        if (e.code === SocketPortAdapterError.SocketPathNotProvided) {
           // we can ignore this error
           return;
         }
@@ -301,5 +306,5 @@ async function init() {
 }
 
 process.on('exit', () => {
-  context.cliServer?.stopSync();
+  context.cliSocket?.stopSync();
 });

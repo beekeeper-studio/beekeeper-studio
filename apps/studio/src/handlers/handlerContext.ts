@@ -1,13 +1,13 @@
 import { PluginManager } from "@/services/plugin";
 import { ThemeManager } from "@/services/theme/ThemeManager";
-import { CliServer } from "@/services/cliServer/CliServer";
+import { SocketPortAdapter } from "@/services/cliServer/SocketPortAdapter";
 import { UtilityApi } from "@/services/UtilityApi";
 
 class Context {
   utilityApi: UtilityApi;
   pluginManager: PluginManager;
   themeManager: ThemeManager;
-  cliServer: CliServer;
+  cliSocket: SocketPortAdapter;
 }
 
 /** State shared across all renderer sessions in the utility process */

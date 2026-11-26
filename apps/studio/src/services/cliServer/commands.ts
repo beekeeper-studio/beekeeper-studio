@@ -17,13 +17,6 @@ import {
   ClientInfo,
 } from "@beekeeperstudio/rpc";
 
-/** Who made a request, and whether they are still waiting for the answer. */
-export interface CliCallContext {
-  client: ClientInfo;
-  /** Aborted when the caller hangs up, e.g. after its timeout. */
-  signal: AbortSignal;
-}
-
 export const UNKNOWN_CLIENT_NAME = "Unknown client";
 
 export function clientInfo(raw: unknown): ClientInfo {

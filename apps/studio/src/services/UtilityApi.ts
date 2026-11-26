@@ -9,8 +9,7 @@ import {
   attempt,
   formatQueryResult,
   CHANGE_ACCESS_HINT,
-  CliCallContext,
-  UNKNOWN_CLIENT_NAME,
+  clientInfo,
   toEntity,
   toColumn,
   connectionDisplayName,
@@ -50,6 +49,7 @@ import {
   SwitchTabParams,
   ApprovalRequester,
 } from "@beekeeperstudio/rpc";
+import type { CallContext } from "@beekeeperstudio/rpc";
 import type { RendererMethods } from "@/lib/utility/RendererMethods";
 import { AuthorizedClient } from "./cliServer/AuthorizedClient";
 import { disallowedStatements } from "./cliServer/queryPermissions";
@@ -57,8 +57,7 @@ import { disallowedStatements } from "./cliServer/queryPermissions";
 const EXCERPT_LENGTH = 250;
 
 /** For calls made without a socket, e.g. from tests. */
-const NO_CONTEXT: CliCallContext = {
-  client: { name: UNKNOWN_CLIENT_NAME },
+const NO_CONTEXT: CallContext = {
   signal: new AbortController().signal,
 };
 
@@ -125,8 +124,9 @@ export class UtilityApi {
 
   async getConnections(
     _params: ConnectionsParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<ConnectionsResult> {
+    const client = clientInfo(context.request?.client);
     const connections = getConnectedStates().map((connectionState) => ({
       id: connectionState.id,
       name: connectionDisplayName(connectionState),
@@ -139,14 +139,14 @@ export class UtilityApi {
         connectionState.database ||
         undefined,
       readOnlyMode: !!connectionState.usedConfig?.readOnlyMode,
-      approved: connectionState.cliClients.has(context.client.name),
+      approved: connectionState.cliClients.has(client.name),
     }));
     return { connections };
   }
 
   async getSchemas(
     params: SchemasParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<SchemasResult> {
     const state = await this.findState(context, params.connection);
     const schemas = await state.connection.listSchemas();
@@ -155,7 +155,7 @@ export class UtilityApi {
 
   async getEntities(
     params: EntitiesParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<EntitiesResult> {
     for (const type of params.entityTypes || []) {
       if (!(ENTITY_TYPES as readonly string[]).includes(type)) {
@@ -213,7 +213,7 @@ export class UtilityApi {
 
   async getTableStructure(
     params: StructureParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<StructureResult> {
     const state = await this.findState(context, params.connection);
     if (!params.name) {
@@ -300,13 +300,14 @@ export class UtilityApi {
 
   async runQuery(
     params: QueryParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<QueryResult> {
+    const client = clientInfo(context.request?.client);
     if (!params.sql || !params.sql.trim()) {
       throw new CliError("USAGE", "No SQL was given to run.");
     }
     const state = await this.findState(context, params.connection);
-    const access = state.cliClients.get(context.client.name).access;
+    const access = state.cliClients.get(client.name).access;
     const disallowed = disallowedStatements(
       params.sql,
       state.connection.dialect,
@@ -316,7 +317,7 @@ export class UtilityApi {
       const needs = [...new Set(disallowed.flatMap((s) => s.needs))];
       throw new CliError(
         "NOT_PERMITTED",
-        `${context.client.name} is not allowed to run ${needs.join(", ")} statements on this connection.`,
+        `${client.name} is not allowed to run ${needs.join(", ")} statements on this connection.`,
         { hint: CHANGE_ACCESS_HINT, details: { statements: disallowed } },
       );
     }
@@ -347,7 +348,7 @@ export class UtilityApi {
         }
         throw new CliError(
           "NOT_PERMITTED",
-          `${context.client.name} may only read on this connection.`,
+          `${client.name} may only read on this connection.`,
           {
             hint: CHANGE_ACCESS_HINT,
           },
@@ -370,8 +371,9 @@ export class UtilityApi {
 
   async openTab(
     params: OpenTabParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<OpenTabResult> {
+    const client = clientInfo(context.request?.client);
     const tab = params.tab;
     if (!(TAB_TYPES as readonly string[]).includes(tab)) {
       throw new CliError("USAGE", `Unknown tab type "${tab}".`, {
@@ -379,7 +381,7 @@ export class UtilityApi {
       });
     }
     const state = await this.findState(context, params.connection);
-    const access = state.cliClients.get(context.client.name).access;
+    const access = state.cliClients.get(client.name).access;
     this.require(access, "openTabs", context);
     const request: CreateTabRequest = { tab, sql: params.sql };
     const tabId = await this.askRendererToCreateTab(state, request);
@@ -388,23 +390,25 @@ export class UtilityApi {
 
   async switchTab(
     params: SwitchTabParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<void> {
+    const client = clientInfo(context.request?.client);
     if (!params.tabId) {
       throw new CliError("USAGE", "switch-tab needs the id of a tab.");
     }
     const state = await this.findState(context, params.connection);
-    const access = state.cliClients.get(context.client.name).access;
+    const access = state.cliClients.get(client.name).access;
     this.require(access, "openTabs", context);
     await this.askRendererToSwitchTab(state, params.tabId);
   }
 
   async getSavedQueries(
     params: SavedQueriesParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<SavedQueriesResult> {
+    const client = clientInfo(context.request?.client);
     const state = await this.findState(context, params.connection);
-    const access = state.cliClients.get(context.client.name).access;
+    const access = state.cliClients.get(client.name).access;
     this.require(access, "savedQueriesRead", context);
     const queries = await FavoriteQuery.find({ order: { title: "ASC" } });
     return { savedQueries: queries.map(toSavedQuerySummary) };
@@ -412,19 +416,21 @@ export class UtilityApi {
 
   async getSavedQuery(
     params: SavedQueryParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<SavedQueryResult> {
+    const client = clientInfo(context.request?.client);
     const id = this.savedQueryId(params.id);
     const state = await this.findState(context, params.connection);
-    const access = state.cliClients.get(context.client.name).access;
+    const access = state.cliClients.get(client.name).access;
     this.require(access, "savedQueriesRead", context);
     return { savedQuery: await this.loadSavedQuery(id) };
   }
 
   async createSavedQuery(
     params: CreateSavedQueryParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<SavedQueryResult> {
+    const client = clientInfo(context.request?.client);
     const title = params.title?.trim();
     if (!title) {
       throw new CliError("USAGE", "A saved query needs a title.");
@@ -433,7 +439,7 @@ export class UtilityApi {
       throw new CliError("USAGE", "A saved query needs SQL text.");
     }
     const state = await this.findState(context, params.connection);
-    const access = state.cliClients.get(context.client.name).access;
+    const access = state.cliClients.get(client.name).access;
     this.require(access, "savedQueriesWrite", context);
     const query = new FavoriteQuery().withProps({
       title,
@@ -448,8 +454,9 @@ export class UtilityApi {
 
   async updateSavedQuery(
     params: UpdateSavedQueryParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<SavedQueryResult> {
+    const client = clientInfo(context.request?.client);
     const id = this.savedQueryId(params.id);
     const title = params.title?.trim();
     if (params.title !== undefined && !title) {
@@ -465,7 +472,7 @@ export class UtilityApi {
       );
     }
     const state = await this.findState(context, params.connection);
-    const access = state.cliClients.get(context.client.name).access;
+    const access = state.cliClients.get(client.name).access;
     this.require(access, "savedQueriesWrite", context);
     const query = await this.findSavedQuery(id);
     if (title !== undefined) {
@@ -483,11 +490,12 @@ export class UtilityApi {
   /** Shows the approval dialog, unless the client is already approved for the connection. */
   async requestApproval(
     params: RequestApprovalParams,
-    context: CliCallContext = NO_CONTEXT,
+    context: CallContext = NO_CONTEXT,
   ): Promise<RequestApprovalResult> {
+    const client = clientInfo(context.request?.client);
     const selected = await this.selectConnection(context, params.connection);
     const connectionState = state(selected.id);
-    const clientName = context.client.name;
+    const clientName = client.name;
     const existing = connectionState.cliClients.get(clientName)?.access;
     if (existing) {
       return { newlyApproved: false, access: existing };
@@ -626,12 +634,13 @@ export class UtilityApi {
   private require(
     access: Access,
     permission: Permission,
-    context: CliCallContext,
+    context: CallContext,
   ): void {
+    const client = clientInfo(context.request?.client);
     if (!access[permission]) {
       throw new CliError(
         "NOT_PERMITTED",
-        `${context.client.name} is not allowed to ${PERMISSION_LABELS[permission]} on this connection.`,
+        `${client.name} is not allowed to ${PERMISSION_LABELS[permission]} on this connection.`,
         { hint: CHANGE_ACCESS_HINT },
       );
     }
@@ -676,15 +685,16 @@ export class UtilityApi {
 
   /** The open connection the params name (or the only candidate), once the client is approved for it. */
   private async findState(
-    context: CliCallContext,
+    context: CallContext,
     requested?: string,
   ): Promise<State> {
+    const client = clientInfo(context.request?.client);
     const selected = await this.selectConnection(context, requested);
     const connectionState = state(selected.id);
-    if (!connectionState.cliClients.has(context.client.name)) {
+    if (!connectionState.cliClients.has(client.name)) {
       throw new CliError(
         "NOT_APPROVED",
-        `${context.client.name} is not approved to use this connection.`,
+        `${client.name} is not approved to use this connection.`,
         {
           hint: `Run \`bks request-approval --connection "${selected.name}"\`, then approve it in Beekeeper Studio.`,
         },
@@ -791,7 +801,7 @@ export class UtilityApi {
   }
 
   private async selectConnection(
-    context: CliCallContext,
+    context: CallContext,
     requested: string | undefined,
   ): Promise<OpenConnection> {
     const result = await this.getConnections({}, context);
