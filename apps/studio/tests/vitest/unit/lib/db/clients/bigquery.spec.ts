@@ -85,7 +85,13 @@ describe("BigQuery getTableCreateScript", () => {
     await client.getTableCreateScript("users")
     const sql = client.driverExecuteSingle.mock.calls[0][0]
     expect(sql).toContain("WHERE table_name = 'users'")
+    expect(sql).toContain("AND c.table_name = 'users'")
     expect(sql).toContain("CONCAT('CREATE TABLE ', 'dataset.users', ' (',")
+    expect(sql).toContain("STRING_AGG(cu.column_name, ', ' ORDER BY cu.ordinal_position)")
+    expect(sql).toContain("AND c.table_name = cu.table_name")
+    expect(sql).toContain(") NOT ENFORCED")
+    expect(sql).not.toContain("GROUP BY")
+    expect(sql).not.toContain("STRING_AGG(pk.column_list)")
   })
 
   it("escapes a single quote in the table name", async () => {
@@ -93,6 +99,7 @@ describe("BigQuery getTableCreateScript", () => {
     await client.getTableCreateScript("o'brien")
     const sql = client.driverExecuteSingle.mock.calls[0][0]
     expect(sql).toContain("WHERE table_name = 'o''brien'")
+    expect(sql).toContain("AND c.table_name = 'o''brien'")
     expect(sql).toContain("CONCAT('CREATE TABLE ', 'da''ta.o''brien', ' (',")
     expect(sql).not.toContain("table_name = o'brien")
   })

@@ -41,7 +41,6 @@ export const BigQueryData: DialectData = {
     shell: true,
     truncateElement: true,
     duplicateTable: true,
-    sqlCreate: true,
     dropTable: true,
     indexes: true,
     compositeKeys: true,

@@ -105,8 +105,17 @@ export default {
         {
           name: "SQL: Create",
           slug: 'sql-create',
-          class: disabled(dialect.disabledFeatures?.sqlCreate),
-          title: disabledTitle(dialectName, 'SQL: Create', !!dialect.disabledFeatures?.sqlCreate, false),
+          class: ({ item }) => disabled(
+            !!dialect.disabledFeatures?.sqlCreate,
+            dialectName === 'bigquery' && item?.entityType !== 'table'
+          ),
+          title: ({ item }) => disabledTitle(
+            dialectName,
+            'SQL: Create',
+            !!dialect.disabledFeatures?.sqlCreate
+              || (dialectName === 'bigquery' && item?.entityType !== 'table'),
+            false
+          ),
           handler: ({ item }) => {
             this.$root.$emit('loadTableCreate', item)
           }
