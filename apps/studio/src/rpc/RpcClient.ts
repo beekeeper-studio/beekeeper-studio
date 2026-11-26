@@ -80,7 +80,7 @@ export class RpcClient<
   }
 
   /** Runs the handler registered under `name` without waiting for a reply. */
-  notify(name: string, args?: unknown): void {
+  private notify(name: string, args?: unknown): void {
     const notification: Notification = { name, args };
     this.port.postMessage({ type: "notification", input: notification });
   }
