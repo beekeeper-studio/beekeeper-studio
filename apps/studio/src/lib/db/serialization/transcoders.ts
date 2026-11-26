@@ -69,13 +69,32 @@ export const BooleanTranscoder = primitiveTranscoder('BOOLEAN', (value) => {
   return undefined;
 });
 
-export const MongoDBObjectIdTranscoder: Transcoder<ObjectId, Uint8Array> = {
+function isObjectIdLike(value: unknown): value is ObjectId {
+  return value instanceof ObjectId || (value as { _bsontype?: string })?._bsontype === "ObjectId";
+}
+
+function serializeNestedObjectIds(value: unknown): unknown {
+  if (isObjectIdLike(value)) {
+    return value.toHexString();
+  }
+  if (_.isArray(value)) {
+    return value.map(serializeNestedObjectIds);
+  }
+  if (_.isPlainObject(value)) {
+    return _.mapValues(value as Record<string, unknown>, serializeNestedObjectIds);
+  }
+  return value;
+}
+
+export const MongoDBObjectIdTranscoder: Transcoder<ObjectId | unknown, Uint8Array | unknown> = {
   serialize(value) {
-    if (!(value instanceof ObjectId)) {
-      log.warn("MongoDBObjectIdTranscoder: cannot serialize non-objectid value");
-      return value;
+    if (isObjectIdLike(value)) {
+      return value.id;
     }
-    return value.id;
+    if (_.isArray(value) || _.isPlainObject(value)) {
+      return serializeNestedObjectIds(value);
+    }
+    return value;
   },
   deserialize(value) {
     if (!_.isTypedArray(value)) {
@@ -85,7 +104,12 @@ export const MongoDBObjectIdTranscoder: Transcoder<ObjectId, Uint8Array> = {
     return new ObjectId(value);
   },
   serializeCheckByField(field: BksField): boolean {
-    return field.bksType === "OBJECTID";
+    return (
+      field.bksType === "OBJECTID" ||
+      field.bksType === "ARRAY" ||
+      field.bksType === "OBJECT" ||
+      field.bksType === "UNKNOWN"
+    );
   },
   deserializeCheckByValue(value): value is Uint8Array {
     return _.isTypedArray(value);

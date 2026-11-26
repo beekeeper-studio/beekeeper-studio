@@ -267,7 +267,7 @@ describe("MongoDBClient ObjectIds", () => {
     expect(result[0].tags).toEqual([FILM_ID])
   })
 
-  it("converts ObjectIds to hex strings in updateValues results", async () => {
+  it("serializes top-level _id as Buffer and nested ObjectIds as hex in updateValues results", async () => {
     const client = new MongoDBClient(null, { database: "test" } as any)
     const connection = {
       collection: vi.fn().mockReturnValue({
@@ -280,12 +280,11 @@ describe("MongoDBClient ObjectIds", () => {
       connection
     )
 
-    expect(updated).toEqual({
-      _id: ID,
-      title: "ACADEMY DINOSAUR",
-      actors: { films: [{ film_id: FILM_ID }] },
-      tags: [FILM_ID],
-      released: RELEASED,
-    })
+    expect(Buffer.isBuffer(updated._id)).toBe(true)
+    expect(Buffer.from(updated._id).toString("hex")).toBe(ID)
+    expect(updated.title).toBe("ACADEMY DINOSAUR")
+    expect(updated.actors).toEqual({ films: [{ film_id: FILM_ID }] })
+    expect(updated.tags).toEqual([FILM_ID])
+    expect(updated.released).toEqual(RELEASED)
   })
 })
