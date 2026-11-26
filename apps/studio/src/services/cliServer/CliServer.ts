@@ -2,7 +2,7 @@ import fs from 'fs'
 import net from 'net'
 import { CliRequestEvent } from './auditLog'
 import { CliCallContext, clientInfo } from './commands'
-import { CliRequest, CliResponse, isCliError, isWindowsPipePath } from '@beekeeperstudio/cli'
+import { CliRequest, Reply, isCliError, isWindowsPipePath } from '@beekeeperstudio/cli'
 import { CancelError, UnknownMethodError } from '@/rpc/RpcServer'
 import { EventEmitter } from '@/common/EventEmitter'
 import { uuidv4 } from '@/lib/uuid'
@@ -187,8 +187,10 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
       if (buffer.length > this.maxRequestBytes) {
         handled = true
         this.respond(socket, {
-          ok: false,
-          error: { code: 'USAGE', message: `Request is larger than ${this.maxRequestBytes} bytes.` },
+          id: null,
+          type: 'error',
+          error: `Request is larger than ${this.maxRequestBytes} bytes.`,
+          errorCode: 'USAGE',
         }, null, Date.now())
         return
       }
@@ -217,8 +219,10 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
       request = JSON.parse(line)
     } catch {
       this.respond(socket, {
-        ok: false,
-        error: { code: 'USAGE', message: 'Malformed CLI request: expected one JSON object per line.' },
+        id: null,
+        type: 'error',
+        error: 'Malformed CLI request: expected one JSON object per line.',
+        errorCode: 'USAGE',
       }, null, started)
       return
     }
@@ -237,30 +241,41 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
     this.respond(socket, response, request, started)
   }
 
-  private async dispatch(request: CliRequest, context: CliCallContext): Promise<CliResponse> {
+  private async dispatch(request: CliRequest, context: CliCallContext): Promise<Reply> {
+    const id = request?.id ?? null
     try {
-      const result = await this.call(uuidv4(), request?.method, request?.params || {}, context)
-      return { ok: true, result }
+      const data = await this.call(uuidv4(), request?.method, request?.params || {}, context)
+      return { id, type: 'reply', data }
     } catch (error) {
       if (error instanceof UnknownMethodError) {
-        return { ok: false, error: { code: 'USAGE', message: error.message } }
+        return { id, type: 'error', error: error.message, errorName: error.name, errorCode: 'USAGE' }
       }
       if (isCliError(error)) {
-        return { ok: false, error: error.toPayload() }
+        return {
+          id,
+          type: 'error',
+          error: error.message,
+          errorName: error.name,
+          errorCode: error.code,
+          errorHint: error.hint,
+          errorDetail: error.details,
+        }
       }
       log.error('CLI request failed', error)
-      return { ok: false, error: { code: 'INTERNAL', message: error?.message ?? String(error) } }
+      return { id, type: 'error', error: error?.message ?? String(error), errorName: error?.name, errorCode: 'INTERNAL' }
     }
   }
 
-  private respond(socket: net.Socket, response: CliResponse, request: CliRequest | null, started: number): void {
+  private respond(socket: net.Socket, response: Reply, request: CliRequest | null, started: number): void {
     let payload: string
     try {
       payload = JSON.stringify(response, (_key, value) => serializeBigInt(value))
     } catch (error) {
       response = {
-        ok: false,
-        error: { code: 'INTERNAL', message: `Could not serialize the response: ${error?.message ?? error}` },
+        id: response.id,
+        type: 'error',
+        error: `Could not serialize the response: ${error?.message ?? error}`,
+        errorCode: 'INTERNAL',
       }
       payload = JSON.stringify(response)
     }

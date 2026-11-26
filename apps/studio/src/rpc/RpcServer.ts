@@ -1,6 +1,7 @@
 import { uuidv4 } from "@/lib/uuid";
 import type { MessagePortMain as ElectronPort } from "electron";
-import type { Method, Notification, Reply, Request } from "./types";
+import type { Reply } from "@beekeeperstudio/cli";
+import type { Method, Notification, Request } from "./types";
 
 /** Thrown by RpcServer.call when the request was cancelled before it finished. */
 export class CancelError extends Error {

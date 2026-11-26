@@ -183,9 +183,9 @@ export function formatErrorPayload(error: CliErrorPayload): string {
 /** Runs `request` and prints the text it returns, or the error it failed with. */
 export async function send(
   command: CommandUnknownOpts,
-  request: () => Promise<string>,
+  request: () => Promise<unknown>,
 ): Promise<void> {
-  let output: string;
+  let output: unknown;
   try {
     output = await request();
   } catch (error) {
@@ -194,8 +194,11 @@ export async function send(
     }
     throw error;
   }
-  if (output) {
+  if (typeof output === "string") {
     command.configureOutput().writeOut(output + "\n");
+  } else if (output !== undefined) {
+    const json = JSON.stringify(output);
+    command.configureOutput().writeOut(json + "\n");
   }
 }
 

@@ -3,9 +3,9 @@ import type {
   Method,
   Notification,
   RequestOptions,
-  Reply,
   Request,
 } from "./types";
+import type { Reply } from "@beekeeperstudio/cli";
 import type { MessagePortMain as ElectronPort } from "electron";
 import { CancelError } from "./RpcServer";
 

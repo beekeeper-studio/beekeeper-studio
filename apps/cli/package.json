@@ -13,9 +13,6 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "markdown-table": "^3.0.2"
-  },
   "devDependencies": {
     "@types/node": "^22.13.4",
     "typescript": "~5.8.3",

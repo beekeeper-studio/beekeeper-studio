@@ -138,14 +138,14 @@ export interface StructureResult {
   warnings: string[];
 }
 
-export interface CreateTabParams {
+export interface OpenTabParams {
   connection?: string;
   tab: CliTabType;
   /** SQL to prefill a query tab with. */
   sql?: string;
 }
 
-export interface CreateTabResult {
+export interface OpenTabResult {
   tabId: number;
 }
 
@@ -222,6 +222,8 @@ export interface CliCreateTabRequest {
 }
 
 export interface CliRequest {
+  /** Missing from clients older than ids on the wire. */
+  id?: string;
   method: CliMethodName;
   params: unknown;
   /** Missing from clients older than per-client approval. */
@@ -251,17 +253,18 @@ export interface CliErrorPayload {
   details?: unknown;
 }
 
-export interface CliResultResponse {
-  ok: true;
-  result: unknown;
+export type Reply = {
+  /** Null when the request could not be parsed. */
+  id: string | null;
+  type: "reply" | "error";
+  data?: unknown;
+  error?: string;
+  errorName?: string;
+  errorCode?: CliErrorCode;
+  errorHint?: string;
+  errorDetail?: unknown;
+  stack?: string;
 }
-
-export interface CliErrorResponse {
-  ok: false;
-  error: CliErrorPayload;
-}
-
-export type CliResponse = CliResultResponse | CliErrorResponse;
 
 export class CliError extends Error {
   code: CliErrorCode;

@@ -13,8 +13,10 @@ async function fakeApp(result: unknown): Promise<string> {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-cli-"));
   const socketPath = path.join(dir, "cli.sock");
   server = net.createServer((socket) => {
-    socket.once("data", () => {
-      socket.end(JSON.stringify({ ok: true, result }) + "\n");
+    socket.once("data", (chunk) => {
+      const request = JSON.parse(chunk.toString());
+      const reply = { id: request.id, type: "reply", data: result };
+      socket.end(JSON.stringify(reply) + "\n");
     });
   });
   await new Promise<void>((resolve) => server!.listen(socketPath, resolve));
@@ -36,7 +38,7 @@ describe("Client communication", () => {
   it("returns no connections when none are open", async () => {
     const socketPath = await fakeApp({ connections: [] });
     const client = new Client({ socketPath });
-    expect((await client.getConnections()).json().connections).toEqual([]);
+    expect((await client.getConnections()).connections).toEqual([]);
   });
 
   it("returns the open connections", async () => {
@@ -49,7 +51,7 @@ describe("Client communication", () => {
     };
     const socketPath = await fakeApp({ connections: [open] });
     const client = new Client({ socketPath });
-    expect((await client.getConnections()).json().connections).toEqual([open]);
+    expect((await client.getConnections()).connections).toEqual([open]);
   });
 });
 

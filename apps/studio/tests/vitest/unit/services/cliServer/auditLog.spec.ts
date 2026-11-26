@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { CLI_AUDIT_SQL_MAX_CHARS, CliAuditLog, buildAuditEntry, createElectronLogSink, summarizeResult } from '@/services/cliServer/auditLog'
-import { CliRequest, CliResponse } from '@beekeeperstudio/cli'
+import { CliRequest, Reply } from '@beekeeperstudio/cli'
 
 function request(method: CliRequest['method'], params: CliRequest['params'] = {}): CliRequest {
   return { method, params }
@@ -10,9 +10,10 @@ const now = new Date('2026-10-30T12:00:00.000Z')
 
 describe('buildAuditEntry', () => {
   it('records a successful query with a summary instead of the rows', () => {
-    const response: CliResponse = {
-      ok: true,
-      result: {
+    const response: Reply = {
+      id: null,
+      type: 'reply',
+      data: {
         results: [
           { command: 'SELECT', columns: ['id'], rows: [{ id: 1 }, { id: 2 }], rowCount: 2, totalRowCount: 20005, truncated: true, maxRows: 20000, affectedRows: 0 },
           { command: 'SELECT', columns: ['n'], rows: [{ n: 1 }], rowCount: 1, totalRowCount: 1, truncated: false, maxRows: 20000, affectedRows: 0 },
@@ -37,9 +38,10 @@ describe('buildAuditEntry', () => {
   })
 
   it('records a successful entities with a summary instead of the entities', () => {
-    const response: CliResponse = {
-      ok: true,
-      result: {
+    const response: Reply = {
+      id: null,
+      type: 'reply',
+      data: {
         schema: 'public',
         entities: [
           { schema: 'public', name: 'customers', entityType: 'table' },
@@ -61,9 +63,12 @@ describe('buildAuditEntry', () => {
   })
 
   it('records errors with their code', () => {
-    const response: CliResponse = {
-      ok: false,
-      error: { code: 'ACCESS_DENIED', message: 'Access to "Prod" was denied for Claude Code.', hint: 'Run the command again to ask again.' },
+    const response: Reply = {
+      id: null,
+      type: 'error',
+      error: 'Access to "Prod" was denied for Claude Code.',
+      errorCode: 'ACCESS_DENIED',
+      errorHint: 'Run the command again to ask again.',
     }
     const entry = buildAuditEntry({ request: request('getEntities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
     expect(entry.ok).toBe(false)
@@ -73,7 +78,7 @@ describe('buildAuditEntry', () => {
   })
 
   it('handles requests that could not be parsed', () => {
-    const response: CliResponse = { ok: false, error: { code: 'USAGE', message: 'Malformed CLI request: expected one JSON object per line.' } }
+    const response: Reply = { id: null, type: 'error', error: 'Malformed CLI request: expected one JSON object per line.', errorCode: 'USAGE' }
     const entry = buildAuditEntry({ request: null, response, durationMs: 0, responseBytes: 90 }, now)
     expect(entry.method).toBeNull()
     expect(entry.params).toBeNull()
@@ -83,7 +88,7 @@ describe('buildAuditEntry', () => {
   it('cuts very long sql but keeps its length', () => {
     const sql = 'select ' + 'x'.repeat(CLI_AUDIT_SQL_MAX_CHARS * 2)
     const entry = buildAuditEntry(
-      { request: request('runQuery', { sql }), response: { ok: true, result: { connection: { id: 's', name: 'n' }, results: [] } }, durationMs: 1, responseBytes: 10 },
+      { request: request('runQuery', { sql }), response: { id: null, type: 'reply', data: { connection: { id: 's', name: 'n' }, results: [] } }, durationMs: 1, responseBytes: 10 },
       now
     )
     expect((entry.params.sql as string).length).toBe(CLI_AUDIT_SQL_MAX_CHARS)
@@ -120,7 +125,7 @@ describe('CliAuditLog', () => {
     const log = new CliAuditLog({ write: (line) => lines.push(line) })
     const entry = log.record({
       request: request('runQuery', { sql: 'select 1', password: 'hunter2' } as any),
-      response: { ok: true, result: { connection: { id: 's', name: 'Dev' }, results: [] } },
+      response: { id: null, type: 'reply', data: { connection: { id: 's', name: 'Dev' }, results: [] } },
       durationMs: 2,
       responseBytes: 50,
     })
@@ -136,7 +141,7 @@ describe('CliAuditLog', () => {
   it('reports sink failures without throwing', () => {
     const onError = vi.fn()
     const log = new CliAuditLog({ write: () => { throw new Error('disk full') } }, onError)
-    const entry = log.record({ request: request('getConnections'), response: { ok: true, result: { connections: [] } }, durationMs: 1, responseBytes: 20 })
+    const entry = log.record({ request: request('getConnections'), response: { id: null, type: 'reply', data: { connections: [] } }, durationMs: 1, responseBytes: 20 })
     expect(entry).toBeNull()
     expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'disk full' }))
   })

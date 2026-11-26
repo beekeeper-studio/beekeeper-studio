@@ -370,11 +370,11 @@ describe("bks", () => {
 
   it("prints the created tab", async () => {
     const result = await bks("create-tab query select 1");
-    expect(result.out).toBe(`${created.length}\n`);
+    expect(result.json()).toEqual({ tabId: created.length });
   });
 
   it("switches to a tab by the id create-tab query printed", async () => {
-    const tabId = (await bks("create-tab query")).out.trim();
+    const tabId = (await bks("create-tab query")).json().tabId;
     const result = await bks(`switch-tab ${tabId}`);
     expect(result.error).toBeNull();
     expect(result.out).toBe("");

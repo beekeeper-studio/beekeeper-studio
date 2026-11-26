@@ -184,10 +184,6 @@ importers:
         version: 3.0.0
 
   apps/cli:
-    dependencies:
-      markdown-table:
-        specifier: ^3.0.2
-        version: 3.0.4
     devDependencies:
       '@types/node':
         specifier: ^22.13.4

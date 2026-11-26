@@ -43,7 +43,15 @@ import {
   RegistryModule,
   LicenseModule,
 } from '@/services/plugin/modules';
-import type { Reply, Request } from '@/rpc/types';
+import type { Request } from '@/rpc/types';
+import type { Reply as RpcReply } from '@beekeeperstudio/cli';
+import type {
+  ExtensionRegistryErrorCode,
+  ExtensionRepositoryErrorCode,
+  PluginErrorCode,
+  PluginSystemErrorCode,
+  ThemeSystemErrorCode,
+} from '@/lib/errors';
 
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
@@ -74,6 +82,12 @@ const driverDepManager = new DriverDepManager({
   platform: platformInfo.platform as DepPlatform,
   arch: (process.arch === 'x64' ? 'x64' : 'arm64') as DepArch,
 });
+
+// errorCode is omitted because these codes are not CliErrorCodes
+interface Reply extends Omit<RpcReply, 'errorCode'> {
+  errorName?: "PluginSystemError" | "PluginError" | "ExtensionRegistryError" | "ExtensionRepositoryError" | "ThemeSystemError" | "CancelError" | "Error"
+  errorCode?: PluginSystemErrorCode | PluginErrorCode | ExtensionRegistryErrorCode | ExtensionRepositoryErrorCode | ThemeSystemErrorCode
+}
 
 export const handlers: Handlers = {
   ...ConnHandlers,

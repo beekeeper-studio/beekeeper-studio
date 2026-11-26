@@ -1,18 +1,23 @@
 import { EventEmitter } from "events";
+import { randomUUID } from "crypto";
 import net from "net";
 import {
   CliError,
-  ConnectionsParams,
-  CliResponse,
-  CliResultResponse,
+  ConnectionsResult,
+  Reply,
   EntitiesParams,
+  EntitiesResult,
   SchemasParams,
+  SchemasResult,
   QueryParams,
+  QueryResult,
   StructureParams,
-  CreateTabParams,
-  CreateTabResult,
+  StructureResult,
+  OpenTabParams,
+  OpenTabResult,
   SwitchTabParams,
   SavedQueriesParams,
+  SavedQueriesResult,
   SavedQueryParams,
   SavedQueryResult,
   CreateSavedQueryParams,
@@ -20,13 +25,6 @@ import {
   RequestApprovalParams,
   RequestApprovalResult,
 } from "./protocol";
-import { ConnectionsReply } from "./replies/ConnectionsReply";
-import { EntitiesReply } from "./replies/EntitiesReply";
-import { SchemasReply } from "./replies/SchemasReply";
-import { QueryReply } from "./replies/QueryReply";
-import { StructureReply } from "./replies/StructureReply";
-import { CliReply } from "./replies/CliReply";
-import { SavedQueriesReply } from "./replies/SavedQueriesReply";
 import { defaultCliSocketPath } from "./socketPath";
 
 export const CLI_EXIT_OK = 0;
@@ -72,34 +70,28 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
     this.timeout = options.timeout ?? DEFAULT_CLI_TIMEOUT;
   }
 
-  async getConnections(params: ConnectionsParams = {}): Promise<ConnectionsReply> {
-    const response = await this.request("getConnections", params);
-    return new ConnectionsReply(response);
+  async getConnections(): Promise<ConnectionsResult> {
+    return (await this.request("getConnections", {})) as ConnectionsResult;
   }
 
-  async getSchemas(params: SchemasParams): Promise<SchemasReply> {
-    const response = await this.request("getSchemas", params);
-    return new SchemasReply(response);
+  async getSchemas(params: SchemasParams): Promise<SchemasResult> {
+    return (await this.request("getSchemas", params)) as SchemasResult;
   }
 
-  async getEntities(params: EntitiesParams): Promise<EntitiesReply> {
-    const response = await this.request("getEntities", params);
-    return new EntitiesReply(response);
+  async getEntities(params: EntitiesParams): Promise<EntitiesResult> {
+    return (await this.request("getEntities", params)) as EntitiesResult;
   }
 
-  async getTableStructure(params: StructureParams): Promise<StructureReply> {
-    const response = await this.request("getTableStructure", params);
-    return new StructureReply(response);
+  async getTableStructure(params: StructureParams): Promise<StructureResult> {
+    return (await this.request("getTableStructure", params)) as StructureResult;
   }
 
-  async runQuery(params: QueryParams): Promise<QueryReply> {
-    const response = await this.request("runQuery", params);
-    return new QueryReply(response);
+  async runQuery(params: QueryParams): Promise<QueryResult> {
+    return (await this.request("runQuery", params)) as QueryResult;
   }
 
-  async openTab(params: CreateTabParams): Promise<CliReply<CreateTabResult>> {
-    const response = await this.request("openTab", params);
-    return new CliReply(response);
+  async openTab(params: OpenTabParams): Promise<OpenTabResult> {
+    return (await this.request("openTab", params)) as OpenTabResult;
   }
 
   async switchTab(params: SwitchTabParams): Promise<void> {
@@ -108,42 +100,39 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
 
   async requestApproval(
     params: RequestApprovalParams,
-  ): Promise<CliReply<RequestApprovalResult>> {
-    const response = await this.request("requestApproval", params);
-    return new CliReply(response);
+  ): Promise<RequestApprovalResult> {
+    return (await this.request(
+      "requestApproval",
+      params,
+    )) as RequestApprovalResult;
   }
 
-  async getSavedQueries(params: SavedQueriesParams): Promise<SavedQueriesReply> {
-    const response = await this.request("getSavedQueries", params);
-    return new SavedQueriesReply(response);
+  async getSavedQueries(
+    params: SavedQueriesParams,
+  ): Promise<SavedQueriesResult> {
+    return (await this.request(
+      "getSavedQueries",
+      params,
+    )) as SavedQueriesResult;
   }
 
-  async getSavedQuery(
-    params: SavedQueryParams,
-  ): Promise<CliReply<SavedQueryResult>> {
-    const response = await this.request("getSavedQuery", params);
-    return new CliReply(response);
+  async getSavedQuery(params: SavedQueryParams): Promise<SavedQueryResult> {
+    return (await this.request("getSavedQuery", params)) as SavedQueryResult;
   }
 
   async createSavedQuery(
     params: CreateSavedQueryParams,
-  ): Promise<CliReply<SavedQueryResult>> {
-    const response = await this.request("createSavedQuery", params);
-    return new CliReply(response);
+  ): Promise<SavedQueryResult> {
+    return (await this.request("createSavedQuery", params)) as SavedQueryResult;
   }
 
-  async updateSavedQuery(
-    params: UpdateSavedQueryParams,
-  ): Promise<CliReply<SavedQueryResult>> {
-    const response = await this.request("updateSavedQuery", params);
-    return new CliReply(response);
+  async updateSavedQuery(params: UpdateSavedQueryParams): Promise<void> {
+    await this.request("updateSavedQuery", params);
   }
 
-  /** Sends one request and resolves with the app's reply, or throws the CliError it replied with. */
-  private async request(
-    method: unknown,
-    params: unknown,
-  ): Promise<CliResultResponse> {
+  /** Sends one request and resolves with the reply's data, or throws the CliError it replied with. */
+  private async request(method: unknown, params: unknown): Promise<unknown> {
+    const id = randomUUID();
     const reply = new Promise<string>((resolve, reject) => {
       const socket = net.createConnection(this.socketPath);
       socket.setEncoding("utf8");
@@ -176,7 +165,7 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
         const client = this.options.clientName
           ? { name: this.options.clientName }
           : undefined;
-        socket.write(JSON.stringify({ method, params, client }) + "\n");
+        socket.write(JSON.stringify({ id, method, params, client }) + "\n");
       });
       socket.on("data", (chunk: string) => {
         buffer += chunk;
@@ -211,7 +200,7 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
       throw error;
     }
 
-    let response: CliResponse;
+    let response: Reply;
     try {
       response = JSON.parse(raw);
     } catch {
@@ -220,19 +209,23 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
         "Beekeeper Studio sent a reply that is not valid JSON.",
       );
     }
-    if (!response || typeof response !== "object" || !("ok" in response)) {
+    if (
+      !response ||
+      typeof response !== "object" ||
+      response.id !== id ||
+      (response.type !== "reply" && response.type !== "error")
+    ) {
       throw new CliError(
         "INTERNAL",
         "Beekeeper Studio sent an unexpected reply.",
       );
     }
-    if (response.ok === false) {
-      const error = response.error;
-      throw new CliError(error.code, error.message, {
-        hint: error.hint,
-        details: error.details,
+    if (response.type === "error") {
+      throw new CliError(response.errorCode ?? "INTERNAL", response.error, {
+        hint: response.errorHint,
+        details: response.errorDetail,
       });
     }
-    return response;
+    return response.data;
   }
 }

@@ -80,15 +80,19 @@ describe("CliServer", () => {
     await server.start();
 
     await expect(
-      sendRawString('{"method":"method1","params":{}}\n'),
-    ).resolves.toBe('{"ok":true,"result":{"big":"9007199254740993"}}\n');
+      sendRawString('{"id":"1","method":"method1","params":{}}\n'),
+    ).resolves.toBe(
+      '{"id":"1","type":"reply","data":{"big":"9007199254740993"}}\n',
+    );
     await expect(sendRawString('{"method":"method2"}\n')).resolves.toBe(
-      '{"ok":false,"error":{"code":"NOT_FOUND","message":"nope","hint":"look elsewhere"}}\n',
+      '{"id":null,"type":"error","error":"nope","errorName":"CliError",' +
+        '"errorCode":"NOT_FOUND","errorHint":"look elsewhere"}\n',
     );
     await expect(
       sendRawString('{"method":"method3","params":{}}\n'),
     ).resolves.toBe(
-      '{"ok":false,"error":{"code":"INTERNAL","message":"boom"}}\n',
+      '{"id":null,"type":"error","error":"boom","errorName":"Error",' +
+        '"errorCode":"INTERNAL"}\n',
     );
   });
 
@@ -99,11 +103,11 @@ describe("CliServer", () => {
 
     for (const method of ["missing", "toString", "__proto__"]) {
       await expect(send({ method, params: {} })).resolves.toEqual({
-        ok: false,
-        error: {
-          code: "USAGE",
-          message: `Unknown method "${method}".`,
-        },
+        id: null,
+        type: "error",
+        error: `Unknown method "${method}".`,
+        errorName: "UnknownMethodError",
+        errorCode: "USAGE",
       });
     }
   });
@@ -116,11 +120,10 @@ describe("CliServer", () => {
 
     await expect(sendRawString("not json\n")).resolves.toBe(
       JSON.stringify({
-        ok: false,
-        error: {
-          code: "USAGE",
-          message: "Malformed CLI request: expected one JSON object per line.",
-        },
+        id: null,
+        type: "error",
+        error: "Malformed CLI request: expected one JSON object per line.",
+        errorCode: "USAGE",
       }) + "\n",
     );
     expect(events).toHaveLength(1);
@@ -135,7 +138,8 @@ describe("CliServer", () => {
     await expect(
       sendRawString(JSON.stringify({ method: "method1" }), { end: true }),
     ).resolves.toBe(
-      JSON.stringify({ ok: true, result: { pong: true } }) + "\n",
+      JSON.stringify({ id: null, type: "reply", data: { pong: true } }) +
+        "\n",
     );
   });
 
@@ -151,8 +155,10 @@ describe("CliServer", () => {
     await expect(
       send({ method: "method1", params: { sql: "x".repeat(200) } }),
     ).resolves.toEqual({
-      ok: false,
-      error: { code: "USAGE", message: "Request is larger than 64 bytes." },
+      id: null,
+      type: "error",
+      error: "Request is larger than 64 bytes.",
+      errorCode: "USAGE",
     });
     expect(called).toBe(false);
   });
@@ -166,12 +172,14 @@ describe("CliServer", () => {
     await server.start();
 
     await expect(send({ method: "method1" })).resolves.toEqual({
-      ok: true,
-      result: {},
+      id: null,
+      type: "reply",
+      data: {},
     });
     await expect(send({ method: "method1" })).resolves.toEqual({
-      ok: true,
-      result: {},
+      id: null,
+      type: "reply",
+      data: {},
     });
   });
 
@@ -221,8 +229,9 @@ describe("CliServer", () => {
       server.register("method1", async () => ({}));
       await server.start();
       await expect(send({ method: "method1" })).resolves.toEqual({
-        ok: true,
-        result: {},
+        id: null,
+        type: "reply",
+        data: {},
       });
     },
   );
@@ -242,8 +251,9 @@ describe("CliServer", () => {
       expect(error?.code).toBe("EADDRINUSE");
       await second.stop();
       await expect(send({ method: "method1" })).resolves.toEqual({
-        ok: true,
-        result: { from: "first" },
+        id: null,
+        type: "reply",
+        data: { from: "first" },
       });
     },
   );

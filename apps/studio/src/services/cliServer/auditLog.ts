@@ -1,12 +1,12 @@
 import { redactMessage } from '@/lib/log/redact'
-import { CliRequest, CliResponse } from '@beekeeperstudio/cli'
+import { CliRequest, Reply } from '@beekeeperstudio/cli'
 import { clientInfo } from './commands'
 
 /** What the socket server reports after answering one request. */
 export interface CliRequestEvent {
   /** Null when the request line was not valid JSON. */
   request: CliRequest | null
-  response: CliResponse
+  response: Reply
   durationMs: number
   responseBytes: number
 }
@@ -91,16 +91,15 @@ export function buildAuditEntry(event: CliRequestEvent, now: Date = new Date()):
     method,
     client: clientInfo(event.request?.client).name,
     params: auditParams(event.request),
-    ok: !!event.response?.ok,
+    ok: event.response?.type === 'reply',
     durationMs: Math.max(0, Math.round(event.durationMs)),
     responseBytes: event.responseBytes,
   }
-  if (event.response?.ok) {
-    const result: any = event.response.result
+  if (event.response?.type === 'reply') {
+    const result: any = event.response.data
     entry.result = summarizeResult(method, result)
-  } else if (event.response && event.response.ok === false) {
-    const error = event.response.error
-    entry.error = { code: error?.code ?? 'INTERNAL', message: String(error?.message ?? '') }
+  } else if (event.response?.type === 'error') {
+    entry.error = { code: event.response.errorCode ?? 'INTERNAL', message: String(event.response.error ?? '') }
   }
   return entry
 }
