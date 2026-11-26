@@ -722,6 +722,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         resultsEditData: [],
         resultEditableMap: [],
         pollInterval: null,
+        editorClosed: false,
         queryDeleted: false
       }
     },
@@ -2214,6 +2215,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         };
       },
       maybePollOriginalText() {
+        if (this.editorClosed) return
         if (this.active && this.tab.queryId && this.isCloud && _.isNil(this.pollInterval)) {
           this.pollInterval = setInterval(async () => {
             let query: ISavedQuery;
@@ -2287,6 +2289,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (this.tab.queryId) {
           this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
 
+          if (this.editorClosed) return
           this.maybePollOriginalText();
         } else if (this.tab.usedQueryId) {
           this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
@@ -2322,6 +2325,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.addTransactionTimeoutListener();
     },
     beforeDestroy() {
+      this.editorClosed = true
       this.unregisterHandlers(this.rootBindings)
       if(this.split) {
         this.split.destroy()
@@ -2332,6 +2336,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.stopTimer();
       if (!_.isNil(this.pollInterval)) {
         clearInterval(this.pollInterval);
+        this.pollInterval = null;
       }
     },
   }
