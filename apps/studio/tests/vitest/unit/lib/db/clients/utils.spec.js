@@ -99,6 +99,24 @@ describe("buildSelectTopQuery", () => {
   })
 })
 
+describe("buildSelectTopQuery filter params", () => {
+  // Quick Filter passes the raw cell value, so it can be 0, false or ''
+  it.each([0, false, ''])("binds a param for the falsy value %j", (value) => {
+    const result = buildSelectTopQuery('info', 0, 10, null, [{ field: 'id', type: '=', value }])
+    expect(result.query).toContain('`id` = ?')
+    expect(result.params).toStrictEqual([value])
+  })
+
+  it("keeps params in line with placeholders around a falsy value", () => {
+    const result = buildSelectTopQuery('info', 0, 10, null, [
+      { field: 'a', type: '=', value: 0 },
+      { op: 'AND', field: 'b', type: 'is', value: null },
+      { op: 'AND', field: 'c', type: '=', value: 5 },
+    ])
+    expect(result.params).toStrictEqual([0, 5])
+  })
+})
+
 describe('buildSchemaFilter SQL injection', () => {
   const identity = (s) => s
 
