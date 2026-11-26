@@ -145,7 +145,9 @@ export function buildFilterString(filters: TableFilter[], columns = [], wrapIden
 
     log.info('FILTER: ', filterString)
 
-    filterParams = filters.filter((item) => !!item.value).flatMap((item) => {
+    // Every filter except IS / IS NOT has a placeholder, so it needs a
+    // param even when the value is falsy (0, false or '')
+    filterParams = filters.filter((item) => !item.type.includes('is')).flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
     })
   }

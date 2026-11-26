@@ -291,6 +291,30 @@ describe("Postgres UNIT tests (no connection required)", () => {
     })
   })
 
+  describe("buildSelectTopQueries filter params", () => {
+    const build = (filters) => client.buildSelectTopQueries({
+      table: 'users', schema: 'public', filters, orderBy: [],
+      limit: 100, offset: 0, version: { number: 160000 },
+    })
+
+    // Quick Filter passes the raw cell value, so it can be 0, false or ''
+    it.each([0, false, ''])("binds a param for the falsy value %j", (value) => {
+      const result = build([{ field: 'id', type: '=', value }])
+      expect(result.query).toContain('"id" = $1')
+      expect(result.params).toStrictEqual([value])
+    })
+
+    it("keeps params in line with placeholders around a falsy value", () => {
+      const result = build([
+        { field: 'a', type: '=', value: 0 },
+        { op: 'AND', field: 'b', type: 'is', value: null },
+        { op: 'AND', field: 'c', type: '=', value: 5 },
+      ])
+      expect(result.query).toContain('"a" = $1 AND "b" IS NULL AND "c" = $2')
+      expect(result.params).toStrictEqual([0, 5])
+    })
+  })
+
   describe("buildSelectTopQueries selects", () => {
     const build = (selects) => client.buildSelectTopQueries({
       table: 'users', schema: 'public', selects, filters: [], orderBy: [],

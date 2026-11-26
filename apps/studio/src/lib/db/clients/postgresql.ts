@@ -1270,7 +1270,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       })
       filterString = "WHERE " + joinFilters(allFilters, filters)
 
-      params = filters.filter((item) => !!item.value).flatMap((item) => {
+      // Every filter except IS / IS NOT has a placeholder, so it needs a
+      // param even when the value is falsy (0, false or '')
+      params = filters.filter((item) => !item.type.includes('is')).flatMap((item) => {
         return _.isArray(item.value) ? item.value : [item.value]
       })
     }
