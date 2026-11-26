@@ -2,7 +2,8 @@ import { uuidv4 } from "@/lib/uuid";
 import type { MessagePortMain as ElectronPort } from "electron";
 import { CancelError } from "@beekeeperstudio/cli";
 import type { Reply } from "@beekeeperstudio/cli";
-import type { Method, Notification, Request } from "./types";
+import type { Notification, Request } from "@beekeeperstudio/cli";
+import type { Method } from "./types";
 
 /** Thrown by RpcServer.call when nothing is registered under the name. */
 export class UnknownMethodError extends Error {

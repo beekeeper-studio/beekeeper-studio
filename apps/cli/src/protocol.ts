@@ -224,7 +224,7 @@ export interface CreateTabRequest {
 export interface Request {
   /** Missing from clients older than ids on the wire. */
   id?: string;
-  name: MethodName | "$/cancel";
+  name: string;
   args: unknown;
   /** Missing from clients older than per-client approval. */
   client?: ClientInfo;

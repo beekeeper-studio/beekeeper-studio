@@ -43,7 +43,7 @@ import {
   RegistryModule,
   LicenseModule,
 } from '@/services/plugin/modules';
-import type { Request } from '@/rpc/types';
+import type { Request } from '@beekeeperstudio/cli';
 import type { Reply as RpcReply } from '@beekeeperstudio/cli';
 import type {
   ExtensionRegistryErrorCode,

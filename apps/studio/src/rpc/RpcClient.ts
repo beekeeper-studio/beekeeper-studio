@@ -1,5 +1,10 @@
 import { uuidv4 } from "@/lib/uuid";
-import type { Method, Notification, RequestOptions, Request } from "./types";
+import type { Method } from "./types";
+import type {
+  Notification,
+  Request,
+  RequestOptions,
+} from "@beekeeperstudio/cli";
 import { CancelError } from "@beekeeperstudio/cli";
 import type { Reply } from "@beekeeperstudio/cli";
 import type { MessagePortMain as ElectronPort } from "electron";
