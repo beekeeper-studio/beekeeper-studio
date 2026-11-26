@@ -8,22 +8,22 @@
  * file, so nothing in here may depend on electron.
  */
 
-/** Hard cap on the number of rows a single `query` result returns. */
+/** Hard cap on the number of rows a single `runQuery` result returns. */
 export const CLI_MAX_QUERY_ROWS = 20000;
 
 export const CLI_METHODS = [
-  "connections",
-  "schemas",
-  "entities",
-  "structure",
-  "query",
-  "createTab",
+  "getConnections",
+  "getSchemas",
+  "getEntities",
+  "getTableStructure",
+  "runQuery",
+  "openTab",
   "switchTab",
-  "savedQueries",
-  "savedQuery",
+  "getSavedQueries",
+  "getSavedQuery",
   "createSavedQuery",
   "updateSavedQuery",
-  "askApproval",
+  "requestApproval",
 ] as const;
 
 export type CliMethodName = (typeof CLI_METHODS)[number];
@@ -75,6 +75,13 @@ export interface CliAccess {
 /** Who is calling, as the bks command detected it. */
 export interface CliClientInfo {
   name: string;
+}
+
+/** What the approval dialog shows. */
+export interface ApprovalRequester {
+  clientName: string;
+  connectionName: string;
+  readOnlyMode: boolean;
 }
 
 export interface ConnectionsParams {}
@@ -138,7 +145,9 @@ export interface CreateTabParams {
   sql?: string;
 }
 
-export interface CreateTabResult extends CliCreateTabRequest, CliTabSummary {}
+export interface CreateTabResult {
+  tabId: number;
+}
 
 export interface QueryParams {
   connection?: string;
@@ -151,16 +160,14 @@ export interface QueryResult {
 
 export interface SwitchTabParams {
   connection?: string;
-  tabId: string;
+  tabId: number;
 }
 
-export interface SwitchTabResult extends CliTabSummary {}
-
-export interface AskApprovalParams {
+export interface RequestApprovalParams {
   connection?: string;
 }
 
-export interface AskApprovalResult {
+export interface RequestApprovalResult {
   /** False when the client was approved before and no dialog was shown. */
   newlyApproved: boolean;
   access: CliAccess;
@@ -212,13 +219,6 @@ export interface UpdateSavedQueryParams {
 export interface CliCreateTabRequest {
   tab: CliTabType;
   sql?: string;
-}
-
-/** The tab the renderer created or switched to. */
-export interface CliTabSummary {
-  tabId: string;
-  title: string;
-  tabType: string;
 }
 
 export interface CliRequest {

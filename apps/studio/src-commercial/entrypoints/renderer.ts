@@ -35,6 +35,9 @@ import { ThemeRenderer } from "@/lib/theme/ThemeRenderer";
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
+import { RpcServer } from '@/rpc/RpcServer'
+import { RpcMixin } from '@/rpc/RpcMixin'
+import type { RendererMethods } from '@/lib/utility/RendererMethods'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
@@ -139,6 +142,7 @@ import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
     // @ts-ignore
     // window.platformInfo = window.main.platformInfo
     Vue.mixin(AppEventMixin)
+    Vue.mixin(RpcMixin)
     Vue.mixin({
       methods: {
         ctrlOrCmd(key) {
@@ -223,6 +227,11 @@ import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
         log.log('Received port in renderer with sId: ', sId);
 
         Vue.prototype.$util.setPort(port, sId);
+        const server = new RpcServer<RendererMethods>(port);
+        server.initialize();
+        // A closing window must not leave a bks command waiting forever
+        window.addEventListener("beforeunload", server.cancelAll.bind(server));
+        Vue.prototype.$server = server;
         app.$store.dispatch('settings/initializeSettings');
       }
     }

@@ -69,6 +69,7 @@ export type PluginTabContext = {
 export namespace TabTypeConfig {
   interface BaseConfig {
     type: TabType;
+    /** Default tab title, numbered automatically: "AI Shell #1", "AI Shell #2", etc. */
     name: string;
     /** Used for the dropdown menu next to the "new tab" icon. */
     menuItem?: {

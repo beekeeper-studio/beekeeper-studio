@@ -2,8 +2,10 @@ import fs from 'fs'
 import net from 'net'
 import { CliRequestEvent } from './auditLog'
 import { CliCallContext, clientInfo } from './commands'
-import { CliError, CliRequest, CliResponse, isCliError, isWindowsPipePath } from '@beekeeperstudio/cli'
+import { CliRequest, CliResponse, isCliError, isWindowsPipePath } from '@beekeeperstudio/cli'
+import { CancelError, UnknownMethodError } from '@/rpc/RpcServer'
 import { EventEmitter } from '@/common/EventEmitter'
+import { uuidv4 } from '@/lib/uuid'
 import { serializeBigInt } from '@/services/plugin/utils'
 import rawLog from '@bksLogger';
 
@@ -52,12 +54,15 @@ export function probeSocket(socketPath: string, timeoutMs = 1000): Promise<boole
  * line, the server answers with one response line and closes. Lives in the
  * utility process, next to the database connections it exposes.
  */
+type CliMethod = (...args: any[]) => unknown
+
 export class CliServer extends EventEmitter<CliServerEventMap> {
+  private readonly handlers = new Map<string, CliMethod>()
+  private readonly runningRequests = new Map<string, AbortController>()
   private server: net.Server | null = null
   private started = false
   private readonly sockets = new Set<net.Socket>()
   private readonly maxRequestBytes: number
-  private readonly funcs = new Map<string, Function>()
 
   constructor(private readonly options: CliServerOptions) {
     super()
@@ -66,8 +71,20 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
     this.handleError = this.handleError.bind(this)
   }
 
-  register(name: string, func: Function): void {
-    this.funcs.set(name, func)
+  register(name: string, handler: CliMethod): void {
+    this.handlers.set(name, handler)
+  }
+
+  /** Removes the handler only if it is still the one registered under `name`. */
+  unregister(name: string, handler: CliMethod): void {
+    if (this.handlers.get(name) === handler) {
+      this.handlers.delete(name)
+    }
+  }
+
+  /** Aborts the signal of the request with this id, if it is still running. */
+  cancel(id: string): void {
+    this.runningRequests.get(id)?.abort()
   }
 
   get socketPath(): string {
@@ -214,23 +231,20 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
     }
     socket.once('close', hangUp)
     const context: CliCallContext = { client: clientInfo(request?.client), signal: caller.signal }
-    const response = await this.call(request, context)
+    const response = await this.dispatch(request, context)
     socket.off('end', hangUp)
     socket.off('close', hangUp)
     this.respond(socket, response, request, started)
   }
 
-  private async call(request: CliRequest, context: CliCallContext): Promise<CliResponse> {
+  private async dispatch(request: CliRequest, context: CliCallContext): Promise<CliResponse> {
     try {
-      const method = typeof request?.method === 'string' ? this.funcs.get(request.method) : null
-      if (!method) {
-        throw new CliError('USAGE', `Unknown method "${request?.method}".`, {
-          hint: `Methods: ${[...this.funcs.keys()].join(', ')}.`,
-        })
-      }
-      const result = await method(request.params || {}, context)
+      const result = await this.call(uuidv4(), request?.method, request?.params || {}, context)
       return { ok: true, result }
     } catch (error) {
+      if (error instanceof UnknownMethodError) {
+        return { ok: false, error: { code: 'USAGE', message: error.message } }
+      }
       if (isCliError(error)) {
         return { ok: false, error: error.toPayload() }
       }
@@ -303,6 +317,40 @@ export class CliServer extends EventEmitter<CliServerEventMap> {
       if (fs.existsSync(socketPath)) fs.unlinkSync(socketPath)
     } catch (error) {
       log.warn(`Could not remove CLI socket ${socketPath}`, error)
+    }
+  }
+
+  /**
+   * Runs the handler registered under `name` with `args`, plus a last
+   * argument: a signal that `cancel(id)` aborts.
+   */
+  private async call(
+    id: string,
+    name: string,
+    ...args: unknown[]
+  ): Promise<unknown> {
+    const handler = this.handlers.get(name)
+    if (!handler) {
+      const methods = [...this.handlers.keys()]
+      throw new UnknownMethodError(name, methods)
+    }
+    const controller = new AbortController()
+    this.runningRequests.set(id, controller)
+    // The handler may ignore the signal, so stop waiting on it once aborted
+    const cancelled = Promise.withResolvers<never>()
+    controller.signal.addEventListener(
+      'abort',
+      cancelled.reject.bind(null, new CancelError(id)),
+      { once: true },
+    )
+    try {
+      const result = await Promise.race([
+        handler(...args, controller.signal),
+        cancelled.promise,
+      ])
+      return result
+    } finally {
+      this.runningRequests.delete(id)
     }
   }
 }

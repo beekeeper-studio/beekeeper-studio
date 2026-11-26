@@ -49,6 +49,9 @@ export const TabModule: Module<State, RootState> = {
     ],
   }),
   getters: {
+    queryConfig(state) {
+      return state.allTabTypeConfigs.find((t) => t.type === 'query')!;
+    },
     tabTypeConfigs(state, _getters, _rootState, rootGetters) {
       return state.allTabTypeConfigs.filter((tab) => {
         if (tab.type === "shell" && rootGetters.dialectData?.disabledFeatures?.shell) {

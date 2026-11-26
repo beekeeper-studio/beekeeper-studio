@@ -23,7 +23,7 @@ import {
   notRunningMessage,
 } from "./helpers";
 import {
-  CliClient,
+  Client,
   isConnectError,
   isCliError,
   defaultCliSocketPath,
@@ -48,7 +48,7 @@ export function createProgram(options: {
   const program = new Command("bks")
     .version(options.version, "-v, --version", "Output the version number")
     .description(
-      "Runs commands against a database connection that is already open in the Beekeeper Studio desktop app. A client has to be approved first: run ask-approval.",
+      "Runs commands against a database connection that is already open in the Beekeeper Studio desktop app. A client has to be approved first: run request-approval.",
     )
     .configureHelp({ showGlobalOptions: true })
     .showHelpAfterError("(add --help for usage)")
@@ -85,18 +85,18 @@ Examples:
   bks structure users --schema public
   bks query "select id, email from users limit 10"
   bks create-tab query "select id, email from users limit 10"
-  bks ask-approval
+  bks request-approval
   bks saved-queries list
 
 The client name shown in the approval dialog is detected from the parent
 processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     );
 
-  let client: CliClient;
+  let client: Client;
 
   program.hook("preAction", () => {
     const globals = program.opts();
-    client = new CliClient({
+    client = new Client({
       socketPath: globals.socket,
       timeout: globals.timeout,
       clientName: options.clientName ?? detectClientName(),
@@ -126,7 +126,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const reply = await client.connections();
+        const reply = await client.getConnections();
         return opts.format === "md" ? reply.markdown() : reply.raw();
       });
     });
@@ -138,7 +138,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const reply = await client.schemas({ connection: opts.connection });
+        const reply = await client.getSchemas({ connection: opts.connection });
         return opts.format === "md" ? reply.markdown() : reply.raw();
       });
     });
@@ -151,7 +151,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const reply = await client.entities({
+        const reply = await client.getEntities({
           connection: opts.connection,
           schema: opts.schema,
           entityTypes: ["table"],
@@ -173,7 +173,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const reply = await client.entities({
+        const reply = await client.getEntities({
           connection: opts.connection,
           schema: opts.schema,
           entityTypes: resolveEntityTypes(opts.type),
@@ -198,7 +198,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (name, opts, command) => {
       await send(command, async () => {
-        const reply = await client.structure({
+        const reply = await client.getTableStructure({
           connection: opts.connection,
           ...tableTarget(name, opts.schema),
         });
@@ -222,7 +222,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
         required: true,
       });
       await send(command, async () => {
-        const reply = await client.query({
+        const reply = await client.runQuery({
           connection: opts.connection,
           sql: sql as string,
         });
@@ -252,12 +252,12 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
         required: false,
       });
       await send(command, async () => {
-        const reply = await client.createTab({
+        const reply = await client.openTab({
           connection: opts.connection,
           tab: "query",
           sql,
         });
-        return reply.raw();
+        return String(reply.json().tabId);
       });
     });
 
@@ -268,24 +268,24 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(connectionOption)
     .action(async (id, opts, command) => {
       await send(command, async () => {
-        const reply = await client.switchTab({
+        await client.switchTab({
           connection: opts.connection,
-          tabId: id,
+          tabId: Number(id),
         });
-        return reply.raw();
+        return "";
       });
     });
 
   program
-    .command("ask-approval")
-    .alias("a")
+    .command("request-approval")
+    .alias("r")
     .description(
       "Ask for access to a connection. Opens a dialog in the app and waits until it is answered",
     )
     .addOption(connectionOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const reply = await client.askApproval({ connection: opts.connection });
+        const reply = await client.requestApproval({ connection: opts.connection });
         return reply.raw();
       });
     });
@@ -301,7 +301,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const reply = await client.savedQueries({ connection: opts.connection });
+        const reply = await client.getSavedQueries({ connection: opts.connection });
         return opts.format === "md" ? reply.markdown() : reply.raw();
       });
     });
@@ -313,7 +313,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(connectionOption)
     .action(async (id, opts, command) => {
       await send(command, async () => {
-        const reply = await client.savedQuery({ connection: opts.connection, id });
+        const reply = await client.getSavedQuery({ connection: opts.connection, id });
         return reply.raw();
       });
     });

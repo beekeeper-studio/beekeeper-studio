@@ -194,6 +194,8 @@ export async function send(
     }
     throw error;
   }
-  command.configureOutput().writeOut(output + "\n");
+  if (output) {
+    command.configureOutput().writeOut(output + "\n");
+  }
 }
 

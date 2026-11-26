@@ -3,7 +3,7 @@ import fs from "fs";
 import net from "net";
 import os from "os";
 import path from "path";
-import { CliClient } from "../src/CliClient";
+import { Client } from "../src/Client";
 import { OpenConnection } from "../src/protocol";
 
 let server: net.Server | null = null;
@@ -32,11 +32,11 @@ afterEach(async () => {
   dir = null;
 });
 
-describe("CliClient communication", () => {
+describe("Client communication", () => {
   it("returns no connections when none are open", async () => {
     const socketPath = await fakeApp({ connections: [] });
-    const client = new CliClient({ socketPath });
-    expect((await client.connections()).json().connections).toEqual([]);
+    const client = new Client({ socketPath });
+    expect((await client.getConnections()).json().connections).toEqual([]);
   });
 
   it("returns the open connections", async () => {
@@ -48,12 +48,12 @@ describe("CliClient communication", () => {
       approved: true,
     };
     const socketPath = await fakeApp({ connections: [open] });
-    const client = new CliClient({ socketPath });
-    expect((await client.connections()).json().connections).toEqual([open]);
+    const client = new Client({ socketPath });
+    expect((await client.getConnections()).json().connections).toEqual([open]);
   });
 });
 
-describe("CliClient timeout", () => {
+describe("Client timeout", () => {
   it("hangs up so the app can stop waiting too", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-cli-"));
     const socketPath = path.join(dir, "cli.sock");
@@ -67,9 +67,9 @@ describe("CliClient timeout", () => {
     });
     await new Promise<void>((resolve) => server!.listen(socketPath, resolve));
 
-    const client = new CliClient({ socketPath, timeout: 50 });
+    const client = new Client({ socketPath, timeout: 50 });
     client.on("error", () => undefined);
-    await expect(client.connections()).rejects.toThrow(
+    await expect(client.getConnections()).rejects.toThrow(
       "No reply from Beekeeper Studio after 50ms.",
     );
     await closed;

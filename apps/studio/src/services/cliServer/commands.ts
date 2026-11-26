@@ -35,7 +35,7 @@ export function clientInfo(raw: unknown): CliClientInfo {
 }
 
 export const CHANGE_ACCESS_HINT =
-  "Access is chosen when the client is approved. Reconnect in Beekeeper Studio, then run `bks ask-approval --timeout 0` to choose again.";
+  "Access is chosen when the client is approved. Reconnect in Beekeeper Studio, then run `bks request-approval --timeout 0` to choose again.";
 
 const FILE_BASED_TYPES = ["sqlite", "duckdb", "libsql"];
 

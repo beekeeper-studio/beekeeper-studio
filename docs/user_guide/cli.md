@@ -21,10 +21,10 @@ bks create-tab query "select id, email from users order by id limit 5"
 A client has to be approved before it can use a connection. Until then every command fails with `NOT_APPROVED` and prints the command that asks for approval:
 
 ```bash
-bks ask-approval --connection "Local Postgres" --timeout 0
+bks request-approval --connection "Local Postgres" --timeout 0
 ```
 
-`ask-approval` opens a dialog in the window that holds the connection and waits for your answer, for as long as `--timeout` allows (30 seconds by default). If it gives up, the dialog closes and nothing is approved. Pass `--timeout 0` to wait until you answer. If the client is already approved it returns right away with the current access.
+`request-approval` opens a dialog in the window that holds the connection and waits for your answer, for as long as `--timeout` allows (30 seconds by default). If it gives up, the dialog closes and nothing is approved. Pass `--timeout 0` to wait until you answer. If the client is already approved it returns right away with the current access.
 
 The dialog shows the client's name and lets you choose what it may do:
 
@@ -35,7 +35,7 @@ The dialog shows the client's name and lets you choose what it may do:
 
 On a connection in read only mode, write query types can't be granted.
 
-**Deny** fails `ask-approval` with `ACCESS_DENIED`; run it again to ask again. **Approve** keeps the choice for that client while the connection stays open. Disconnecting or closing the app revokes every approval, so the client has to ask again next time. To change what a client may do, reconnect and run `ask-approval` again.
+**Deny** fails `request-approval` with `ACCESS_DENIED`; run it again to ask again. **Approve** keeps the choice for that client while the connection stays open. Disconnecting or closing the app revokes every approval, so the client has to ask again next time. To change what a client may do, reconnect and run `request-approval` again.
 
 A command the client isn't allowed to run fails with `NOT_PERMITTED`.
 
@@ -91,34 +91,33 @@ Usage: bks [options] [command]
 
 Runs commands against a database connection that is already open in the
 Beekeeper Studio desktop app. A client has to be approved first: run
-ask-approval.
+request-approval.
 
 Options:
-  -v, --version               Output the version number
-  --socket <path>             Socket the app listens on (beekeeper-studio cli
-                              prints it). (default: the app's socket, env:
-                              BKS_CLI_SOCKET)
-  --timeout <ms>              Stop waiting for the app after this many
-                              milliseconds (0 waits forever) (default: 30000)
-  -h, --help                  display help for command
+  -v, --version                 Output the version number
+  --socket <path>               Socket the app listens on. (default: the app's
+                                socket, env: BKS_CLI_SOCKET)
+  --timeout <ms>                Stop waiting for the app after this many
+                                milliseconds (0 waits forever) (default: 30000)
+  -h, --help                    display help for command
 
 Commands:
-  connections [options]       List the connections currently open in the app
-  schemas [options]           List the schemas in the connected database
-  tables [options]            List tables (same as entities --type table)
-  entities [options]          List tables, views, materialized views and
-                              routines
-  structure [options] <name>  Columns, keys, indexes, relations, triggers and
-                              DDL of a table or view
-  query [options] [sql...]    Run SQL and print the results (at most 20,000 rows
-                              per result). Only the statement types the client
-                              was approved for run
-  create-tab                  Open a new tab and switch to that tab
-  switch-tab [options] <id>   Switch to an open tab
-  ask-approval|a [options]    Ask for access to a connection. Opens a dialog in
-                              the app and waits until it is answered
-  saved-queries               Read and write the queries saved in the app
-  help [command]              display help for command
+  connections [options]         List the connections currently open in the app
+  schemas [options]             List the schemas in the connected database
+  tables [options]              List tables (same as entities --type table)
+  entities [options]            List tables, views, materialized views and
+                                routines
+  structure [options] <name>    Columns, keys, indexes, relations, triggers and
+                                DDL of a table or view
+  query [options] [sql...]      Run SQL and print the results (at most 20,000
+                                rows per result). Only the statement types the
+                                client was approved for run
+  create-tab                    Open a new tab and switch to that tab
+  switch-tab [options] <id>     Switch to an open tab
+  request-approval|r [options]  Ask for access to a connection. Opens a dialog
+                                in the app and waits until it is answered
+  saved-queries                 Read and write the queries saved in the app
+  help [command]                display help for command
 
 Examples:
   bks connections
@@ -126,7 +125,7 @@ Examples:
   bks structure users --schema public
   bks query "select id, email from users limit 10"
   bks create-tab query "select id, email from users limit 10"
-  bks ask-approval
+  bks request-approval
   bks saved-queries list
 
 The client name shown in the approval dialog is detected from the parent
@@ -166,7 +165,7 @@ bks saved-queries update 12 "select * from orders where total > 5000"
 
 | Option | Description |
 | ------ | ------- |
-| `--timeout <ms>` | Give up after this many milliseconds (default `30000`). `0` waits forever. Giving up during `ask-approval` closes the dialog |
+| `--timeout <ms>` | Give up after this many milliseconds (default `30000`). `0` waits forever. Giving up during `request-approval` closes the dialog |
 | `--socket <path>` | Socket the app listens on. Defaults to `BKS_CLI_SOCKET` or the app's socket |
 | `-h, --help` | Prints usage |
 
@@ -281,12 +280,12 @@ bks switch-tab <id> [options]
 | ------ | ----------- |
 | `-c, --connection <name>` | Connection name or id |
 
-### `ask-approval`
+### `request-approval`
 
 Also available as `bks a`. Asks for access to a connection: opens the approval dialog in the app and waits for the answer. Prints the access that was granted, and whether a dialog was shown (`newlyApproved`). See [Approving clients](#approving-clients).
 
 ```bash
-bks ask-approval [options]
+bks request-approval [options]
 ```
 
 | Option | Description |
@@ -363,7 +362,7 @@ Give your agent the CLI instead of a connection string. Add a note to the projec
 ```text
 The database for this project is open in Beekeeper Studio. Inspect it with
 `bks tables`, `bks structure <table>` and `bks query "<sql>"`. If a command
-fails with NOT_APPROVED, run the ask-approval command it prints with
+fails with NOT_APPROVED, run the request-approval command it prints with
 --timeout 0 and wait for me to approve it. If it fails with NOT_PERMITTED, tell me what it needs
 so I can reconnect and approve it again with that access.
 ```

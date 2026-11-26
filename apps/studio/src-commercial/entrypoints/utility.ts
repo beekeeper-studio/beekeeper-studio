@@ -19,6 +19,7 @@ import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
 import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { CliServerHandlers } from '@/handlers/cliServerHandlers';
+import { RpcClient } from '@/rpc/RpcClient';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
@@ -178,6 +179,8 @@ async function runHandler(id: string, name: string, args: any) {
           state(args.sId).port.postMessage(replyArgs)
         }
       });
+  } else if (name.startsWith("rpc/")) {
+    // This is handled by the RpcClient
   } else {
     replyArgs.type = 'error';
     replyArgs.error = `Invalid handler name: ${name}`;
@@ -194,8 +197,13 @@ async function initState(sId: string, port: MessagePortMain) {
   newState(sId);
 
   state(sId).port = port;
+  state(sId).rendererClient = new RpcClient(port);
 
   state(sId).port.on('message', ({ data }: { data: Request }) => {
+    // RpcClient handles these itself
+    if ((data as { type?: string }).type === 'rpc/respond') {
+      return;
+    }
     const { id, name, args } = data;
     runHandler(id, name, args);
   })

@@ -23,8 +23,8 @@ import {
   CliSavedQuery,
   CliSavedQuerySummary,
   CreateSavedQueryParams,
-  AskApprovalParams,
-  AskApprovalResult,
+  RequestApprovalParams,
+  RequestApprovalResult,
   SavedQueriesParams,
   SavedQueriesResult,
   SavedQueryParams,
@@ -35,7 +35,6 @@ import {
   CliCreateTabRequest,
   Entity,
   CliError,
-  CliTabSummary,
   ConnectionsParams,
   ConnectionsResult,
   CreateTabParams,
@@ -49,23 +48,13 @@ import {
   StructureParams,
   StructureResult,
   SwitchTabParams,
-  SwitchTabResult,
+  ApprovalRequester,
 } from "@beekeeperstudio/cli";
-import { uuidv4 } from "@/lib/uuid";
-import {
-  CliAccessRequest,
-  pendingRendererRequests,
-} from "./cliServer/rendererRequests";
+import type { RendererMethods } from "@/lib/utility/RendererMethods";
 import { AuthorizedClient } from "./cliServer/AuthorizedClient";
 import { disallowedStatements } from "./cliServer/queryPermissions";
 
-export const RENDERER_RESPONSE_TIMEOUT_MS = 4000;
-
 const EXCERPT_LENGTH = 250;
-
-interface PortLike {
-  postMessage(message: unknown): void;
-}
 
 /** For calls made without a socket, e.g. from tests. */
 const NO_CONTEXT: CliCallContext = {
@@ -103,38 +92,38 @@ export class UtilityApi {
   private readonly pendingApprovals = new Map<string, PendingApproval>();
 
   constructor() {
-    this.connections = this.connections.bind(this);
-    this.schemas = this.schemas.bind(this);
-    this.entities = this.entities.bind(this);
-    this.structure = this.structure.bind(this);
-    this.query = this.query.bind(this);
-    this.createTab = this.createTab.bind(this);
+    this.getConnections = this.getConnections.bind(this);
+    this.getSchemas = this.getSchemas.bind(this);
+    this.getEntities = this.getEntities.bind(this);
+    this.getTableStructure = this.getTableStructure.bind(this);
+    this.runQuery = this.runQuery.bind(this);
+    this.openTab = this.openTab.bind(this);
     this.switchTab = this.switchTab.bind(this);
-    this.savedQueries = this.savedQueries.bind(this);
-    this.savedQuery = this.savedQuery.bind(this);
+    this.getSavedQueries = this.getSavedQueries.bind(this);
+    this.getSavedQuery = this.getSavedQuery.bind(this);
     this.createSavedQuery = this.createSavedQuery.bind(this);
     this.updateSavedQuery = this.updateSavedQuery.bind(this);
-    this.askApproval = this.askApproval.bind(this);
+    this.requestApproval = this.requestApproval.bind(this);
   }
 
   getCliApis() {
     return [
-      { name: "connections", func: this.connections },
-      { name: "schemas", func: this.schemas },
-      { name: "entities", func: this.entities },
-      { name: "structure", func: this.structure },
-      { name: "query", func: this.query },
-      { name: "createTab", func: this.createTab },
+      { name: "getConnections", func: this.getConnections },
+      { name: "getSchemas", func: this.getSchemas },
+      { name: "getEntities", func: this.getEntities },
+      { name: "getTableStructure", func: this.getTableStructure },
+      { name: "runQuery", func: this.runQuery },
+      { name: "openTab", func: this.openTab },
       { name: "switchTab", func: this.switchTab },
-      { name: "savedQueries", func: this.savedQueries },
-      { name: "savedQuery", func: this.savedQuery },
+      { name: "getSavedQueries", func: this.getSavedQueries },
+      { name: "getSavedQuery", func: this.getSavedQuery },
       { name: "createSavedQuery", func: this.createSavedQuery },
       { name: "updateSavedQuery", func: this.updateSavedQuery },
-      { name: "askApproval", func: this.askApproval },
+      { name: "requestApproval", func: this.requestApproval },
     ];
   }
 
-  async connections(
+  async getConnections(
     _params: ConnectionsParams,
     context: CliCallContext = NO_CONTEXT,
   ): Promise<ConnectionsResult> {
@@ -155,7 +144,7 @@ export class UtilityApi {
     return { connections };
   }
 
-  async schemas(
+  async getSchemas(
     params: SchemasParams,
     context: CliCallContext = NO_CONTEXT,
   ): Promise<SchemasResult> {
@@ -164,7 +153,7 @@ export class UtilityApi {
     return { schemas: schemas || [] };
   }
 
-  async entities(
+  async getEntities(
     params: EntitiesParams,
     context: CliCallContext = NO_CONTEXT,
   ): Promise<EntitiesResult> {
@@ -222,7 +211,7 @@ export class UtilityApi {
     return { schema: params.schema || undefined, entities, warnings };
   }
 
-  async structure(
+  async getTableStructure(
     params: StructureParams,
     context: CliCallContext = NO_CONTEXT,
   ): Promise<StructureResult> {
@@ -309,7 +298,7 @@ export class UtilityApi {
     };
   }
 
-  async query(
+  async runQuery(
     params: QueryParams,
     context: CliCallContext = NO_CONTEXT,
   ): Promise<QueryResult> {
@@ -379,7 +368,7 @@ export class UtilityApi {
     return { results: (results || []).map(formatQueryResult) };
   }
 
-  async createTab(
+  async openTab(
     params: CreateTabParams,
     context: CliCallContext = NO_CONTEXT,
   ): Promise<CreateTabResult> {
@@ -393,28 +382,24 @@ export class UtilityApi {
     const access = state.cliClients.get(context.client.name).access;
     this.require(access, "openTabs", context);
     const request: CliCreateTabRequest = { tab, sql: params.sql };
-    const summary = await this.askRendererToCreateTab(state, request);
-    return { ...request, ...summary };
+    const tabId = await this.askRendererToCreateTab(state, request);
+    return { tabId };
   }
 
   async switchTab(
     params: SwitchTabParams,
     context: CliCallContext = NO_CONTEXT,
-  ): Promise<SwitchTabResult> {
+  ): Promise<void> {
     if (!params.tabId) {
       throw new CliError("USAGE", "switch-tab needs the id of a tab.");
     }
     const state = await this.findState(context, params.connection);
     const access = state.cliClients.get(context.client.name).access;
     this.require(access, "openTabs", context);
-    const summary = await this.askRendererToSwitchTab(
-      state,
-      String(params.tabId),
-    );
-    return { ...summary };
+    await this.askRendererToSwitchTab(state, params.tabId);
   }
 
-  async savedQueries(
+  async getSavedQueries(
     params: SavedQueriesParams,
     context: CliCallContext = NO_CONTEXT,
   ): Promise<SavedQueriesResult> {
@@ -425,7 +410,7 @@ export class UtilityApi {
     return { savedQueries: queries.map(toSavedQuerySummary) };
   }
 
-  async savedQuery(
+  async getSavedQuery(
     params: SavedQueryParams,
     context: CliCallContext = NO_CONTEXT,
   ): Promise<SavedQueryResult> {
@@ -496,10 +481,10 @@ export class UtilityApi {
   }
 
   /** Shows the approval dialog, unless the client is already approved for the connection. */
-  async askApproval(
-    params: AskApprovalParams,
+  async requestApproval(
+    params: RequestApprovalParams,
     context: CliCallContext = NO_CONTEXT,
-  ): Promise<AskApprovalResult> {
+  ): Promise<RequestApprovalResult> {
     const selected = await this.selectConnection(context, params.connection);
     const connectionState = state(selected.id);
     const clientName = context.client.name;
@@ -562,7 +547,7 @@ export class UtilityApi {
         "ACCESS_DENIED",
         `Access to "${selected.name}" was denied for ${clientName}.`,
         {
-          hint: "Run `bks ask-approval --timeout 0` again to ask again.",
+          hint: "Run `bks request-approval --timeout 0` again to ask again.",
         },
       );
     }
@@ -655,49 +640,38 @@ export class UtilityApi {
   /** Shows the approval dialog in the connection's window. Resolves null when the user denies. */
   protected async askRendererForAccess(
     connectionState: State,
-    request: CliAccessRequest,
+    request: ApprovalRequester,
     signal: AbortSignal,
   ): Promise<CliAccess | null> {
-    let answer: { access: CliAccess | null };
     try {
-      answer = (await this.askRenderer(
-        this.rendererPort(connectionState),
-        "cli/requestAccess",
+      return await this.askRenderer(
+        connectionState,
+        "cli/requestApproval",
         { ...request },
-        0,
         signal,
-      )) as {
-        access: CliAccess | null;
-      };
+      );
     } catch (error) {
-      if (signal.aborted) {
+      if (signal.aborted || error.code === "ACCESS_DENIED") {
         return null;
       }
       throw error;
     }
-    return answer?.access ?? null;
   }
 
   protected async askRendererToCreateTab(
     connectionState: State,
     request: CliCreateTabRequest,
-  ): Promise<CliTabSummary> {
-    return (await this.askRenderer(
-      this.rendererPort(connectionState),
-      "cli/createTab",
-      { ...request },
-    )) as CliTabSummary;
+  ): Promise<number> {
+    return await this.askRenderer(connectionState, "cli/createTab", {
+      ...request,
+    });
   }
 
   protected async askRendererToSwitchTab(
     connectionState: State,
-    tabId: string,
-  ): Promise<CliTabSummary> {
-    return (await this.askRenderer(
-      this.rendererPort(connectionState),
-      "cli/switchTab",
-      { tabId },
-    )) as CliTabSummary;
+    tabId: number,
+  ): Promise<void> {
+    await this.askRenderer(connectionState, "cli/switchTab", { tabId });
   }
 
   /** The open connection the params name (or the only candidate), once the client is approved for it. */
@@ -712,7 +686,7 @@ export class UtilityApi {
         "NOT_APPROVED",
         `${context.client.name} is not approved to use this connection.`,
         {
-          hint: `Run \`bks ask-approval --connection "${selected.name}" --timeout 0\`, then approve it in Beekeeper Studio.`,
+          hint: `Run \`bks request-approval --connection "${selected.name}" --timeout 0\`, then approve it in Beekeeper Studio.`,
         },
       );
     }
@@ -820,7 +794,7 @@ export class UtilityApi {
     context: CliCallContext,
     requested: string | undefined,
   ): Promise<OpenConnection> {
-    const result = await this.connections({}, context);
+    const result = await this.getConnections({}, context);
     const all = result.connections;
     const details = { connections: all };
     const openNames = all.map((item) => `"${item.name}"`).join(", ");
@@ -880,67 +854,25 @@ export class UtilityApi {
     );
   }
 
-  private rendererPort(connectionState: State) {
-    const port = connectionState?.port;
-    if (!port) {
+  /** Calls a handler the renderer registered, see UtilityConnection.register. */
+  private async askRenderer<K extends keyof RendererMethods>(
+    connectionState: State,
+    name: K,
+    args: Parameters<RendererMethods[K]>[0],
+    signal?: AbortSignal,
+  ): Promise<Awaited<ReturnType<RendererMethods[K]>>> {
+    const client = connectionState?.rendererClient;
+    if (!client) {
       throw new CliError(
         "INTERNAL",
         "The window that owns this connection is not reachable.",
       );
     }
-    return port;
-  }
-
-  /** Posts a message to a renderer and waits for it to respond through respondRendererRequest. */
-  private askRenderer(
-    port: PortLike,
-    type: string,
-    input: Record<string, unknown>,
-    timeoutMs = RENDERER_RESPONSE_TIMEOUT_MS,
-    signal?: AbortSignal,
-  ): Promise<unknown> {
-    const requestId = uuidv4();
-    return new Promise((resolve, reject) => {
-      const onAbort = () => {
-        if (!pendingRendererRequests.delete(requestId)) {
-          return;
-        }
-        if (timer) {
-          clearTimeout(timer);
-        }
-        port.postMessage({ type: "cli/cancelRequest", input: { requestId } });
-        reject(new CliError("INTERNAL", "The request was cancelled."));
-      };
-      const timer =
-        timeoutMs > 0
-          ? setTimeout(() => {
-            pendingRendererRequests.delete(requestId);
-            reject(
-              new CliError(
-                "INTERNAL",
-                `The app window did not respond within ${timeoutMs}ms.`,
-              ),
-            );
-          }, timeoutMs)
-          : null;
-      pendingRendererRequests.set(requestId, {
-        resolve: (value) => {
-          if (timer) {
-            clearTimeout(timer);
-          }
-          signal?.removeEventListener("abort", onAbort);
-          resolve(value);
-        },
-        reject: (error) => {
-          if (timer) {
-            clearTimeout(timer);
-          }
-          signal?.removeEventListener("abort", onAbort);
-          reject(error);
-        },
-      });
-      signal?.addEventListener("abort", onAbort, { once: true });
-      port.postMessage({ type, input: { ...input, requestId } });
-    });
+    try {
+      return await client.request(name, args, { signal });
+    } catch (error) {
+      const code = error.code ?? "INTERNAL";
+      throw new CliError(code, error.message);
+    }
   }
 }

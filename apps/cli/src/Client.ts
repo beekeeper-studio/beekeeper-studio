@@ -12,14 +12,13 @@ import {
   CreateTabParams,
   CreateTabResult,
   SwitchTabParams,
-  SwitchTabResult,
   SavedQueriesParams,
   SavedQueryParams,
   SavedQueryResult,
   CreateSavedQueryParams,
   UpdateSavedQueryParams,
-  AskApprovalParams,
-  AskApprovalResult,
+  RequestApprovalParams,
+  RequestApprovalResult,
 } from "./protocol";
 import { ConnectionsReply } from "./replies/ConnectionsReply";
 import { EntitiesReply } from "./replies/EntitiesReply";
@@ -63,7 +62,7 @@ export interface CliClientOptions {
  * timeout, a dropped connection. Giving up closes the socket, which tells the
  * app to stop waiting too, e.g. to close an approval dialog.
  */
-export class CliClient extends EventEmitter<{ error: [unknown] }> {
+export class Client extends EventEmitter<{ error: [unknown] }> {
   private readonly socketPath: string;
   private readonly timeout: number;
 
@@ -73,57 +72,56 @@ export class CliClient extends EventEmitter<{ error: [unknown] }> {
     this.timeout = options.timeout ?? DEFAULT_CLI_TIMEOUT;
   }
 
-  async connections(params: ConnectionsParams = {}): Promise<ConnectionsReply> {
-    const response = await this.request("connections", params);
+  async getConnections(params: ConnectionsParams = {}): Promise<ConnectionsReply> {
+    const response = await this.request("getConnections", params);
     return new ConnectionsReply(response);
   }
 
-  async schemas(params: SchemasParams): Promise<SchemasReply> {
-    const response = await this.request("schemas", params);
+  async getSchemas(params: SchemasParams): Promise<SchemasReply> {
+    const response = await this.request("getSchemas", params);
     return new SchemasReply(response);
   }
 
-  async entities(params: EntitiesParams): Promise<EntitiesReply> {
-    const response = await this.request("entities", params);
+  async getEntities(params: EntitiesParams): Promise<EntitiesReply> {
+    const response = await this.request("getEntities", params);
     return new EntitiesReply(response);
   }
 
-  async structure(params: StructureParams): Promise<StructureReply> {
-    const response = await this.request("structure", params);
+  async getTableStructure(params: StructureParams): Promise<StructureReply> {
+    const response = await this.request("getTableStructure", params);
     return new StructureReply(response);
   }
 
-  async query(params: QueryParams): Promise<QueryReply> {
-    const response = await this.request("query", params);
+  async runQuery(params: QueryParams): Promise<QueryReply> {
+    const response = await this.request("runQuery", params);
     return new QueryReply(response);
   }
 
-  async createTab(params: CreateTabParams): Promise<CliReply<CreateTabResult>> {
-    const response = await this.request("createTab", params);
+  async openTab(params: CreateTabParams): Promise<CliReply<CreateTabResult>> {
+    const response = await this.request("openTab", params);
     return new CliReply(response);
   }
 
-  async switchTab(params: SwitchTabParams): Promise<CliReply<SwitchTabResult>> {
-    const response = await this.request("switchTab", params);
+  async switchTab(params: SwitchTabParams): Promise<void> {
+    await this.request("switchTab", params);
+  }
+
+  async requestApproval(
+    params: RequestApprovalParams,
+  ): Promise<CliReply<RequestApprovalResult>> {
+    const response = await this.request("requestApproval", params);
     return new CliReply(response);
   }
 
-  async askApproval(
-    params: AskApprovalParams,
-  ): Promise<CliReply<AskApprovalResult>> {
-    const response = await this.request("askApproval", params);
-    return new CliReply(response);
-  }
-
-  async savedQueries(params: SavedQueriesParams): Promise<SavedQueriesReply> {
-    const response = await this.request("savedQueries", params);
+  async getSavedQueries(params: SavedQueriesParams): Promise<SavedQueriesReply> {
+    const response = await this.request("getSavedQueries", params);
     return new SavedQueriesReply(response);
   }
 
-  async savedQuery(
+  async getSavedQuery(
     params: SavedQueryParams,
   ): Promise<CliReply<SavedQueryResult>> {
-    const response = await this.request("savedQuery", params);
+    const response = await this.request("getSavedQuery", params);
     return new CliReply(response);
   }
 

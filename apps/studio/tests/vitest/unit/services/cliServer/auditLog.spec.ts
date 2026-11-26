@@ -20,12 +20,12 @@ describe('buildAuditEntry', () => {
       },
     }
     const entry = buildAuditEntry(
-      { request: request('query', { sql: 'select id from users; select 1 as n', connection: 'Local Dev' }), response, durationMs: 12.6, responseBytes: 345 },
+      { request: request('runQuery', { sql: 'select id from users; select 1 as n', connection: 'Local Dev' }), response, durationMs: 12.6, responseBytes: 345 },
       now
     )
     expect(entry).toEqual({
       time: '2026-10-30T12:00:00.000Z',
-      method: 'query',
+      method: 'runQuery',
       client: 'Unknown client',
       params: { sql: 'select id from users; select 1 as n', connection: 'Local Dev' },
       ok: true,
@@ -50,7 +50,7 @@ describe('buildAuditEntry', () => {
       },
     }
     const entry = buildAuditEntry(
-      { request: request('entities', { schema: 'public', entityTypes: ['table'] }), response, durationMs: 4, responseBytes: 300 },
+      { request: request('getEntities', { schema: 'public', entityTypes: ['table'] }), response, durationMs: 4, responseBytes: 300 },
       now
     )
     expect(entry.result).toEqual({ schema: 'public', entities: 3, warnings: 0 })
@@ -65,7 +65,7 @@ describe('buildAuditEntry', () => {
       ok: false,
       error: { code: 'ACCESS_DENIED', message: 'Access to "Prod" was denied for Claude Code.', hint: 'Run the command again to ask again.' },
     }
-    const entry = buildAuditEntry({ request: request('entities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
+    const entry = buildAuditEntry({ request: request('getEntities', { schema: 'public' }), response, durationMs: 3, responseBytes: 200 }, now)
     expect(entry.ok).toBe(false)
     expect(entry.error).toEqual({ code: 'ACCESS_DENIED', message: 'Access to "Prod" was denied for Claude Code.' })
     expect(entry.result).toBeUndefined()
@@ -83,7 +83,7 @@ describe('buildAuditEntry', () => {
   it('cuts very long sql but keeps its length', () => {
     const sql = 'select ' + 'x'.repeat(CLI_AUDIT_SQL_MAX_CHARS * 2)
     const entry = buildAuditEntry(
-      { request: request('query', { sql }), response: { ok: true, result: { connection: { id: 's', name: 'n' }, results: [] } }, durationMs: 1, responseBytes: 10 },
+      { request: request('runQuery', { sql }), response: { ok: true, result: { connection: { id: 's', name: 'n' }, results: [] } }, durationMs: 1, responseBytes: 10 },
       now
     )
     expect((entry.params.sql as string).length).toBe(CLI_AUDIT_SQL_MAX_CHARS)
@@ -94,23 +94,23 @@ describe('buildAuditEntry', () => {
 
 describe('summarizeResult', () => {
   it('summarizes each method', () => {
-    expect(summarizeResult('connections', { connections: [{ approved: true }, { approved: false }] })).toEqual({ connections: 2, approved: 1 })
-    expect(summarizeResult('schemas', { schemas: ['a', 'b'] })).toEqual({ schemas: 2 })
-    expect(summarizeResult('entities', { schema: 'public', entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
+    expect(summarizeResult('getConnections', { connections: [{ approved: true }, { approved: false }] })).toEqual({ connections: 2, approved: 1 })
+    expect(summarizeResult('getSchemas', { schemas: ['a', 'b'] })).toEqual({ schemas: 2 })
+    expect(summarizeResult('getEntities', { schema: 'public', entities: [{}, {}, {}], warnings: ['w'] })).toEqual({
       schema: 'public',
       entities: 3,
       warnings: 1,
     })
-    expect(summarizeResult('structure', { schema: null, name: 'users', entityType: 'table', columns: [{}, {}], warnings: [] })).toEqual({
+    expect(summarizeResult('getTableStructure', { schema: null, name: 'users', entityType: 'table', columns: [{}, {}], warnings: [] })).toEqual({
       schema: null,
       name: 'users',
       entityType: 'table',
       columns: 2,
       warnings: 0,
     })
-    expect(summarizeResult('query', { results: [] })).toEqual({ statements: 0, commands: [], rows: 0, totalRows: 0, truncated: false, affectedRows: null })
+    expect(summarizeResult('runQuery', { results: [] })).toEqual({ statements: 0, commands: [], rows: 0, totalRows: 0, truncated: false, affectedRows: null })
     expect(summarizeResult('nope', { anything: true })).toEqual({})
-    expect(summarizeResult('query', null)).toEqual({})
+    expect(summarizeResult('runQuery', null)).toEqual({})
   })
 })
 
@@ -119,15 +119,15 @@ describe('CliAuditLog', () => {
     const lines: string[] = []
     const log = new CliAuditLog({ write: (line) => lines.push(line) })
     const entry = log.record({
-      request: request('query', { sql: 'select 1', password: 'hunter2' } as any),
+      request: request('runQuery', { sql: 'select 1', password: 'hunter2' } as any),
       response: { ok: true, result: { connection: { id: 's', name: 'Dev' }, results: [] } },
       durationMs: 2,
       responseBytes: 50,
     })
-    expect(entry.method).toBe('query')
+    expect(entry.method).toBe('runQuery')
     expect(lines).toHaveLength(1)
     const parsed = JSON.parse(lines[0])
-    expect(parsed.method).toBe('query')
+    expect(parsed.method).toBe('runQuery')
     expect(parsed.params.sql).toBe('select 1')
     expect(parsed.params.password).toBe('[REDACTED]')
     expect(lines[0]).not.toContain('\n')
@@ -136,7 +136,7 @@ describe('CliAuditLog', () => {
   it('reports sink failures without throwing', () => {
     const onError = vi.fn()
     const log = new CliAuditLog({ write: () => { throw new Error('disk full') } }, onError)
-    const entry = log.record({ request: request('connections'), response: { ok: true, result: { connections: [] } }, durationMs: 1, responseBytes: 20 })
+    const entry = log.record({ request: request('getConnections'), response: { ok: true, result: { connections: [] } }, durationMs: 1, responseBytes: 20 })
     expect(entry).toBeNull()
     expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'disk full' }))
   })

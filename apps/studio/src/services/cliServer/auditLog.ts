@@ -37,19 +37,19 @@ function sum(values: unknown[]): number | null {
 export function summarizeResult(method: string | null, result: any): Record<string, unknown> {
   if (!result || typeof result !== 'object') return {}
   switch (method) {
-    case 'connections': {
+    case 'getConnections': {
       const connections: any[] = result.connections || []
       return { connections: connections.length, approved: connections.filter((c) => c?.approved).length }
     }
-    case 'schemas':
+    case 'getSchemas':
       return { schemas: (result.schemas || []).length }
-    case 'entities':
+    case 'getEntities':
       return {
         schema: result.schema ?? null,
         entities: (result.entities || []).length,
         warnings: (result.warnings || []).length,
       }
-    case 'structure':
+    case 'getTableStructure':
       return {
         schema: result.schema ?? null,
         name: result.name ?? null,
@@ -57,7 +57,7 @@ export function summarizeResult(method: string | null, result: any): Record<stri
         columns: (result.columns || []).length,
         warnings: (result.warnings || []).length,
       }
-    case 'query': {
+    case 'runQuery': {
       const results: any[] = result.results || []
       return {
         statements: results.length,

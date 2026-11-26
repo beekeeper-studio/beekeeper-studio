@@ -6,15 +6,14 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import { SqliteClient } from '@/lib/db/clients/sqlite'
 import { CliCallContext, connectionDisplayName, formatQueryResult, UNKNOWN_CLIENT_NAME } from '@/services/cliServer/commands'
 import { AuthorizedClient } from '@/services/cliServer/AuthorizedClient'
-import { CliAccessRequest } from '@/services/cliServer/rendererRequests'
 import { UtilityApi } from '@/services/UtilityApi'
 import {
   CLI_MAX_QUERY_ROWS,
   CLI_METHODS,
+  ApprovalRequester,
   CliAccess,
   CliError,
   CliCreateTabRequest,
-  CliTabSummary,
 } from '@beekeeperstudio/cli'
 import { serializeBigInt } from '@/services/plugin/utils'
 
@@ -54,7 +53,7 @@ function context(name = 'Claude Code'): CliCallContext & { hangUp(): void } {
  * `approved: false`, the default clients also start out approved with it.
  */
 function backendFor(connections: FakeConnection[], answer: CliAccess | null = READ_ONLY_ACCESS): FakeParts {
-  const asked: CliAccessRequest[] = []
+  const asked: ApprovalRequester[] = []
   return {
     asked,
     answer,
@@ -63,20 +62,20 @@ function backendFor(connections: FakeConnection[], answer: CliAccess | null = RE
       asked.push(request)
       return answer
     },
-    askRendererToCreateTab: async () => ({ tabId: '1', title: 'Query #1', tabType: 'query' }),
-    askRendererToSwitchTab: async (_connection, tabId) => ({ tabId, title: 'Query #1', tabType: 'query' }),
+    askRendererToCreateTab: async () => 1,
+    askRendererToSwitchTab: async () => {},
   }
 }
 
 /** The parts of UtilityApi that reach the app's renderers, faked by each test. */
 interface FakeParts {
   /** Every approval dialog shown. */
-  asked: CliAccessRequest[]
+  asked: ApprovalRequester[]
   answer: CliAccess | null
   openConnections(): FakeConnection[]
-  askRendererForAccess(connectionState: State, request: CliAccessRequest, signal: AbortSignal): Promise<CliAccess | null>
-  askRendererToCreateTab(connectionState: State, request: CliCreateTabRequest): Promise<CliTabSummary>
-  askRendererToSwitchTab(connectionState: State, tabId: string): Promise<CliTabSummary>
+  askRendererForAccess(connectionState: State, request: ApprovalRequester, signal: AbortSignal): Promise<CliAccess | null>
+  askRendererToCreateTab(connectionState: State, request: CliCreateTabRequest): Promise<number>
+  askRendererToSwitchTab(connectionState: State, tabId: number): Promise<void>
 }
 
 /** UtilityApi with its connections and renderers replaced by a fake. */
@@ -103,7 +102,7 @@ class TestUtilityApi extends UtilityApi {
     }
   }
 
-  protected askRendererForAccess(connectionState: State, request: CliAccessRequest, signal: AbortSignal) {
+  protected askRendererForAccess(connectionState: State, request: ApprovalRequester, signal: AbortSignal) {
     return this.fake.askRendererForAccess(connectionState, request, signal)
   }
 
@@ -111,7 +110,7 @@ class TestUtilityApi extends UtilityApi {
     return this.fake.askRendererToCreateTab(connectionState, request)
   }
 
-  protected askRendererToSwitchTab(connectionState: State, tabId: string) {
+  protected askRendererToSwitchTab(connectionState: State, tabId: number) {
     return this.fake.askRendererToSwitchTab(connectionState, tabId)
   }
 
@@ -165,20 +164,20 @@ describe('UtilityApi', () => {
     it('lists open connections with whether the caller is approved for them', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite', readOnlyMode: true })
       const api = new TestUtilityApi(backendFor([primary, second]), false)
-      await api.askApproval({ connection: 'Local Dev' }, context())
-      const result = await call(api.connections({}, context()))
+      await api.requestApproval({ connection: 'Local Dev' }, context())
+      const result = await call(api.getConnections({}, context()))
       expect(result.connections).toEqual([
         expect.objectContaining({ id: 'sid-primary', name: 'Local Dev', connectionType: 'sqlite', approved: true, readOnlyMode: false }),
         expect.objectContaining({ id: 'sid-other', name: 'Other', approved: false, readOnlyMode: true }),
       ])
-      const otherClient = await call(api.connections({}, context('Cursor')))
+      const otherClient = await call(api.getConnections({}, context('Cursor')))
       expect(otherClient.connections.map((c) => c.approved)).toEqual([false, false])
     })
 
     it('names unsaved connections after their type and database', async () => {
       // sqlite configs carry the default host, which means nothing for a file
       const unsaved = openConnection('sid-quick', other, { connectionType: 'sqlite', host: 'localhost', defaultDatabase: '/tmp/x.db' })
-      const result = await call(new TestUtilityApi(backendFor([unsaved])).connections({}))
+      const result = await call(new TestUtilityApi(backendFor([unsaved])).getConnections({}))
       expect(result.connections[0].name).toBe('sqlite :memory:')
 
       expect(connectionDisplayName(Object.assign(new State('abcdef123'), { connection: other, database: 'app', usedConfig: { connectionType: 'postgresql', host: 'db.local' } as any }))).toBe('postgresql db.local/app')
@@ -187,39 +186,39 @@ describe('UtilityApi', () => {
     })
 
     it('reports when no connection is open at all', async () => {
-      const error = await expectError(new TestUtilityApi(backendFor([])).entities({ entityTypes: ['table'] }), 'NO_OPEN_CONNECTIONS')
+      const error = await expectError(new TestUtilityApi(backendFor([])).getEntities({ entityTypes: ['table'] }), 'NO_OPEN_CONNECTIONS')
       expect(error.hint).toContain('Connect to a database')
     })
 
     it('needs --connection when several are open and the caller is approved for none or several', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite' })
       const api = new TestUtilityApi(backendFor([primary, second]), false)
-      await expectError(api.entities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
-      await api.askApproval({ connection: 'Other' }, context())
-      await api.askApproval({ connection: 'Local Dev' }, context())
-      const error = await expectError(api.entities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
+      await expectError(api.getEntities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
+      await api.requestApproval({ connection: 'Other' }, context())
+      await api.requestApproval({ connection: 'Local Dev' }, context())
+      const error = await expectError(api.getEntities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
       expect(error.message).toContain('"Local Dev"')
       expect(error.message).toContain('"Other"')
 
-      const byName = await call(api.entities({ entityTypes: ['table'], connection: 'other' }, context()))
+      const byName = await call(api.getEntities({ entityTypes: ['table'], connection: 'other' }, context()))
       expect(byName.entities.map((e) => e.name)).toEqual(['widgets'])
 
-      const byId = await call(api.entities({ entityTypes: ['table'], connection: 'sid-primary' }, context()))
+      const byId = await call(api.getEntities({ entityTypes: ['table'], connection: 'sid-primary' }, context()))
       expect(byId.entities.map((e) => e.name)).toEqual(['orders', 'users'])
 
-      await expectError(api.entities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
+      await expectError(api.getEntities({ entityTypes: ['table'] }, context()), 'AMBIGUOUS_CONNECTION')
     })
 
     it('picks the one connection the caller is approved for when several are open', async () => {
       const second = openConnection('sid-other', other, { id: 2, name: 'Other', connectionType: 'sqlite' })
       const api = new TestUtilityApi(backendFor([primary, second]), false)
-      await api.askApproval({ connection: 'Other' }, context())
-      const result = await call(api.entities({ entityTypes: ['table'] }, context()))
+      await api.requestApproval({ connection: 'Other' }, context())
+      const result = await call(api.getEntities({ entityTypes: ['table'] }, context()))
       expect(result.entities.map((e) => e.name)).toEqual(['widgets'])
     })
 
     it('rejects unknown --connection values', async () => {
-      const unknown = await expectError(new TestUtilityApi(backend).entities({ entityTypes: ['table'], connection: 'nope' }), 'UNKNOWN_CONNECTION')
+      const unknown = await expectError(new TestUtilityApi(backend).getEntities({ entityTypes: ['table'], connection: 'nope' }), 'UNKNOWN_CONNECTION')
       expect(unknown.hint).toContain('"Local Dev"')
     })
   })
@@ -228,24 +227,24 @@ describe('UtilityApi', () => {
     it('fails without approval and says how to ask for it, without showing a dialog', async () => {
       const fake = backendFor([primary])
       const api = new TestUtilityApi(fake, false)
-      const error = await expectError(api.schemas({}, context()), 'NOT_APPROVED')
+      const error = await expectError(api.getSchemas({}, context()), 'NOT_APPROVED')
       expect(error.message).toContain('Claude Code')
-      expect(error.hint).toContain('bks ask-approval --connection "Local Dev"')
+      expect(error.hint).toContain('bks request-approval --connection "Local Dev"')
       expect(fake.asked).toEqual([])
     })
 
     it('asks once per client and connection, then remembers', async () => {
       const fake = backendFor([primary])
       const api = new TestUtilityApi(fake, false)
-      const result = await call(api.askApproval({}, context()))
+      const result = await call(api.requestApproval({}, context()))
       expect(result).toEqual({ newlyApproved: true, access: READ_ONLY_ACCESS })
       expect(fake.asked).toEqual([{ clientName: 'Claude Code', connectionName: 'Local Dev', readOnlyMode: false }])
 
-      expect((await call(api.askApproval({}, context()))).newlyApproved).toBe(false)
-      await api.schemas({}, context())
+      expect((await call(api.requestApproval({}, context()))).newlyApproved).toBe(false)
+      await api.getSchemas({}, context())
       expect(fake.asked).toHaveLength(1)
 
-      await expectError(api.schemas({}, context('Cursor')), 'NOT_APPROVED')
+      await expectError(api.getSchemas({}, context('Cursor')), 'NOT_APPROVED')
     })
 
     it('shows one dialog for requests that arrive while it is open', async () => {
@@ -256,7 +255,7 @@ describe('UtilityApi', () => {
         return new Promise((resolve) => { answer = resolve })
       }
       const api = new TestUtilityApi(fake, false)
-      const both = Promise.all([api.askApproval({}, context()), api.askApproval({}, context())])
+      const both = Promise.all([api.requestApproval({}, context()), api.requestApproval({}, context())])
       await new Promise((resolve) => setTimeout(resolve, 10))
       answer(access())
       await both
@@ -275,8 +274,8 @@ describe('UtilityApi', () => {
       const api = new TestUtilityApi(fake, false)
       const a = context()
       const b = context()
-      const first = expectError(api.askApproval({}, a), 'INTERNAL')
-      const second = expectError(api.askApproval({}, b), 'INTERNAL')
+      const first = expectError(api.requestApproval({}, a), 'INTERNAL')
+      const second = expectError(api.requestApproval({}, b), 'INTERNAL')
       await new Promise((resolve) => setTimeout(resolve, 10))
 
       a.hangUp()
@@ -296,38 +295,38 @@ describe('UtilityApi', () => {
     it('fails with ACCESS_DENIED on deny and asks again next time', async () => {
       const fake = backendFor([primary], null)
       const api = new TestUtilityApi(fake, false)
-      const error = await expectError(api.askApproval({}, context()), 'ACCESS_DENIED')
-      expect(error.hint).toContain('ask-approval')
-      await expectError(api.schemas({}, context()), 'NOT_APPROVED')
-      await expectError(api.askApproval({}, context()), 'ACCESS_DENIED')
+      const error = await expectError(api.requestApproval({}, context()), 'ACCESS_DENIED')
+      expect(error.hint).toContain('request-approval')
+      await expectError(api.getSchemas({}, context()), 'NOT_APPROVED')
+      await expectError(api.requestApproval({}, context()), 'ACCESS_DENIED')
       expect(fake.asked).toHaveLength(2)
     })
 
     it('never grants writes on a read only connection', async () => {
       const readOnly = openConnection('sid-ro', client, { id: 5, name: 'Prod', connectionType: 'sqlite', readOnlyMode: true })
       const api = new TestUtilityApi(backendFor([readOnly], access({ queryTypes: ['select', 'update', 'anything'] })), false)
-      await api.askApproval({}, context())
+      await api.requestApproval({}, context())
       expect(state(readOnly.id).cliClients.get('Claude Code')?.access.queryTypes).toEqual(['select'])
     })
   })
 
   it('rejects unknown entity types', async () => {
-    await expectError(new TestUtilityApi(backend).entities({ entityTypes: ['sequence' as any] }), 'USAGE')
+    await expectError(new TestUtilityApi(backend).getEntities({ entityTypes: ['sequence' as any] }), 'USAGE')
   })
 
   it('lists schemas', async () => {
-    const result = await call(new TestUtilityApi(backend).schemas({}))
+    const result = await call(new TestUtilityApi(backend).getSchemas({}))
     expect(Array.isArray(result.schemas)).toBe(true)
   })
 
   it('lists tables and entities', async () => {
-    const tables = await call(new TestUtilityApi(backend).entities({ entityTypes: ['table'] }))
+    const tables = await call(new TestUtilityApi(backend).getEntities({ entityTypes: ['table'] }))
     expect(tables.entities).toEqual([
       { name: 'orders', entityType: 'table' },
       { name: 'users', entityType: 'table' },
     ])
 
-    const all = await call(new TestUtilityApi(backend).entities({}))
+    const all = await call(new TestUtilityApi(backend).getEntities({}))
     expect(all.entities).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'users', entityType: 'table' }),
@@ -336,13 +335,13 @@ describe('UtilityApi', () => {
     )
     expect(all.warnings).toEqual([])
 
-    const views = await call(new TestUtilityApi(backend).entities({ entityTypes: ['view'] }))
+    const views = await call(new TestUtilityApi(backend).getEntities({ entityTypes: ['view'] }))
     expect(views.entities).toEqual([{ name: 'recent_users', entityType: 'view' }])
   })
 
-  describe('structure', () => {
+  describe('getTableStructure', () => {
     it('describes a table', async () => {
-      const result = await call(new TestUtilityApi(backend).structure({ name: 'orders' }))
+      const result = await call(new TestUtilityApi(backend).getTableStructure({ name: 'orders' }))
       expect(result.entityType).toBe('table')
       expect(result.name).toBe('orders')
       expect(result.primaryKeys).toEqual(['id'])
@@ -361,7 +360,7 @@ describe('UtilityApi', () => {
     })
 
     it('describes a view', async () => {
-      const result = await call(new TestUtilityApi(backend).structure({ name: 'recent_users' }))
+      const result = await call(new TestUtilityApi(backend).getTableStructure({ name: 'recent_users' }))
       expect(result.entityType).toBe('view')
       expect(result.columns.map((c) => c.name)).toEqual(['id', 'email'])
       expect(result.primaryKeys).toEqual([])
@@ -369,25 +368,25 @@ describe('UtilityApi', () => {
     })
 
     it('matches names case insensitively when that is unambiguous', async () => {
-      const result = await call(new TestUtilityApi(backend).structure({ name: 'USERS' }))
+      const result = await call(new TestUtilityApi(backend).getTableStructure({ name: 'USERS' }))
       expect(result.name).toBe('users')
     })
 
     it('fails clearly for unknown names', async () => {
-      const error = await expectError(new TestUtilityApi(backend).structure({ name: 'nothing' }), 'NOT_FOUND')
+      const error = await expectError(new TestUtilityApi(backend).getTableStructure({ name: 'nothing' }), 'NOT_FOUND')
       expect(error.message).toContain('"nothing"')
       expect(error.hint).toContain('entities')
     })
   })
 
-  describe('createTab', () => {
+  describe('openTab', () => {
     function recording() {
       const created: { connectionState: State; request: CliCreateTabRequest }[] = []
       const methods = new TestUtilityApi({
         ...backend,
         askRendererToCreateTab: async (connectionState, request) => {
           created.push({ connectionState, request })
-          return { tabId: '7', title: 'Query #1', tabType: 'query' }
+          return 7
         },
       })
       return { methods, created }
@@ -395,9 +394,9 @@ describe('UtilityApi', () => {
 
     it('opens a query tab with the sql and returns its id', async () => {
       const { methods, created } = recording()
-      const result: any = await methods.createTab({ tab: 'query', sql: 'select 1' })
+      const result: any = await methods.openTab({ tab: 'query', sql: 'select 1' })
       expect(created).toEqual([{ connectionState: state('sid-primary'), request: { tab: 'query', sql: 'select 1' } }])
-      expect(result.tabId).toBe('7')
+      expect(result.tabId).toBe(7)
     })
 
     it('needs permission to open tabs', async () => {
@@ -406,27 +405,27 @@ describe('UtilityApi', () => {
         ...backendFor([primary], access({ openTabs: false })),
         askRendererToCreateTab: async (_connectionState, request) => {
           created.push(request)
-          return { tabId: '7', title: 'Query #1', tabType: 'query' }
+          return 7
         },
       })
-      const error = await expectError(api.createTab({ tab: 'query' }, context()), 'NOT_PERMITTED')
+      const error = await expectError(api.openTab({ tab: 'query' }, context()), 'NOT_PERMITTED')
       expect(error.message).toContain('Claude Code')
-      expect(error.hint).toContain('ask-approval')
-      await expectError(api.switchTab({ tabId: '1' }, context()), 'NOT_PERMITTED')
+      expect(error.hint).toContain('request-approval')
+      await expectError(api.switchTab({ tabId: 1 }, context()), 'NOT_PERMITTED')
       expect(created).toEqual([])
     })
 
     it('opens nothing for an unknown tab type', async () => {
       const { methods, created } = recording()
-      await expectError(methods.createTab({ tab: 'table' as any }), 'USAGE')
-      await expectError(methods.createTab({ tab: 'chart' as any }), 'USAGE')
+      await expectError(methods.openTab({ tab: 'table' as any }), 'USAGE')
+      await expectError(methods.openTab({ tab: 'chart' as any }), 'USAGE')
       expect(created).toEqual([])
     })
   })
 
-  describe('query', () => {
+  describe('runQuery', () => {
     it('returns rows keyed by column name', async () => {
-      const result = await call(new TestUtilityApi(backend).query({ sql: 'select id, email, name from users order by id' }))
+      const result = await call(new TestUtilityApi(backend).runQuery({ sql: 'select id, email, name from users order by id' }))
       expect(result.results).toHaveLength(1)
       const [first] = result.results
       expect(first.columns).toEqual(['id', 'email', 'name'])
@@ -438,20 +437,20 @@ describe('UtilityApi', () => {
     })
 
     it('keeps duplicate column names apart', async () => {
-      const result = await call(new TestUtilityApi(backend).query({ sql: 'select 1 as x, 2 as x, 3 as x' }))
+      const result = await call(new TestUtilityApi(backend).runQuery({ sql: 'select 1 as x, 2 as x, 3 as x' }))
       expect(result.results[0].columns).toEqual(['x', 'x_2', 'x_3'])
       expect(result.results[0].rows).toEqual([{ x: 1, x_2: 2, x_3: 3 }])
     })
 
     it('returns one result per statement', async () => {
-      const result = await call(new TestUtilityApi(backend).query({ sql: 'select count(*) as n from users; select count(*) as n from orders' }))
+      const result = await call(new TestUtilityApi(backend).runQuery({ sql: 'select count(*) as n from users; select count(*) as n from orders' }))
       expect(result.results.map((r) => r.rows[0].n)).toEqual([2, 2])
     })
 
     it('caps results at the row limit', async () => {
       const extra = 5
       const sql = `with recursive seq(n) as (select 1 union all select n + 1 from seq where n < ${CLI_MAX_QUERY_ROWS + extra}) select n from seq`
-      const result = await call(new TestUtilityApi(backend).query({ sql }))
+      const result = await call(new TestUtilityApi(backend).runQuery({ sql }))
       const [first] = result.results
       expect(first.rowCount).toBe(CLI_MAX_QUERY_ROWS)
       expect(first.rows).toHaveLength(CLI_MAX_QUERY_ROWS)
@@ -461,7 +460,7 @@ describe('UtilityApi', () => {
     }, 30000)
 
     it('serializes binary and large integer values', async () => {
-      const result = await call(new TestUtilityApi(backend).query({ sql: "select x'deadbeef' as blob, 9007199254740993 as big" }))
+      const result = await call(new TestUtilityApi(backend).runQuery({ sql: "select x'deadbeef' as blob, 9007199254740993 as big" }))
       expect(result.results[0].rows[0]).toEqual({
         blob: { type: 'binary', encoding: 'hex', data: 'deadbeef' },
         big: '9007199254740993',
@@ -469,9 +468,9 @@ describe('UtilityApi', () => {
     })
 
     it('reports sql errors as QUERY_FAILED', async () => {
-      const error = await expectError(new TestUtilityApi(backend).query({ sql: 'select * from missing_table' }), 'QUERY_FAILED')
+      const error = await expectError(new TestUtilityApi(backend).runQuery({ sql: 'select * from missing_table' }), 'QUERY_FAILED')
       expect(error.message).toContain('missing_table')
-      await expectError(new TestUtilityApi(backend).query({ sql: '   ' }), 'USAGE')
+      await expectError(new TestUtilityApi(backend).runQuery({ sql: '   ' }), 'USAGE')
     })
 
     it('runs only the statement types the client was granted', async () => {
@@ -485,33 +484,33 @@ describe('UtilityApi', () => {
         // a read followed by a write is rejected as a whole
         "select 1; insert into users (id, email) values (4, 'd@example.com')",
       ]) {
-        const error = await expectError(selectOnly.query({ sql }, context()), 'NOT_PERMITTED')
-        expect(error.hint).toContain('ask-approval')
+        const error = await expectError(selectOnly.runQuery({ sql }, context()), 'NOT_PERMITTED')
+        expect(error.hint).toContain('request-approval')
       }
-      const check = await call(selectOnly.query({ sql: 'select count(*) as n from users; select count(*) as orders from orders' }, context()))
+      const check = await call(selectOnly.runQuery({ sql: 'select count(*) as n from users; select count(*) as orders from orders' }, context()))
       expect(check.results[0].rows[0].n).toBe(2)
       expect(check.results[1].rows[0].orders).toBe(2)
 
       const updates = new TestUtilityApi(backendFor([primary], access({ queryTypes: ['select', 'update'] })))
-      const updated = await call(updates.query({ sql: "update users set name = name where id = 1" }, context()))
+      const updated = await call(updates.runQuery({ sql: "update users set name = name where id = 1" }, context()))
       expect(updated.results[0].affectedRows).toBe(1)
-      const denied = await expectError(updates.query({ sql: 'delete from users where id = 2' }, context()), 'NOT_PERMITTED')
+      const denied = await expectError(updates.runQuery({ sql: 'delete from users where id = 2' }, context()), 'NOT_PERMITTED')
       expect(denied.message).toContain('delete')
       expect((denied.details as any).statements).toEqual([{ text: 'delete from users where id = 2', needs: ['delete'] }])
     })
 
     it('runs anything with the anything permission', async () => {
       const api = new TestUtilityApi(backendFor([primary], access({ queryTypes: ['anything'] })))
-      await call(api.query({ sql: 'create table scratch_anything (id integer); drop table scratch_anything' }, context()))
+      await call(api.runQuery({ sql: 'create table scratch_anything (id integer); drop table scratch_anything' }, context()))
     })
 
     it('still answers reads on a read only connection', async () => {
       client.readOnlyMode = true
       try {
-        const result = await call(new TestUtilityApi(backend).query({ sql: 'select count(*) as n from users' }))
+        const result = await call(new TestUtilityApi(backend).runQuery({ sql: 'select count(*) as n from users' }))
         expect(result.results[0].rows[0].n).toBe(2)
         const writer = new TestUtilityApi(backendFor([primary], access({ queryTypes: ['select', 'delete'] })))
-        const error = await expectError(writer.query({ sql: 'delete from users' }, context()), 'READ_ONLY')
+        const error = await expectError(writer.runQuery({ sql: 'delete from users' }, context()), 'READ_ONLY')
         expect(error.hint).toContain('read only mode')
       } finally {
         client.readOnlyMode = false
@@ -588,11 +587,11 @@ describe('saved queries', () => {
 
   it('needs read access to list or read them, and write access to change them', async () => {
     const none = new TestUtilityApi(backendFor([primary], access()))
-    await expectError(none.savedQueries({}, context()), 'NOT_PERMITTED')
+    await expectError(none.getSavedQueries({}, context()), 'NOT_PERMITTED')
     await expectError(none.createSavedQuery({ title: 'x', text: 'select 1' }, context()), 'NOT_PERMITTED')
 
     const readOnly = new TestUtilityApi(backendFor([primary], access({ savedQueriesRead: true })))
-    expect((await call(readOnly.savedQueries({}, context()))).savedQueries).toEqual([])
+    expect((await call(readOnly.getSavedQueries({}, context()))).savedQueries).toEqual([])
     await expectError(readOnly.createSavedQuery({ title: 'x', text: 'select 1' }, context()), 'NOT_PERMITTED')
     expect(await FavoriteQuery.count()).toBe(0)
   })
@@ -607,10 +606,10 @@ describe('saved queries', () => {
     expect(updated.savedQuery).toMatchObject({ id, title: 'Active users', text: 'select id from users' })
     expect(api.savedQueryChanges).toEqual([id, id])
 
-    const listed = await call(api.savedQueries({}, context()))
+    const listed = await call(api.getSavedQueries({}, context()))
     expect(listed.savedQueries).toEqual([expect.objectContaining({ id, title: 'Active users' })])
     expect(listed.savedQueries[0].text).toBeUndefined()
-    expect((await call(api.savedQuery({ id }, context()))).savedQuery.text).toBe('select id from users')
+    expect((await call(api.getSavedQuery({ id }, context()))).savedQuery.text).toBe('select id from users')
 
     await expectError(api.updateSavedQuery({ id: 9999, title: 'x' }, context()), 'NOT_FOUND')
     await expectError(api.updateSavedQuery({ id }, context()), 'USAGE')

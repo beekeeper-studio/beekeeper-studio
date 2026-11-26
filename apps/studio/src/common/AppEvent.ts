@@ -73,6 +73,7 @@ export enum AppEvent {
   openThemePlayground = 'openThemePlayground',
   openAppearanceModal = 'openAppearanceModal',
   openCliConfig = 'openCliConfig',
+  cliSavedQueryChanged = "cliSavedQueryChanged",
   themeFileChanged = 'themeFileChanged',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',

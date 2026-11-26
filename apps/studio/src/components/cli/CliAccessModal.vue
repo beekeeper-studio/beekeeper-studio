@@ -3,41 +3,32 @@
     :name="modalName"
     :closable="false"
     first-focusable=".btn-danger"
-    @closed="showNext"
+    @before-close="handleBeforeClose"
   >
-    <template #title>
-      CLI access request
-    </template>
-    <div
-      v-if="current"
-      class="cli-access-request"
-    >
+    <template #title> CLI access request </template>
+    <div v-if="current" class="cli-access-request">
       <div class="cli-access-client">
         <i class="material-icons">smart_toy</i>
         <span class="cli-access-client-name">{{ current.clientName }}</span>
       </div>
       <p class="cli-access-summary">
-        Requests access to <strong>{{ current.connectionName }}</strong>.
-        Choose what it may do. Access lasts until the connection is closed.
+        Requests access to <strong>{{ current.connectionName }}</strong
+        >. Choose what it may do. Access lasts until the connection is closed.
       </p>
       <cli-access-form
         v-model="access"
         :read-only-mode="current.readOnlyMode"
       />
     </div>
-    <template #footer="{ close }">
-      <button
-        type="button"
-        class="btn btn-primary btn-danger"
-        @click.prevent="answer(false, close)"
-      >
-        Deny
-      </button>
+    <template #footer>
       <button
         type="button"
         class="btn btn-flat"
-        @click.prevent="answer(true, close)"
+        @click.prevent="deny"
       >
+        Deny
+      </button>
+      <button type="button" class="btn btn-flat" @click.prevent="approve">
         Approve
       </button>
     </template>
@@ -48,17 +39,17 @@
 import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import CliAccessForm from "./CliAccessForm.vue";
+import { CliError } from "@beekeeperstudio/cli";
 import type { CliAccess } from "@beekeeperstudio/cli";
-
-interface AccessRequest {
-  requestId: string;
-  clientName: string;
-  connectionName: string;
-  readOnlyMode: boolean;
-}
+import type { ApprovalRequester } from "@beekeeperstudio/cli";
 
 function defaultAccess(): CliAccess {
-  return { queryTypes: ["select"], savedQueriesRead: false, savedQueriesWrite: false, openTabs: false };
+  return {
+    queryTypes: ["select"],
+    savedQueriesRead: false,
+    savedQueriesWrite: false,
+    openTabs: false,
+  };
 }
 
 /** Asks the user whether a CLI client may use this window's connection. */
@@ -67,67 +58,67 @@ export default Vue.extend({
   data() {
     return {
       modalName: "cli-access-modal",
-      queue: [] as AccessRequest[],
-      current: null as AccessRequest | null,
+      requester: null as ApprovalRequester | null,
       access: defaultAccess(),
-      listenerIds: [] as string[],
+      denied: false,
+      aborted: false,
+      resolvers: null as PromiseWithResolvers<CliAccess> | null,
     };
   },
+  computed: {
+    rpcMethods() {
+      return [{ "cli/requestApproval": this.requestApproval }];
+    },
+  },
   methods: {
-    enqueue(request: AccessRequest) {
-      this.queue.push(request);
-      if (!this.current) {
-        this.showNext();
+    requestApproval(
+      params: ApprovalRequester,
+      signal: AbortSignal,
+    ): Promise<CliAccess> {
+      if (this.requester) {
+        throw new Error(
+          "Cannot request access while another request is pending",
+        );
       }
-    },
-    showNext() {
-      this.current = this.queue.shift() ?? null;
-      if (!this.current) {
-        return;
-      }
-      this.access = defaultAccess();
-      this.$modal.show(this.modalName);
-    },
-    async answer(approved: boolean, close: () => void) {
-      const request = this.current;
-      if (!request) {
-        return;
-      }
-      const access = this.access;
-      this.current = null;
-      close();
-      await this.respond(request, approved ? access : null);
-    },
-    cancel({ requestId }: { requestId: string }) {
-      this.queue = this.queue.filter((request) => request.requestId !== requestId);
-      if (this.current?.requestId === requestId) {
-        this.current = null;
-        this.$modal.hide(this.modalName);
-      }
-    },
-    respond(request: AccessRequest, access: CliAccess | null) {
-      return this.$util.send("cliServer/respond", {
-        requestId: request.requestId,
-        result: { access },
+
+      signal.addEventListener("abort", this.handleAbort, {
+        once: true,
       });
+
+      this.reset();
+      this.requester = params;
+      this.$modal.show(this.modalName);
+
+      return this.resolvers.promise;
     },
-  },
-  mounted() {
-    this.listenerIds = [
-      this.$util.addListener("cli/requestAccess", this.enqueue),
-      this.$util.addListener("cli/cancelRequest", this.cancel),
-    ];
-  },
-  beforeDestroy() {
-    for (const id of this.listenerIds) {
-      this.$util.removeListener(id);
-    }
-    // A closing window must not leave a bks command waiting forever.
-    for (const request of [this.current, ...this.queue]) {
-      if (request) {
-        this.respond(request, null);
+    reset() {
+      this.denied = false;
+      this.aborted = false;
+    },
+    approve() {
+      this.$modal.hide(this.modalName);
+    },
+    deny() {
+      this.denied = true;
+      this.$modal.hide(this.modalName);
+    },
+    handleAbort() {
+    this.aborted = true;
+      this.$modal.hide(this.modalName);
+    },
+    handleBeforeClose() {
+      if (this.denied) {
+        this.resolvers.reject(
+          new CliError("ACCESS_DENIED", "Access was denied."),
+        );
+      } else if (this.aborted) {
+        this.resolvers.reject(
+          new DOMException("The request was cancelled.", "AbortError"),
+        );
+      } else {
+        this.resolvers.resolve(this.access);
       }
-    }
+    },
   },
 });
 </script>

@@ -13,6 +13,8 @@ import fs from "fs";
 import tmp from 'tmp';
 import rawLog from "@bksLogger";
 import { AuthorizedClient } from "@/services/cliServer/AuthorizedClient";
+import { RpcClient } from "@/rpc/RpcClient";
+import type { RendererMethods } from "@/lib/utility/RendererMethods";
 
 const log = rawLog.scope("handlerState");
 
@@ -25,6 +27,7 @@ export class State {
   constructor(readonly id: string) {}
 
   port: MessagePortMain = null
+  rendererClient: RpcClient<RendererMethods> = null;
   server: IDbConnectionPublicServer = null;
   usedConfig: IConnection = null;
   connection: BasicDatabaseClient<any, any> = null;

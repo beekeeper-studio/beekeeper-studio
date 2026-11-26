@@ -103,7 +103,6 @@ describe("CliServer", () => {
         error: {
           code: "USAGE",
           message: `Unknown method "${method}".`,
-          hint: "Methods: method1.",
         },
       });
     }

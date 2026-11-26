@@ -234,6 +234,7 @@ export const ConnHandlers: IConnectionHandlers = {
 
     state(sId).server = server;
     state(sId).cliClients.clear();
+    state(sId).port.postMessage({ type: "cli/grantsChanged", input: {} });
     state(sId).usedConfig = config;
     state(sId).connection = connection;
     state(sId).database = config.defaultDatabase;
@@ -307,6 +308,7 @@ export const ConnHandlers: IConnectionHandlers = {
     s.database = null;
     s.generator = null;
     s.cliClients.clear();
+    s.port?.postMessage({ type: "cli/grantsChanged", input: {} });
   },
   'conn/getServerConfig': async function({ sId }: { sId: string }) {
     return state(sId).server.getServerConfig();
