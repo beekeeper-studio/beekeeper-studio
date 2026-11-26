@@ -414,3 +414,59 @@ describe("TableTable.vue — issue #4843 UX fixes", () => {
     expect(updateSidebarSpy).toHaveBeenCalled();
   });
 });
+
+describe("TableTable.vue — onSaveEditorModal", () => {
+  it("parses edited JSON back into arrays and objects for structured cells", () => {
+    const onSaveEditorModal = (TableTable as any).options.methods.onSaveEditorModal;
+    const setValue = vi.fn();
+    const ctx = {
+      table: {
+        columns: [
+          { columnName: "tags", dataType: "array", array: true },
+          { columnName: "meta", dataType: "object" },
+        ],
+      },
+    };
+
+    onSaveEditorModal.call(ctx, '[{"film_id":"abc","title":"UPDATED"}]', {}, {
+      getField: () => "tags",
+      getValue: () => [{ film_id: "abc", title: "ORIGINAL" }],
+      setValue,
+    });
+    expect(setValue).toHaveBeenLastCalledWith([{ film_id: "abc", title: "UPDATED" }]);
+
+    onSaveEditorModal.call(ctx, '{"nested":true}', {}, {
+      getField: () => "meta",
+      getValue: () => null,
+      setValue,
+    });
+    expect(setValue).toHaveBeenLastCalledWith({ nested: true });
+  });
+
+  it("keeps plain text strings unchanged and falls back safely on invalid JSON", () => {
+    const onSaveEditorModal = (TableTable as any).options.methods.onSaveEditorModal;
+    const setValue = vi.fn();
+    const ctx = {
+      table: {
+        columns: [
+          { columnName: "notes", dataType: "varchar" },
+          { columnName: "tags", dataType: "array", array: true },
+        ],
+      },
+    };
+
+    onSaveEditorModal.call(ctx, '["literal","string"]', {}, {
+      getField: () => "notes",
+      getValue: () => "old note",
+      setValue,
+    });
+    expect(setValue).toHaveBeenLastCalledWith('["literal","string"]');
+
+    onSaveEditorModal.call(ctx, "[invalid json", {}, {
+      getField: () => "tags",
+      getValue: () => ["a"],
+      setValue,
+    });
+    expect(setValue).toHaveBeenLastCalledWith("[invalid json");
+  });
+});

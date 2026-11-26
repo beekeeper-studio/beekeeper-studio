@@ -462,7 +462,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     const result = await this.buildSelectTopCursor(table, offset, limit, orderBy, filters, selects).toArray();
 
     const fields = this.parseQueryResultColumns(result[0] || {});
-    const rows = await this.serializeQueryResult({ rows: result, columns: [], arrayMode: false }, fields)
+    const rows = (await this.serializeQueryResult({ rows: result, columns: [], arrayMode: false }, fields)).map(objectIdsToHex)
 
     return { result: rows, fields: [] }
   }
@@ -601,7 +601,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           throw new Error(`Failed to update document with _id ${idValue} in ${update.table}`);
         }
 
-        results.push(result);
+        results.push(objectIdsToHex(result));
         log.debug(`Updated document in ${update.table} with _id ${idValue}, column: ${update.column}`);
       } catch (err) {
         const errMsg = `Error updating ${update.table}: ${err.message}`;

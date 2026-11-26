@@ -1445,15 +1445,34 @@ export default Vue.extend({
       }
     },
     onSaveEditorModal(content: string, _l: LanguageData, cell: CellComponent){
-      const column = this.table.columns.find((col) => col.columnName === cell.getField());
-      const isBinary = column?.bksField?.bksType === 'BINARY' || _.isTypedArray(cell.getValue());
+      const column = this.table?.columns?.find((col) => col.columnName === cell.getField());
+      const currentValue = cell.getValue();
+      const isBinary = column?.bksField?.bksType === 'BINARY' || _.isTypedArray(currentValue);
 
-      let value = content;
       if (isBinary) {
-        value = stringToTypedArray(content)
+        cell.setValue(stringToTypedArray(content));
+        return;
       }
 
-      cell.setValue(value)
+      const dataType = column?.dataType?.toLowerCase() ?? '';
+      const isStructured = Boolean(
+        column?.array ||
+        dataType === 'array' ||
+        dataType === 'object' ||
+        Array.isArray(currentValue) ||
+        _.isPlainObject(currentValue)
+      );
+
+      let value: unknown = content;
+      if (isStructured) {
+        try {
+          value = JSON.parse(content);
+        } catch {
+          // Preserve raw string if the edited text is not valid JSON
+        }
+      }
+
+      cell.setValue(value);
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
