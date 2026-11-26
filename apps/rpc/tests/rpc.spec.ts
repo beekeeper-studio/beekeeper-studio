@@ -1,7 +1,7 @@
-import { RpcClient } from "@/rpc/RpcClient";
-import { CancelError } from "@beekeeperstudio/cli";
-import { RpcServer } from "@/rpc/RpcServer";
-import { afterEach, beforeEach, describe, it } from "vitest";
+import { RpcClient } from "../src/RpcClient";
+import { CancelError } from "../src/protocol";
+import { RpcServer } from "../src/RpcServer";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("Basic RPC Tests", () => {
   let serverPort: MessagePort;

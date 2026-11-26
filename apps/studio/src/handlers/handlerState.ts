@@ -13,7 +13,7 @@ import fs from "fs";
 import tmp from 'tmp';
 import rawLog from "@bksLogger";
 import { AuthorizedClient } from "@/services/cliServer/AuthorizedClient";
-import { RpcClient } from "@/rpc/RpcClient";
+import { RpcClient } from "@beekeeperstudio/rpc";
 import type { RendererMethods } from "@/lib/utility/RendererMethods";
 
 const log = rawLog.scope("handlerState");

@@ -49,7 +49,7 @@ import {
   StructureResult,
   SwitchTabParams,
   ApprovalRequester,
-} from "@beekeeperstudio/cli";
+} from "@beekeeperstudio/rpc";
 import type { RendererMethods } from "@/lib/utility/RendererMethods";
 import { AuthorizedClient } from "./cliServer/AuthorizedClient";
 import { disallowedStatements } from "./cliServer/queryPermissions";

@@ -9,8 +9,8 @@ import {
   Reply,
   isCliError,
   isWindowsPipePath,
-} from "@beekeeperstudio/cli";
-import { UnknownMethodError } from "@/rpc/RpcServer";
+} from "@beekeeperstudio/rpc";
+import { UnknownMethodError } from "@beekeeperstudio/rpc";
 import { EventEmitter } from "@/common/EventEmitter";
 import { uuidv4 } from "@/lib/uuid";
 import { serializeBigInt } from "@/services/plugin/utils";

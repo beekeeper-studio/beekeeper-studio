@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*", "tests/**/*"],
   "compilerOptions": {
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom"],
     "types": ["node"],
     "noEmit": true
   }

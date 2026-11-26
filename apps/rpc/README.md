@@ -3,7 +3,7 @@
 	<p>
 		<img src="../studio/src/assets/logo.svg" width="96" alt="Beekeeper Studio" />
 	</p>
-	<h1>@beekeeperstudio/cli</h1>
+	<h1>@beekeeperstudio/rpc</h1>
 	<br />
 	<p>
 		<a href="https://github.com/beekeeper-studio/beekeeper-studio/blob/master/LICENSE.md"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0" /></a>
@@ -13,12 +13,12 @@
 
 ## About
 
-`@beekeeperstudio/cli` is the client for the Beekeeper Studio CLI socket. It talks to a connection that is **already open in the app**, over a local socket, so scripts and AI coding agents can inspect a database without being given its credentials.
+`@beekeeperstudio/rpc` is the client for the Beekeeper Studio CLI socket. It talks to a connection that is **already open in the app**, over a local socket, so scripts and AI coding agents can inspect a database without being given its credentials.
 
 ## Example usage
 
 ```ts
-import { Client } from "@beekeeperstudio/cli";
+import { Client } from "@beekeeperstudio/rpc";
 
 const client = new Client();
 await client.requestApproval();

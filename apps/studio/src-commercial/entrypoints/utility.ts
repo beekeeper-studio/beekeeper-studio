@@ -19,7 +19,7 @@ import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
 import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { CliServerHandlers } from '@/handlers/cliServerHandlers';
-import { RpcClient } from '@/rpc/RpcClient';
+import { RpcClient } from '@beekeeperstudio/rpc';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
@@ -43,8 +43,8 @@ import {
   RegistryModule,
   LicenseModule,
 } from '@/services/plugin/modules';
-import type { Request } from '@beekeeperstudio/cli';
-import type { Reply as RpcReply } from '@beekeeperstudio/cli';
+import type { Request } from '@beekeeperstudio/rpc';
+import type { Reply as RpcReply } from '@beekeeperstudio/rpc';
 import type {
   ExtensionRegistryErrorCode,
   ExtensionRepositoryErrorCode,
@@ -193,8 +193,6 @@ async function runHandler(id: string, name: string, args: any) {
           state(args.sId).port.postMessage(replyArgs)
         }
       });
-  } else if (name.startsWith("rpc/")) {
-    // This is handled by the RpcClient
   } else {
     replyArgs.type = 'error';
     replyArgs.error = `Invalid handler name: ${name}`;

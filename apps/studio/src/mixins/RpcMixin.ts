@@ -1,4 +1,4 @@
-import type { Method } from "./types";
+import type { Method } from "@beekeeperstudio/rpc";
 
 /**
  * Registers every handler in a component's `rpcMethods` on `$server` when it

@@ -35,8 +35,8 @@ import { ThemeRenderer } from "@/lib/theme/ThemeRenderer";
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
-import { RpcServer } from '@/rpc/RpcServer'
-import { RpcMixin } from '@/rpc/RpcMixin'
+import { RpcServer } from '@beekeeperstudio/rpc'
+import { RpcMixin } from '@/mixins/RpcMixin'
 import type { RendererMethods } from '@/lib/utility/RendererMethods'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'

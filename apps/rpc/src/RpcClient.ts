@@ -1,13 +1,12 @@
-import { uuidv4 } from "@/lib/uuid";
-import type { Method } from "./types";
+import { CancelError } from "./protocol";
 import type {
+  Method,
   Notification,
+  Port,
+  Reply,
   Request,
   RequestOptions,
-} from "@beekeeperstudio/cli";
-import { CancelError } from "@beekeeperstudio/cli";
-import type { Reply } from "@beekeeperstudio/cli";
-import type { MessagePortMain as ElectronPort } from "electron";
+} from "./protocol";
 
 /**
  * Calls the methods a RpcServer registered, over any port that reaches
@@ -18,14 +17,14 @@ export class RpcClient<
 > {
   private listenerCount = 0;
 
-  constructor(private readonly port: ElectronPort | MessagePort) { }
+  constructor(private readonly port: Port) { }
 
   request<K extends keyof MethodMap & string>(
     name: K,
     args?: Parameters<MethodMap[K]>[0],
     options: RequestOptions = {},
   ): Promise<Awaited<ReturnType<MethodMap[K]>>> {
-    const id = options.id ?? uuidv4();
+    const id = options.id ?? crypto.randomUUID();
     const { resolve, reject, promise } = Promise.withResolvers<any>();
 
     const onAbort = () => this.cancel(id);

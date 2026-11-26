@@ -1,9 +1,5 @@
-import { uuidv4 } from "@/lib/uuid";
-import type { MessagePortMain as ElectronPort } from "electron";
-import { CancelError } from "@beekeeperstudio/cli";
-import type { Reply } from "@beekeeperstudio/cli";
-import type { Notification, Request } from "@beekeeperstudio/cli";
-import type { Method } from "./types";
+import { CancelError } from "./protocol";
+import type { Method, Notification, Port, Reply, Request } from "./protocol";
 
 /** Thrown by RpcServer.call when nothing is registered under the name. */
 export class UnknownMethodError extends Error {
@@ -33,7 +29,7 @@ export class RpcServer<
   >();
   private readonly runningRequests = new Map<string, AbortController>();
 
-  constructor(private readonly port: ElectronPort | MessagePort) {
+  constructor(private readonly port: Port) {
     this.handleMessage = this.handleMessage.bind(this);
   }
 
@@ -134,7 +130,7 @@ export class RpcServer<
     }
     const name = notification.name as keyof MethodMap;
     try {
-      await this.call(uuidv4(), name, notification.args);
+      await this.call(crypto.randomUUID(), name, notification.args);
     } catch (e) {
       console.error(`Notification ${notification.name} failed`, e);
     }

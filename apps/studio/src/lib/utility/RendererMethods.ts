@@ -1,5 +1,5 @@
-import type { Access, CreateTabRequest } from "@beekeeperstudio/cli";
-import type { ApprovalRequester } from "@beekeeperstudio/cli";
+import type { Access, CreateTabRequest } from "@beekeeperstudio/rpc";
+import type { ApprovalRequester } from "@beekeeperstudio/rpc";
 
 /** Methods a renderer registers on UtilityConnection, for the utility process to call. */
 export interface RendererMethods {

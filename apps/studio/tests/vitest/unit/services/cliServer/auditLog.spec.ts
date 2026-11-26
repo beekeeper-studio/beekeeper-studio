@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { CLI_AUDIT_SQL_MAX_CHARS, CliAuditLog, buildAuditEntry, createElectronLogSink, summarizeResult } from '@/services/cliServer/auditLog'
-import { Request, Reply } from '@beekeeperstudio/cli'
+import { Request, Reply } from '@beekeeperstudio/rpc'
 
 function request(name: Request['name'], args: Request['args'] = {}): Request {
   return { name, args }

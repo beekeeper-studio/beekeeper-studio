@@ -73,7 +73,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import type { Access, QueryPermission } from "@beekeeperstudio/cli";
+import type { Access, QueryPermission } from "@beekeeperstudio/rpc";
 
 const WRITE_TYPES: QueryPermission[] = ["update", "delete", "alter", "anything"];
 

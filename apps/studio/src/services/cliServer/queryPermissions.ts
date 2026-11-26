@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { Dialect as IdentifierDialect } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
-import { QueryPermission } from '@beekeeperstudio/cli'
+import { QueryPermission } from '@beekeeperstudio/rpc'
 import { safelyIdentify } from '@/lib/db/sql_tools'
 
 export interface StatementPermissions {

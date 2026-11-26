@@ -26,7 +26,7 @@ import {
   isConnectError,
   isCliError,
   defaultCliSocketPath,
-} from "@beekeeperstudio/cli";
+} from "@beekeeperstudio/rpc";
 import { detectClientName } from "./clientName";
 import { toMarkdown } from "./markdown";
 

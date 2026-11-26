@@ -39,9 +39,9 @@
 import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import CliAccessForm from "./CliAccessForm.vue";
-import { CliError } from "@beekeeperstudio/cli";
-import type { Access } from "@beekeeperstudio/cli";
-import type { ApprovalRequester } from "@beekeeperstudio/cli";
+import { CliError } from "@beekeeperstudio/rpc";
+import type { Access } from "@beekeeperstudio/rpc";
+import type { ApprovalRequester } from "@beekeeperstudio/rpc";
 
 function defaultAccess(): Access {
   return {

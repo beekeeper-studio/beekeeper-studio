@@ -6,7 +6,7 @@ import type {
   SavedQueriesResult,
   SchemasResult,
   StructureResult,
-} from "@beekeeperstudio/cli";
+} from "@beekeeperstudio/rpc";
 
 function cell(value: unknown): string {
   if (value === null || value === undefined) {

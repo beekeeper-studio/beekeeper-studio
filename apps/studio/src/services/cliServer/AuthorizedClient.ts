@@ -1,4 +1,4 @@
-import type { Access } from "@beekeeperstudio/cli";
+import type { Access } from "@beekeeperstudio/rpc";
 
 export class AuthorizedClient {
   constructor(

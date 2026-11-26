@@ -15,13 +15,13 @@ import { SqliteClient } from "@/lib/db/clients/sqlite";
 import { CliServer } from "@/services/cliServer/CliServer";
 import { UtilityApi } from "@/services/UtilityApi";
 import { getConnectedStates, newState, state, State } from "@/handlers/handlerState";
-import { createProgram } from "@/cli/program";
+import { createProgram } from "@/backend/cli/program";
 import {
   ApprovalRequester,
   Access,
   CliError,
   CreateTabRequest,
-} from "@beekeeperstudio/cli";
+} from "@beekeeperstudio/rpc";
 
 const socketPath =
   process.platform === "win32"

@@ -230,6 +230,26 @@ export interface Request {
   client?: ClientInfo;
 }
 
+export interface RequestOptions {
+  /** Id for this request, so it can be cancelled with cancel(). Generated when left out. */
+  id?: string;
+  signal?: AbortSignal;
+}
+
+export type Method = (...args: unknown[]) => unknown;
+
+/** Electron's MessagePortMain, which emits Node-style events. */
+export interface NodeMessagePort {
+  postMessage(message: unknown): void;
+  addListener(event: "message", listener: (event: { data: any }) => void): unknown;
+  removeListener(
+    event: "message",
+    listener: (event: { data: any }) => void,
+  ): unknown;
+}
+
+export type Port = MessagePort | NodeMessagePort;
+
 /** A one-way message to a named handler. Nothing is sent back. */
 export interface Notification {
   name: string;

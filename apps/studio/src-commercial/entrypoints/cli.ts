@@ -4,10 +4,10 @@
  * This file is bundled on its own into dist/cli.js and runs under plain Node,
  * either a system `node` or the app's Electron binary started with
  * ELECTRON_RUN_AS_NODE=1 (see build/bks). It may import only
- * src/cli and @beekeeperstudio/cli, never electron or the rest of the app; the esbuild
+ * src/backend/cli and @beekeeperstudio/rpc, never electron or the rest of the app; the esbuild
  * target enforces it.
  */
-import { createProgram } from "@/cli/program";
+import { createProgram } from "@/backend/cli/program";
 import { version } from "../../package.json";
 
 const program = createProgram({ version });

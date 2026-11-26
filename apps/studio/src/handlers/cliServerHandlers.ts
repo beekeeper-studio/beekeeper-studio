@@ -1,5 +1,5 @@
 import { state } from "@/handlers/handlerState";
-import type { Access } from "@beekeeperstudio/cli";
+import type { Access } from "@beekeeperstudio/rpc";
 
 export interface AuthorizedClientSnapshot {
   name: string;

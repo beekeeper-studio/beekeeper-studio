@@ -14,7 +14,7 @@ import {
   Access,
   CliError,
   CreateTabRequest,
-} from '@beekeeperstudio/cli'
+} from '@beekeeperstudio/rpc'
 import { serializeBigInt } from '@/services/plugin/utils'
 
 async function createSqliteClient(): Promise<SqliteClient> {

@@ -10,7 +10,7 @@ import {
   CliServerOptions,
 } from "@/services/cliServer/CliServer";
 import { CliRequestEvent } from "@/services/cliServer/auditLog";
-import { CliError } from "@beekeeperstudio/cli";
+import { CliError } from "@beekeeperstudio/rpc";
 
 const unix = process.platform !== "win32";
 

@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import net from "net";
 import {
   CancelError,
+  RequestOptions,
   Message,
   MethodName,
   CliError,
@@ -45,12 +46,6 @@ const CONNECT_ERROR_CODES = new Set([
 /** Whether the socket could not be reached, i.e. the app is not running or not listening there. */
 export function isConnectError(error: any): boolean {
   return !!error && CONNECT_ERROR_CODES.has(error.code);
-}
-
-export interface RequestOptions {
-  /** Id for this request, so it can be cancelled with cancel(). Generated when left out. */
-  id?: string;
-  signal?: AbortSignal;
 }
 
 export interface ClientOptions {

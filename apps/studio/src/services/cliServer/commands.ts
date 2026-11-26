@@ -15,7 +15,7 @@ import {
   EntityType,
   StatementResult,
   ClientInfo,
-} from "@beekeeperstudio/cli";
+} from "@beekeeperstudio/rpc";
 
 /** Who made a request, and whether they are still waiting for the answer. */
 export interface CliCallContext {
