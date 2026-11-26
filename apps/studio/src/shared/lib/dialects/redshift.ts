@@ -23,6 +23,7 @@ const defaultLength = (t: string) => {
 
 export const RedshiftData: DialectData = {
   sqlLabel: "SQL",
+  supportsDropDatabase: true,
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [],
   wrapIdentifier: (id: string) => `"${id.replaceAll(/"/g, '""')}"`,

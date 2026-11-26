@@ -24,6 +24,7 @@ const UNWRAPPER = /^`(.*)`$/
 
 export const MysqlData: DialectData = {
   sqlLabel: "SQL",
+  supportsDropDatabase: true,
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier(value: string) {

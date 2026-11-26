@@ -31,6 +31,7 @@ const UNWRAPPER = /^"(.*)"$/
 
 export const PostgresData: DialectData = {
   sqlLabel: "SQL",
+  supportsDropDatabase: true,
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier: (id: string) => id ? `"${id.replaceAll(/"/g, '""')}"` : null,
