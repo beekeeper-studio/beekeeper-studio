@@ -20,6 +20,7 @@ import { IConnection } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
+import { TableLengthModule, TableLengthState } from './modules/TableLengthModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
 import { ThemesModule } from './modules/themes'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
@@ -133,6 +134,9 @@ export interface State {
 
   /** Set by VueX module. */
   sidebar?: SidebarState
+
+  /** Set by VueX module. */
+  tableLengths?: TableLengthState
 }
 
 Vue.use(Vuex)
@@ -159,6 +163,7 @@ const store = new Vuex.Store<State>({
     menuBar: MenuBarModule,
     plugins: PluginsModule,
     vim: VimStoreModule,
+    tableLengths: TableLengthModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -396,6 +401,9 @@ const store = new Vuex.Store<State>({
       state.namespaceList = []
       state.tables = []
       state.routines = []
+      if (state.tableLengths) {
+        state.tableLengths.counts = {}
+      }
       state.entityFilter = {
         filterQuery: undefined,
         showTables: true,
@@ -766,6 +774,7 @@ const store = new Vuex.Store<State>({
 
       await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase: databaseForServer });
       context.commit('database', newDatabase)
+      await context.dispatch('tableLengths/clear')
       await context.dispatch('updateTables')
       await context.dispatch('updateDatabaseList')
       await context.dispatch('updateRoutines')
@@ -781,6 +790,7 @@ const store = new Vuex.Store<State>({
       context.commit('database', null);
       context.commit('tables', []);
       context.commit('routines', []);
+      await context.dispatch('tableLengths/clear');
     },
 
     async updateTableColumns(context, table: TableOrView) {

@@ -253,6 +253,13 @@ $button-height:     $statusbar-height * 0.72;
       margin-right: 0.35rem;
       width: 16px;
     }
+    i.cached-indicator {
+      font-size: 13px;
+      margin-left: 0.25rem;
+      margin-right: 0;
+      width: auto;
+      opacity: 0.7;
+    }
     &.error {
       color: var(--statusbar-fg);
       font-size: 0.75rem;

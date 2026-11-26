@@ -564,6 +564,7 @@ declare interface IBksConfig {
             itemHeight: number;
         };
         tableTable: {
+            autoFetchRowCount: boolean;
             dataTypeColors: boolean;
             defaultColumnWidth: number;
             editTrigger: string;

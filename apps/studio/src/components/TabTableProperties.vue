@@ -69,6 +69,7 @@
               </x-button>
               <template v-if="properties">
                 <table-length
+                  ref="tableLength"
                   :table="table"
                 />
                 <span
@@ -376,6 +377,7 @@ export default {
       // this.properties = null
       try {
         await this.$store.dispatch('updateTableColumns', this.table)
+        await this.$store.dispatch('tableLengths/invalidate', this.table)
         console.log("getting primary keys")
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
         if (this.table.entityType === 'table') {
@@ -383,6 +385,9 @@ export default {
           this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema);
         }
         this.loading = false
+        if (this.$bksConfig?.ui?.tableTable?.autoFetchRowCount) {
+          this.$nextTick(() => this.$refs.tableLength?.maybeAutoFetch?.())
+        }
       } catch (ex) {
         this.error = ex
       } finally {
