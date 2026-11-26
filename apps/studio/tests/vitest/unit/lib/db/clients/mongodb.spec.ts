@@ -251,4 +251,40 @@ describe("MongoDBClient ObjectIds", () => {
       col_5: "2006-01-01T00:00:00.000Z",
     })
   })
+
+  it("converts nested ObjectIds to hex strings in selectTop while preserving top-level _id serialization", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    vi.spyOn(client as any, "buildSelectTopCursor").mockReturnValue({
+      toArray: vi.fn().mockResolvedValue([filmDoc()]),
+    })
+
+    const { result } = await client.selectTop("films", 0, 10, [], [])
+
+    expect(Buffer.isBuffer(result[0]._id)).toBe(true)
+    expect(Buffer.from(result[0]._id).toString("hex")).toBe(ID)
+    expect(result[0].title).toBe("ACADEMY DINOSAUR")
+    expect(result[0].actors).toEqual({ films: [{ film_id: FILM_ID }] })
+    expect(result[0].tags).toEqual([FILM_ID])
+  })
+
+  it("serializes top-level _id as Buffer and nested ObjectIds as hex in updateValues results", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const connection = {
+      collection: vi.fn().mockReturnValue({
+        findOneAndUpdate: vi.fn().mockResolvedValue(filmDoc()),
+      }),
+    } as any
+
+    const [updated] = await client.updateValues(
+      [{ table: "films", column: "tags", value: [FILM_ID], primaryKeys: [{ column: "_id", value: ID }] }],
+      connection
+    )
+
+    expect(Buffer.isBuffer(updated._id)).toBe(true)
+    expect(Buffer.from(updated._id).toString("hex")).toBe(ID)
+    expect(updated.title).toBe("ACADEMY DINOSAUR")
+    expect(updated.actors).toEqual({ films: [{ film_id: FILM_ID }] })
+    expect(updated.tags).toEqual([FILM_ID])
+    expect(updated.released).toEqual(RELEASED)
+  })
 })
