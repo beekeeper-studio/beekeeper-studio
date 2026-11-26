@@ -1,5 +1,6 @@
 import { RpcClient } from "../src/RpcClient";
-import { CancelError } from "../src/protocol";
+import { CancelError, CliError } from "../src/protocol";
+import type { CallContext } from "../src/protocol";
 import { RpcServer } from "../src/RpcServer";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -99,6 +100,34 @@ describe("Basic RPC Tests", () => {
     const promise = client.request("ping");
     await expect(promise).rejects.toThrow("ping failed");
     await expect(promise).rejects.toMatchObject({ code: "PING_FAILED" });
+  });
+
+  it("passes the request and a signal to the handler", async () => {
+    server.register("echo", (_args: unknown, context: CallContext) => ({
+      name: context.request?.name,
+      aborted: context.signal.aborted,
+    }));
+    await expect(client.request("echo")).resolves.toEqual({
+      name: "echo",
+      aborted: false,
+    });
+  });
+
+  it("replies with the hint and details of an error", async () => {
+    server.register("ping", () => {
+      throw new CliError("NOT_FOUND", "nope", {
+        hint: "look elsewhere",
+        details: { tried: 1 },
+      });
+    });
+    const replies: unknown[] = [];
+    clientPort.addEventListener("message", (event) => replies.push(event.data));
+
+    await expect(client.request("ping")).rejects.toThrow("nope");
+    expect(replies.at(-1)).toMatchObject({
+      type: "response",
+      input: { errorHint: "look elsewhere", errorDetail: { tried: 1 } },
+    });
   });
 
   it("internally add listener only when needed", async () => {

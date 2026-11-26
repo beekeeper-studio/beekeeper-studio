@@ -1,5 +1,12 @@
 import { CancelError } from "./protocol";
-import type { Method, Notification, Port, Reply, Request } from "./protocol";
+import type {
+  CallContext,
+  Method,
+  Notification,
+  Port,
+  Reply,
+  Request,
+} from "./protocol";
 
 /** Thrown by RpcServer.call when nothing is registered under the name. */
 export class UnknownMethodError extends Error {
@@ -63,13 +70,14 @@ export class RpcServer<
   }
 
   /**
-   * Runs the handler registered under `name` with `args`, plus a last
-   * argument: a signal that `cancel(id)` aborts.
+   * Runs the handler registered under `name` with `args` and a context whose
+   * signal `cancel(id)` aborts.
    */
   private async call<K extends keyof MethodMap>(
     id: string,
     name: K,
-    ...args: unknown[]
+    args: unknown,
+    request?: Request,
   ): Promise<Awaited<ReturnType<MethodMap[K]>>> {
     const handler = this.handlers.get(name);
     if (!handler) {
@@ -85,9 +93,10 @@ export class RpcServer<
       rejectWithReason.bind(null, cancelled.reject, controller.signal),
       { once: true },
     );
+    const context: CallContext = { signal: controller.signal, request };
     try {
       const result = await Promise.race([
-        handler(...args, controller.signal),
+        handler(args, context),
         cancelled.promise,
       ]);
       return result as Awaited<ReturnType<MethodMap[K]>>;
@@ -107,7 +116,7 @@ export class RpcServer<
   private async handleRequest(request: Request): Promise<void> {
     try {
       const name = request.name as keyof MethodMap;
-      const data = await this.call(request.id, name, request.args);
+      const data = await this.call(request.id, name, request.args, request);
       const reply: Reply = { id: request.id, type: "reply", data };
       this.port.postMessage({ type: "response", input: reply });
     } catch (e) {
@@ -117,6 +126,8 @@ export class RpcServer<
         error: e?.message ?? String(e),
         errorName: e?.name,
         errorCode: e?.code,
+        errorHint: e?.hint,
+        errorDetail: e?.details,
       };
       this.port.postMessage({ type: "response", input: reply });
     }

@@ -42,6 +42,7 @@ import CliAccessForm from "./CliAccessForm.vue";
 import { CliError } from "@beekeeperstudio/rpc";
 import type { Access } from "@beekeeperstudio/rpc";
 import type { ApprovalRequester } from "@beekeeperstudio/rpc";
+import type { CallContext } from "@beekeeperstudio/rpc";
 
 function defaultAccess(): Access {
   return {
@@ -73,7 +74,7 @@ export default Vue.extend({
   methods: {
     requestApproval(
       params: ApprovalRequester,
-      signal: AbortSignal,
+      context: CallContext,
     ): Promise<Access> {
       if (this.requester) {
         throw new Error(
@@ -81,7 +82,7 @@ export default Vue.extend({
         );
       }
 
-      signal.addEventListener("abort", this.handleAbort, {
+      context.signal.addEventListener("abort", this.handleAbort, {
         once: true,
       });
 

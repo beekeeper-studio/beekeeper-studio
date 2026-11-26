@@ -1,27 +1,55 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
+import { EventEmitter } from "events";
 import fs from "fs";
 import net from "net";
 import os from "os";
 import path from "path";
 import { Client } from "../src/Client";
-import { CancelError, OpenConnection } from "../src/protocol";
+import { RpcServer } from "../src/RpcServer";
+import { CancelError, Message, OpenConnection } from "../src/protocol";
+
+/**
+ * A port over the test's socket server, so RpcServer can answer Client.
+ * Each connection carries one message; a response goes back on the socket
+ * its request came in on.
+ */
+class SocketPortAdapter extends EventEmitter {
+  private readonly sockets = new Map<string, net.Socket>();
+
+  accept(socket: net.Socket): void {
+    socket.once("data", this.handleData.bind(this, socket));
+  }
+
+  postMessage(message: unknown): void {
+    const response = message as Extract<Message, { type: "response" }>;
+    const socket = this.sockets.get(response.input.id);
+    this.sockets.delete(response.input.id);
+    socket?.end(JSON.stringify(response) + "\n");
+  }
+
+  private handleData(socket: net.Socket, chunk: Buffer): void {
+    const message: Message = JSON.parse(chunk.toString());
+    if (message.type === "request") {
+      this.sockets.set(message.input.id, socket);
+    } else {
+      socket.end();
+    }
+    this.emit("message", { data: message });
+  }
+}
 
 let server: net.Server | null = null;
 let dir: string | null = null;
 
-async function fakeApp(result: unknown): Promise<string> {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-cli-"));
-  const socketPath = path.join(dir, "cli.sock");
-  server = net.createServer((socket) => {
-    socket.once("data", (chunk) => {
-      const message = JSON.parse(chunk.toString());
-      const reply = { id: message.input.id, type: "reply", data: result };
-      const response = { type: "response", input: reply };
-      socket.end(JSON.stringify(response) + "\n");
-    });
-  });
+async function startApp(): Promise<{ socketPath: string; app: RpcServer }> {
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-rpc-"));
+  const socketPath = path.join(dir, "rpc.sock");
+  const port = new SocketPortAdapter();
+  const app = new RpcServer(port);
+  app.initialize();
+  server = net.createServer(port.accept.bind(port));
   await new Promise<void>((resolve) => server!.listen(socketPath, resolve));
-  return socketPath;
+  return { socketPath, app };
 }
 
 afterEach(async () => {
@@ -37,8 +65,9 @@ afterEach(async () => {
 
 describe("Client communication", () => {
   it("returns no connections when none are open", async () => {
-    const socketPath = await fakeApp({ connections: [] });
-    const client = new Client({ socketPath });
+    const started = await startApp();
+    started.app.register("getConnections", () => ({ connections: [] }));
+    const client = new Client({ socketPath: started.socketPath });
     expect((await client.getConnections()).connections).toEqual([]);
   });
 
@@ -50,50 +79,26 @@ describe("Client communication", () => {
       readOnlyMode: false,
       approved: true,
     };
-    const socketPath = await fakeApp({ connections: [open] });
-    const client = new Client({ socketPath });
+    const started = await startApp();
+    started.app.register("getConnections", () => ({ connections: [open] }));
+    const client = new Client({ socketPath: started.socketPath });
     expect((await client.getConnections()).connections).toEqual([open]);
   });
 });
 
 describe("Client cancel", () => {
-  it("sends a cancel notification and rejects when the app replies", async () => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-cli-"));
-    const socketPath = path.join(dir, "cli.sock");
-    const pending = new Map<string, net.Socket>();
-    server = net.createServer((socket) => {
-      socket.once("data", (chunk) => {
-        const message = JSON.parse(chunk.toString());
-        if (message.type === "request") {
-          pending.set(message.input.id, socket);
-          return;
-        }
-        expect(message).toEqual({
-          type: "notification",
-          input: { name: "$/cancel", args: { id: "id-123" } },
-        });
-        const reply = {
-          id: message.input.args.id,
-          type: "error",
-          error: "The request was cancelled.",
-          errorName: "CancelError",
-        };
-        const response = { type: "response", input: reply };
-        pending
-          .get(message.input.args.id)
-          ?.end(JSON.stringify(response) + "\n");
-        socket.end();
-      });
+  it("rejects with CancelError once the app cancels the request", async () => {
+    const started = await startApp();
+    const running = Promise.withResolvers<void>();
+    started.app.register("getConnections", () => {
+      running.resolve();
+      return new Promise(() => {});
     });
-    await new Promise<void>((resolve) => server!.listen(socketPath, resolve));
 
-    const client = new Client({ socketPath });
+    const client = new Client({ socketPath: started.socketPath });
     const controller = new AbortController();
-    const request = client.getConnections({
-      id: "id-123",
-      signal: controller.signal,
-    });
-    await vi.waitFor(() => expect(pending.has("id-123")).toBe(true));
+    const request = client.getConnections({ signal: controller.signal });
+    await running.promise;
     controller.abort();
 
     await expect(request).rejects.toBeInstanceOf(CancelError);

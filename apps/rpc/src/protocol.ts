@@ -238,6 +238,14 @@ export interface RequestOptions {
 
 export type Method = (...args: unknown[]) => unknown;
 
+/** What RpcServer passes to a handler after its args. */
+export interface CallContext {
+  /** Aborted when the request is cancelled. */
+  signal: AbortSignal;
+  /** The request being handled. Missing for notifications. */
+  request?: Request;
+}
+
 /** Electron's MessagePortMain, which emits Node-style events. */
 export interface NodeMessagePort {
   postMessage(message: unknown): void;
