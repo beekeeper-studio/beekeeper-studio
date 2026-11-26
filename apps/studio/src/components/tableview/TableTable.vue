@@ -62,6 +62,7 @@
         </x-button>
         <!-- Info -->
         <table-length
+          ref="tableLength"
           v-if="!minimalMode"
           :table="table"
           :filters="filters"
@@ -1901,8 +1902,9 @@ export default Vue.extend({
 
           const result = await this.connection.applyChanges(payload);
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
+          const rowCountChanged = this.hasPendingInserts || this.hasPendingDeletes
 
-          if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes || this.addedCol) {
+          if (updateIncludedPK || rowCountChanged || this.addedCol) {
             replaceData = true
             this.addedCol = false;
           } else if (this.hasPendingUpdates) {
@@ -1931,6 +1933,13 @@ export default Vue.extend({
           }
 
           this.resetPendingChanges()
+
+          if (rowCountChanged) {
+            await this.$store.dispatch('tableLengths/invalidate', this.table)
+            if (this.$bksConfig?.ui?.tableTable?.autoFetchRowCount) {
+              (this.$refs.tableLength as any)?.maybeAutoFetch?.()
+            }
+          }
 
 
         } catch (ex) {
@@ -2198,6 +2207,7 @@ export default Vue.extend({
           totalRows = Number(count) || 0
         } else {
           totalRows = await this.connection.getTableLength(this.table.name, this.table.schema)
+          await this.$store.dispatch('tableLengths/setCount', { table: this.table, count: totalRows })
         }
 
         const lastPage = Math.max(1, Math.ceil(totalRows / this.limit))
@@ -2222,6 +2232,7 @@ export default Vue.extend({
       // Re-fetch column metadata on explicit refresh so renames show up without
       // reopening the connection (issue #4567). No-ops when columns are unchanged.
       await this.$store.dispatch('updateTableColumns', this.table)
+      await this.$store.dispatch('tableLengths/invalidate', this.table)
 
       await this.tabulator.replaceData()
       const layout = this.tabulator.getColumnLayout();
@@ -2229,6 +2240,9 @@ export default Vue.extend({
       this.tabulator.setColumnLayout(layout);
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
+      if (this.$bksConfig?.ui?.tableTable?.autoFetchRowCount) {
+        (this.$refs.tableLength as any)?.maybeAutoFetch?.()
+      }
     },
     positionRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
