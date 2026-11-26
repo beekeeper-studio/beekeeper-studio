@@ -3,6 +3,7 @@ import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows, OpenOptions, setConfirmWindowClose } from './WindowBuilder'
 import { app, dialog, shell } from 'electron'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
+import { relaunchOnQuit } from './relaunch'
 import platformInfo from '../common/platform_info'
 import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
@@ -155,12 +156,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   restart(): void {
-    if (platformInfo.isAppImage && process.env.APPIMAGE) {
-      app.relaunch({ execPath: process.env.APPIMAGE, args: process.argv.slice(1) });
-    } else {
-      app.relaunch();
-    }
-    app.quit();
+    relaunchOnQuit()
+    app.quit()
   }
 
   // first argument when coming from the ipcRenderer when opening a new window via new database doesn't return the same arguments as going through menu natively

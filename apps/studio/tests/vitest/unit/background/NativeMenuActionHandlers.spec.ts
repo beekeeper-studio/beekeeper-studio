@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   app: {
     relaunch: vi.fn(),
     quit: vi.fn(),
   },
+  relaunchOnQuit: vi.fn(),
 }));
 
 vi.mock("electron", () => ({
@@ -13,6 +14,7 @@ vi.mock("electron", () => ({
   shell: {},
 }));
 vi.mock("electron-updater", () => ({ autoUpdater: { checkForUpdates: vi.fn() } }));
+vi.mock("@/background/relaunch", () => ({ relaunchOnQuit: mocks.relaunchOnQuit }));
 vi.mock("@/background/WindowBuilder", () => ({
   buildWindow: vi.fn(),
   getActiveWindows: () => [],
@@ -39,36 +41,15 @@ vi.mock("@bksLogger", () => {
 import NativeMenuActionHandlers from "@/background/NativeMenuActionHandlers";
 
 describe("NativeMenuActionHandlers.restart", () => {
-  let savedAppImage: string | undefined;
-
   beforeEach(() => {
-    savedAppImage = process.env.APPIMAGE;
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    if (savedAppImage === undefined) delete process.env.APPIMAGE;
-    else process.env.APPIMAGE = savedAppImage;
-  });
-
-  it("relaunches the AppImage file, not the binary in its temporary mount", () => {
-    process.env.APPIMAGE = "/tmp/Beekeeper-Studio.AppImage";
-
+  it("arms a relaunch on quit and quits the app", () => {
     new NativeMenuActionHandlers({} as any).restart();
 
-    expect(mocks.app.relaunch).toHaveBeenCalledWith({
-      execPath: "/tmp/Beekeeper-Studio.AppImage",
-      args: process.argv.slice(1),
-    });
-    expect(mocks.app.quit).toHaveBeenCalled();
-  });
-
-  it("relaunches with no arguments when APPIMAGE is unset", () => {
-    delete process.env.APPIMAGE;
-
-    new NativeMenuActionHandlers({} as any).restart();
-
-    expect(mocks.app.relaunch).toHaveBeenCalledWith();
-    expect(mocks.app.quit).toHaveBeenCalled();
+    expect(mocks.relaunchOnQuit).toHaveBeenCalledTimes(1);
+    expect(mocks.app.quit).toHaveBeenCalledTimes(1);
+    expect(mocks.app.relaunch).not.toHaveBeenCalled();
   });
 });

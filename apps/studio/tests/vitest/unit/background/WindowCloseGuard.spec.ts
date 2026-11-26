@@ -3,6 +3,9 @@ import { EventEmitter } from "events";
 import { WindowCloseGuard, WindowCloseState } from "@/background/lib/electron/WindowCloseGuard";
 import { AppEvent } from "@/common/AppEvent";
 
+const cancelPendingRelaunch = vi.hoisted(() => vi.fn());
+vi.mock("@/background/relaunch", () => ({ cancelPendingRelaunch }));
+
 class FakeWebContents extends EventEmitter {
   destroyed = false;
   send = vi.fn();
@@ -55,6 +58,7 @@ describe("WindowCloseGuard", () => {
     ipcMain = new EventEmitter();
     app = { quit: vi.fn<() => void>() };
     state = { bypassed: false, quitRequested: false };
+    cancelPendingRelaunch.mockClear();
   });
 
   it("closes without asking when there are no listeners", () => {
@@ -192,5 +196,24 @@ describe("WindowCloseGuard", () => {
 
     expect(state.quitRequested).toBe(false);
     expect(app.quit).not.toHaveBeenCalled();
+    expect(cancelPendingRelaunch).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the pending relaunch when the listeners allow the close", async () => {
+    const win = new FakeWindow();
+    setup(win);
+    state.quitRequested = true;
+    app.quit.mockImplementation(() => {
+      state.quitRequested = true;
+      win.close();
+    });
+
+    app.quit();
+    await tick();
+    answer(win, false);
+    await tick();
+
+    expect(win.closed).toBe(true);
+    expect(cancelPendingRelaunch).not.toHaveBeenCalled();
   });
 });
