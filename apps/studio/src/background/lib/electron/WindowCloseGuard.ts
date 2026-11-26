@@ -1,5 +1,6 @@
 import type { App, BrowserWindow, Event, IpcMain, IpcMainEvent } from 'electron'
 import { AppEvent } from '@/common/AppEvent'
+import { cancelPendingRelaunch } from '@/background/relaunch'
 
 export interface WindowCloseState {
   bypassed: boolean
@@ -35,6 +36,8 @@ export class WindowCloseGuard {
     this.pending.then((prevented) => {
       if (prevented) {
         this.state.quitRequested = false
+        // a cancelled quit must not leave a pending restart armed
+        cancelPendingRelaunch()
         return
       }
       // stays set: the window may still be closing when a resumed quit closes it again

@@ -28,6 +28,7 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
+import { relaunchNow } from '@/background/relaunch'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -382,8 +383,8 @@ ipcMain.handle('clipboard:read', async () => {
 })
 
 ipcMain.on('app:restart', async () => {
-  app.relaunch();
-  app.exit();
+  relaunchNow()
+  app.exit()
 })
 
 // Exit cleanly on request from parent process in development mode.
