@@ -17,6 +17,7 @@ function withDestroyHooks(ctx) {
   ctx.connection = { releaseConnection: vi.fn() };
   ctx.containerResizeObserver = { disconnect: vi.fn() };
   ctx.removeTransactionTimeoutListener = vi.fn();
+  ctx.stopTimer = vi.fn();
   return ctx;
 }
 
