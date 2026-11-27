@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery, convertParamsForReplacement } from "@/lib/db/sql_tools";
+import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery, convertParamsForReplacement, QueryPermissionChecker, QueryPermissionError } from "@/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -216,5 +216,68 @@ describe("Postgres dollar-quoted function bodies", () => {
     // And the function statement must end at the $$ ... language sql; line,
     // not swallow the trailing select:
     expect(result[2].text).toMatch(/\$\$ language sql;/);
+  });
+});
+
+describe("QueryPermissionChecker", () => {
+  it("allows a statement whose type was granted", () => {
+    const checker = new QueryPermissionChecker("psql", ["DELETE"]);
+    expect(() => checker.assert("delete from t")).not.toThrow();
+  });
+
+  it("rejects a statement whose type was not granted", () => {
+    const checker = new QueryPermissionChecker("psql", ["SELECT"]);
+    expect(() => checker.assert("delete from t")).toThrow(
+      QueryPermissionError,
+    );
+    expect(() => checker.assert("delete from t")).toThrow(
+      "Not allowed to run DELETE statements on this connection.",
+    );
+  });
+
+  it("reports only the statements and types that are missing", () => {
+    const checker = new QueryPermissionChecker("psql", ["SELECT", "UPDATE"]);
+    let error;
+    try {
+      checker.assert("select 1; delete from t; update t set a = 1");
+    } catch (e) {
+      error = e;
+    }
+    expect(error.needs).toEqual(["DELETE"]);
+    expect(error.statements).toEqual([
+      { text: "delete from t;", needs: ["DELETE"] },
+    ]);
+  });
+
+  it("needs the explained statement too for EXPLAIN ANALYZE, since it runs it", () => {
+    const allowed = new QueryPermissionChecker("psql", ["EXPLAIN", "SELECT"]);
+    expect(() => allowed.assert("explain analyze select 1")).not.toThrow();
+
+    const explainOnly = new QueryPermissionChecker("psql", ["EXPLAIN"]);
+    expect(() =>
+      explainOnly.assert("explain (analyze, buffers) delete from t"),
+    ).toThrow(QueryPermissionError);
+  });
+
+  it("sees writes hidden in a CTE", () => {
+    const sql = "with d as (delete from t returning *) select * from d";
+
+    const selectOnly = new QueryPermissionChecker("psql", ["SELECT"]);
+    expect(() => selectOnly.assert(sql)).toThrow(QueryPermissionError);
+
+    const withDelete = new QueryPermissionChecker("psql", ["SELECT", "DELETE"]);
+    expect(() => withDelete.assert(sql)).not.toThrow();
+  });
+
+  it("lets transaction control through", () => {
+    const checker = new QueryPermissionChecker("psql", ["UPDATE"]);
+    expect(() =>
+      checker.assert("begin; update t set a = 1; commit;"),
+    ).not.toThrow();
+  });
+
+  it("allows everything with ANYTHING", () => {
+    const checker = new QueryPermissionChecker("psql", ["ANYTHING"]);
+    expect(() => checker.assert("drop table t")).not.toThrow();
   });
 });

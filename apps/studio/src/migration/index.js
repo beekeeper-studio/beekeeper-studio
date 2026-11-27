@@ -166,7 +166,7 @@ const realMigrations = [
   addGithubPluginSetting,
   addConfirmWindowCloseSetting,
   addPluginEntryCache,
-  addThemeEntryCache
+  addThemeEntryCache,
 ]
 
 // fixtures require the models

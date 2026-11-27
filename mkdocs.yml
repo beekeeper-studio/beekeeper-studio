@@ -207,6 +207,7 @@ nav:
     - Sharing & Permissions: user_guide/sharing.md
     - user_guide/security.md
     - Plugins: user_guide/plugins.md
+    - Command Line Interface: user_guide/cli.md
     - Themes: user_guide/themes.md
     - Configuration: user_guide/configuration.md
   - Plugins & Themes:

@@ -47,7 +47,8 @@ export default class {
     this.forward(AppEvent.pluginMenuClicked)
     this.forward(AppEvent.pasteAsNewRows)
     this.vueApp.$util.addListener('conn/connection-lost', this.connectionLost.bind(this))
-    this.vueApp.$util.addListener('themeFileChanged', (...args) => this.vueApp.$emit(AppEvent.themeFileChanged, ...args))
+    this.vueApp.$util.addListener('themeFileChanged', this.vueApp.$emit.bind(this.vueApp, AppEvent.themeFileChanged))
+    this.vueApp.$util.addListener("cli/savedQueryChanged", this.vueApp.$emit.bind(this.vueApp, AppEvent.cliSavedQueryChanged))
   }
 
   forward(event) {

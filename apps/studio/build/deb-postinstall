@@ -23,6 +23,11 @@ if [ ! -f /usr/bin/beekeeper-studio ]; then
   ln -s /opt/Beekeeper\ Studio/beekeeper-studio /usr/bin/beekeeper-studio
 fi
 
+# bks: the command line interface, see https://docs.beekeeperstudio.io/user_guide/cli/
+if [ ! -e /usr/bin/bks ]; then
+  ln -s "/opt/Beekeeper Studio/resources/bin/bks" /usr/bin/bks
+fi
+
 if available apt-key
 then
       apt-key add - >/dev/null <<EOF

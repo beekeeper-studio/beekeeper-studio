@@ -6,6 +6,8 @@ import { BeekeeperPlugin } from './plugins/BeekeeperPlugin'
 import BksConfig from './common/bksConfig'
 import { createVHotkeyKeymap, createCodemirroKeymap } from './plugins/ConfigPlugin'
 import { UtilityConnection } from './lib/utility/UtilityConnection'
+import { RpcServer } from '@beekeeperstudio/rpc'
+import type { RendererMethods } from './lib/utility/RendererMethods'
 import WebPluginManager from './services/plugin/web/WebPluginManager'
 import { ConnectionType } from './lib/db/types'
 
@@ -20,6 +22,7 @@ declare module 'vue/types/vue' {
     $bksConfig: typeof BksConfig
     $native: NativePlugin
     $util: UtilityConnection
+    $server: RpcServer<RendererMethods>
     $plugin: WebPluginManager
     $noty: {
       show(text: string, type: string, opts?: any): void

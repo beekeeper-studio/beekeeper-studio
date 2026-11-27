@@ -12,6 +12,9 @@ import { FSWatcher } from "fs";
 import fs from "fs";
 import tmp from 'tmp';
 import rawLog from "@bksLogger";
+import { AuthorizedClient } from "@/services/cliServer/AuthorizedClient";
+import { RpcClient } from "@beekeeperstudio/rpc";
+import type { RendererMethods } from "@/lib/utility/RendererMethods";
 
 const log = rawLog.scope("handlerState");
 
@@ -20,8 +23,11 @@ export interface TempFile {
   fileHandle: fs.promises.FileHandle
 }
 
-class State {
+export class State {
+  constructor(readonly id: string) {}
+
   port: MessagePortMain = null
+  rendererClient: RpcClient<RendererMethods> = null;
   server: IDbConnectionPublicServer = null;
   usedConfig: IConnection = null;
   connection: BasicDatabaseClient<any, any> = null;
@@ -38,6 +44,9 @@ class State {
   workspaceId: number = null;
 
   connectionAbortController: AbortController = null;
+
+  /** CLI clients approved for this connection, by client name. */
+  cliClients: Map<string, AuthorizedClient> = new Map();
 
   // enums
   enumsInitialized = false;
@@ -73,7 +82,18 @@ export function broadcast(message: unknown): void {
 }
 
 export function newState(id: string): void {
-  states.set(id, new State());
+  states.set(id, new State(id));
+}
+
+/** All states that have a connection. */
+export function getConnectedStates(): State[] {
+  const ret = [];
+  for (const state of states.values()) {
+    if (state.connection) {
+      ret.push(state);
+    }
+  }
+  return ret;
 }
 
 export async function removeState(id: string): Promise<void> {

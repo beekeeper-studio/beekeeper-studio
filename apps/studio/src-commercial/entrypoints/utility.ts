@@ -18,6 +18,7 @@ import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
 import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
+import { CliServerHandlers } from '@/handlers/cliServerHandlers';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
@@ -42,10 +43,20 @@ import {
   LicenseModule,
 } from '@/services/plugin/modules';
 import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCode, PluginSystemErrorCode, ThemeSystemErrorCode } from '@/lib/errors';
+import {
+  RpcClient,
+  RpcServer,
+  SocketServerPort,
+  SocketServerPortError,
+  type Request,
+  Reply as RpcReply,
+} from '@beekeeperstudio/rpc';
 
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
+import { UtilityApi } from '@/services/UtilityApi';
+import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';
 import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
 import globals from '@/common/globals';
 import { ThemeManager } from '@/services/theme/ThemeManager';
@@ -70,16 +81,10 @@ const driverDepManager = new DriverDepManager({
   arch: (process.arch === 'x64' ? 'x64' : 'arm64') as DepArch,
 });
 
-interface Reply {
-  id: string,
-  type: 'reply' | 'error',
-  data?: any,
-  error?: string
-  errorName?: "PluginSystemError" | "PluginError" | "ExtensionRegistryError" | "ExtensionRepositoryError" | "ThemeSystemError" | "Error"
+// errorCode is omitted because these codes are not CliErrorCodes
+interface Reply extends Omit<RpcReply, 'errorCode'> {
+  errorName?: "PluginSystemError" | "PluginError" | "ExtensionRegistryError" | "ExtensionRepositoryError" | "ThemeSystemError" | "CancelError" | "Error"
   errorCode?: PluginSystemErrorCode | PluginErrorCode | ExtensionRegistryErrorCode | ExtensionRepositoryErrorCode | ThemeSystemErrorCode
-  errorDetail?: string
-  errorHint?: string
-  stack?: string
 }
 
 export const handlers: Handlers = {
@@ -91,6 +96,7 @@ export const handlers: Handlers = {
   ...AppDbHandlers,
   ...BackupHandlers,
   ...CliHandlers,
+  ...CliServerHandlers,
   ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
@@ -201,8 +207,13 @@ async function initState(sId: string, port: MessagePortMain) {
   newState(sId);
 
   state(sId).port = port;
+  state(sId).rendererClient = new RpcClient(port);
 
-  state(sId).port.on('message', ({ data }) => {
+  state(sId).port.on('message', ({ data }: { data: Request }) => {
+    // RpcClient handles these itself
+    if ((data as { type?: string }).type === 'response') {
+      return;
+    }
     const { id, name, args } = data;
     runHandler(id, name, args);
   })
@@ -240,8 +251,24 @@ async function init() {
     ThemeFileChangedModule,
   ]);
 
+  const auditSink = createElectronLogSink(rawLog);
+  const auditLog = new CliAuditLog(auditSink, (e) => log.warn('Could not write the CLI audit log', e));
+  const cliSocket = new SocketServerPort({
+    socketPath: platformInfo.cliSocketPath,
+    logger: rawLog.scope("SocketServerPort"),
+  });
+  const cliServer = new RpcServer(cliSocket);
+  cliServer.initialize();
+  const utilityApi = new UtilityApi();
+  for (const command of utilityApi.getCliApis()) {
+    cliServer.register(command.name, command.func);
+  }
+  cliSocket.on("requestHandled", (event) => auditLog.record(event));
+
+  context.utilityApi = utilityApi;
   context.pluginManager = pluginManager;
   context.themeManager = themeManager;
+  context.cliSocket = cliSocket;
 
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
@@ -255,5 +282,24 @@ async function init() {
     log.error("Error initializing driver dep manager", e);
   });
 
+  cliSocket
+    .start()
+    .then(() => {
+      log.info(`CLI calls are recorded in ${auditSink.filePath() ?? 'cli.log'}`);
+    })
+    .catch((e) => {
+      if (e instanceof SocketServerPortError) {
+        if (e.code === SocketServerPortError.SocketPathNotProvided) {
+          // we can ignore this error
+          return;
+        }
+      }
+      log.error('Failed to start the CLI socket server', e);
+    });
+
   process.parentPort.postMessage({ type: 'ready' });
 }
+
+process.on('exit', () => {
+  context.cliSocket?.stopSync();
+});

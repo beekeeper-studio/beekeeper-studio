@@ -200,10 +200,6 @@ export default Vue.extend({
       right: 0;
     }
 
-    .config-group {
-      margin-bottom: 1rem;
-    }
-
     .alert {
       margin-inline: 0.5rem;
     }

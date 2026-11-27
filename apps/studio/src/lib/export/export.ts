@@ -9,6 +9,7 @@ import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from '.
 import _ from 'lodash'
 import { Mutators } from '../data/tools'
 import { BasicDatabaseClient } from '../db/clients/BasicDatabaseClient'
+import { uniqueColumnNames } from '@/common/utils'
 
 const log = rawlog.scope('export/export')
 
@@ -66,17 +67,11 @@ export abstract class Export {
   }
 
   get dedupedColumns(): TableColumn[] {
-    if (!this.columns) return []
-    const found: Map<string, number> = new Map()
-    return this.columns.map((c) => {
-      const nuCol: TableColumn = { ...c }
-      found.set(c.columnName, (found.get(c.columnName) || 0) + 1)
-      const counter = found.get(c.columnName) || 0
-      if (counter > 1) {
-        nuCol.columnName = `${c.columnName}_${counter}`
-      }
-      return nuCol
-    })
+    if (!this.columns) {
+      return []
+    }
+    const names = uniqueColumnNames(this.columns.map((c) => c.columnName))
+    return this.columns.map((c, i) => ({ ...c, columnName: names[i] }))
   }
 
 

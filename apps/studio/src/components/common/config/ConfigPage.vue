@@ -157,6 +157,17 @@ export default Vue.extend({
   ::v-deep > .config-page-content {
     height: 100%;
   }
+
+  ::v-deep h3 {
+    margin-block: 0.75rem;
+    padding-inline: 0.5rem;
+    font-size: 1rem;
+  }
+
+  ::v-deep p {
+    margin-block: 0.5rem;
+    padding-inline: 0.5rem;
+  }
 }
 
 // While a nested page is active, hide everything else on this page

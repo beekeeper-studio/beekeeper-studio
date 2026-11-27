@@ -1134,6 +1134,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
+      "tab.unsavedQueryText"(text: string) {
+        if (text !== this.unsavedText) {
+          this.unsavedText = text;
+        }
+      },
       remoteDeleted() {
         if (this.remoteDeleted) {
           this.tab.unsavedChanges = false

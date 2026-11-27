@@ -28,6 +28,8 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
+import { isCliLaunch } from '@/services/cliServer/args'
+import { Command } from '@commander-js/extra-typings'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -35,6 +37,27 @@ if (platformInfo.env.development || platformInfo.env.test) {
 
 log.transports.console.level = platformInfo.logLevel;
 log.transports.file.level = platformInfo.logLevel;
+
+// Prints the bks help and exits before any window opens.
+const cliMode = isCliLaunch()
+if (cliMode) {
+  // Only the help text belongs on the terminal (mainLogger already silenced
+  // the console transport while the modules loaded).
+  log.transports.console.level = false
+  app.dock?.hide()
+  new Command('beekeeper-studio cli')
+    .configureHelp({
+      formatHelp: (cmd, helper) =>
+        `${helper.boxWrap(cmd.description(), helper.helpWidth ?? 80)}\n`,
+    })
+    .description(
+      'The Beekeeper Studio command line interface is the separate `bks` ' +
+        `command that ships with the app, located at ${platformInfo.bksPath}. ` +
+        'It talks to the running app over a local socket.'
+    )
+    .helpOption(false)
+    .help()
+}
 
 electron.nativeTheme.on('updated', () => {
   const dark = electron.nativeTheme.shouldUseDarkColors
@@ -230,6 +253,10 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  // CLI mode exits on its own once the reply is printed. Opening a window here
+  // would start a second copy of the app.
+  if (cliMode) return
+
   if (isDevelopment && !process.env.IS_TEST) {
 
     // Per: www.npmjs.com/package/electron-devtools-installer?activeTab=readme#what-extensions-can-i-use

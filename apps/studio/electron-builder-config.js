@@ -48,6 +48,8 @@ module.exports = {
   },
   files: [
     'dist/**/*',
+    // the CLI ships outside the asar, see extraResources
+    '!dist/cli.js',
     'package.json',
     'public/icons/**/*',
     '!**/node_gyp_bins/*'
@@ -81,6 +83,21 @@ module.exports = {
     {
       from: 'build/launcher-script.sh',
       to: 'launcher-script.sh'
+    },
+    // The bks command line interface: resources/bin/bks (or bks.cmd) runs
+    // resources/bin/cli.js with the app binary in node mode. Kept out of the
+    // asar so the shim can hand node a plain file path.
+    {
+      from: 'dist/cli.js',
+      to: 'bin/cli.js'
+    },
+    {
+      from: 'build/bks',
+      to: 'bin/bks'
+    },
+    {
+      from: 'build/bks.cmd',
+      to: 'bin/bks.cmd'
     },
     {
       from: './vendor',

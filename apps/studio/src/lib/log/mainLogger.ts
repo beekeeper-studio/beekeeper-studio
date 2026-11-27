@@ -1,9 +1,13 @@
 import log from 'electron-log/main';
 import path from 'path';
 import { redactMessage } from './redact';
+import { isCliLaunch } from '@/services/cliServer/args';
 
-// we set these in main.ts later, becuase we don't have access to platformInfo here
-log.transports.console.level = 'silly';
+// we set these in main.ts later, becuase we don't have access to platformInfo here.
+// `beekeeper-studio cli ...` prints its result on stdout, so in that mode the
+// console transport is off from the first line: modules log while they load,
+// long before main.ts gets a chance to quiet them.
+log.transports.console.level = isCliLaunch() ? false : 'silly';
 log.transports.file.level = 'warn';
 log.variables.processType = 'MAIN';
 log.transports.console.format = '{h}:{i}:{s}.{ms} [{level}] [{processType}]{scope}›{text}';

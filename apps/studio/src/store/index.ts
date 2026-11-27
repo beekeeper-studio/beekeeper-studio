@@ -42,6 +42,7 @@ import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
 import { VimStoreModule } from './modules/VimStoreModule'
+import { CliModule } from "./modules/CliModule";
 import { pluralize } from '@/vendor/pluralize'
 
 
@@ -159,6 +160,7 @@ const store = new Vuex.Store<State>({
     menuBar: MenuBarModule,
     plugins: PluginsModule,
     vim: VimStoreModule,
+    cli: CliModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),

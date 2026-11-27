@@ -189,6 +189,7 @@
         />
       </div>
     </div>
+    <cli-access-modal />
     <portal to="modals">
       <modal
         :name="modalName"
@@ -351,6 +352,7 @@ import _ from 'lodash'
 import QueryEditor from './TabQueryEditor.vue'
 import Statusbar from './common/StatusBar.vue'
 import CoreTabHeader from './CoreTabHeader.vue'
+import CliAccessModal from './cli/CliAccessModal.vue'
 import TableTable from './tableview/TableTable.vue'
 import TableProperties from './TabTableProperties.vue'
 import TableBuilder from './TabTableBuilder.vue'
@@ -384,12 +386,15 @@ import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
 import rawLog from '@bksLogger'
+import { CliError } from '@beekeeperstudio/rpc'
+import type { CreateTabRequest } from '@beekeeperstudio/rpc'
 
 const log = rawLog.scope('CoreTabs.vue')
 
 export default Vue.extend({
   props: [],
   components: {
+    CliAccessModal,
     Statusbar,
     QueryEditor,
     CoreTabHeader,
@@ -477,6 +482,7 @@ export default Vue.extend({
        'dialectTitle': 'dialectTitle',
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
        'getKeybindings': 'plugins/keybindings/getKeybindings',
+       'queryConfig': 'tabs/queryConfig',
     }),
     confirmsWindowClose() {
       return !this.settings.dontConfirmWindowClose?.value && this.tabs.some((tab) => tab.unsavedChanges)
@@ -516,6 +522,12 @@ export default Vue.extend({
         this.$store.dispatch('tabs/reorder', newTabs)
       }
     },
+    rpcMethods() {
+      return [
+        { "cli/createTab": this.createTabFromCli },
+        { "cli/switchTab": this.switchTabFromCli },
+      ];
+    },
     rootBindings() {
       return [
         { event: AppEvent.closeTab, handler: this.closeCurrentTab },
@@ -546,6 +558,7 @@ export default Vue.extend({
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
         { event: AppEvent.pasteAsNewRows, handler: this.pasteAsNewRowsWrongTabCheck },
+        { event: AppEvent.cliSavedQueryChanged, handler: this.savedQueryChangedFromCli },
       ]
     },
     lastTab() {
@@ -750,6 +763,7 @@ export default Vue.extend({
     async addTab(item: TransportOpenTab) {
       const savedItem = await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
       await this.setActiveTab(savedItem)
+      return savedItem
     },
     async reopenLastClosedTab() {
       await this.$store.dispatch("tabs/reopenLastClosedTab")
@@ -775,7 +789,7 @@ export default Vue.extend({
     openPluginManager,
     async createTab(config: TabTypeConfig.Config) {
       if (config.type === "query") {
-        this.createQuery()
+        return await this.createQuery()
       } else if (config.type === "shell") {
         this.createShell()
       } else if (config.type === "plugin-shell" || config.type === "plugin-base") {
@@ -838,7 +852,7 @@ export default Vue.extend({
       result.title = tabName,
       result.unsavedChanges = false
       result.unsavedQueryText = optionalText
-      await this.addTab(result)
+      return await this.addTab(result)
     },
     async selectTopColumnNames(table): Promise<string[]> {
       if (table.columns?.length) return table.columns.map((c) => c.columnName)
@@ -1086,7 +1100,7 @@ export default Vue.extend({
       t.title = table.name ?? table.tableName
       const existing = this.tabItems.find((tab) => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
-      this.addTab(t)
+      return this.addTab(t)
     },
     async openTable({ table, filters }) {
       let tab = {} as TransportOpenTab;
@@ -1301,6 +1315,23 @@ export default Vue.extend({
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
 
       this.addTab(tab);
+    },
+    async createTabFromCli(params: CreateTabRequest) {
+      const tab = await this.createTab(this.queryConfig)
+      if (params.sql) {
+        await this.updateTab({ ...tab, unsavedQueryText: params.sql })
+      }
+      return tab.id
+    },
+    async switchTabFromCli(params: { tabId: number }) {
+      const tab = this.tabItems.find((t) => t.id === params.tabId)
+      if (!tab) {
+        throw new CliError("NOT_FOUND", `No open tab with id ${params.tabId}.`)
+      }
+      await this.setActiveTab(tab)
+    },
+    savedQueryChangedFromCli({ id }: { id: number }) {
+      return this.$store.dispatch('data/queries/reload', id)
     },
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;

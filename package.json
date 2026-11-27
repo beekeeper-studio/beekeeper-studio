@@ -8,6 +8,7 @@
   "scripts": {
     "bks:build": "pnpm -F beekeeper-studio electron:build",
     "bks:dev": "pnpm -F beekeeper-studio electron:serve",
+    "bks": "pnpm -F beekeeper-studio bks",
     "bks:config:build": "pnpm -F beekeeper-studio config:build",
     "lib:dev": "pnpm -F @beekeeperstudio/ui-kit lib:dev",
     "lib:build": "pnpm -F @beekeeperstudio/ui-kit build",
@@ -17,7 +18,7 @@
     "test:e2e:ci": "pnpm -F beekeeper-studio test:e2e:ci",
     "test:integration": "pnpm -F beekeeper-studio test:integration",
     "test:integration:setup": "pnpm -F beekeeper-studio test:integration:setup",
-    "test:unit": "pnpm -F beekeeper-studio test:unit && pnpm -F ui-kit test",
+    "test:unit": "pnpm -F beekeeper-studio test:unit && pnpm -F ui-kit test && pnpm -F @beekeeperstudio/rpc test",
     "vitest:unit": "pnpm -F beekeeper-studio vitest:unit",
     "vitest:integration": "pnpm -F beekeeper-studio vitest:integration",
     "vitest:ci": "pnpm -F beekeeper-studio vitest:ci",

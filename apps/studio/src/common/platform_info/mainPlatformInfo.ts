@@ -5,6 +5,7 @@ import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
 import { isMsiInstall } from '@/common/msiInstall'
+import { resolveCliSocketPath } from '@beekeeperstudio/rpc'
 
 
 // TODO: Automatically enable wayland without flags once
@@ -131,6 +132,8 @@ export function mainPlatformInfo(): IPlatformInfo {
     driverDepsDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
+    cliSocketPath: resolveCliSocketPath({ userDirectory, isWindows, isDevelopment: isDevEnv }),
+    bksPath: join(resourcesPath, 'bin', isWindows ? 'bks.cmd' : 'bks'),
     updatesDisabled,
     appVersion,
     parsedAppVersion,

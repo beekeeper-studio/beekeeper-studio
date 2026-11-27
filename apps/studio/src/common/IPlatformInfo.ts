@@ -43,6 +43,10 @@ export interface IPlatformInfo {
   driverDepsDirectory: string,
   testMode: boolean,
   appDbPath: string,
+  /** Local socket (or Windows named pipe) the running app answers `beekeeper-studio cli` requests on. */
+  cliSocketPath: string,
+  /** The bks command that ships with the app, in resources/bin. */
+  bksPath: string,
   updatesDisabled: boolean,
   appVersion: string,
   parsedAppVersion: BksVersion,

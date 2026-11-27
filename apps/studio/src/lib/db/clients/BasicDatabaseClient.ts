@@ -67,7 +67,7 @@ export interface BaseQueryResult {
 }
 
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult, Conn = null> implements IBasicDatabaseClient {
+export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult = BaseQueryResult, Conn = null> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: IdentifierDialect;

@@ -89,11 +89,18 @@
       justify-content: center;
       width: 44px;
       height: 44px;
+      padding: 0;
+      border: 0;
+      background: none;
+      cursor: pointer;
       font-size: 18px;
       transition: color 0.15s ease-in-out;
       color: var(--sidebar-rail-fg);
       &:hover {
         color: var(--sidebar-rail-fg-hover);
+      }
+      &.authorized {
+        color: var(--primary-text);
       }
       &.active {
         color: var(--sidebar-rail-active-fg);
