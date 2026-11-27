@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import crypto from "crypto";
 import os from "os";
 import path from "path";
 
@@ -25,7 +25,7 @@ export function resolveCliSocketPath(options: CliSocketPathOptions): string {
   // Windows paths are case-insensitive, and the app (SHGetKnownFolderPath) and
   // the CLI (%APPDATA%) can spell the same directory differently. Both must
   // land on the same pipe name.
-  const hash = createHash("sha1")
+  const hash = crypto.createHash("sha1")
     .update(options.isWindows ? resolved.toLowerCase() : resolved)
     .digest("hex")
     .slice(0, 12);

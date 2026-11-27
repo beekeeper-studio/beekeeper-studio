@@ -48,7 +48,7 @@ export class RpcClient<
       if ("removeEventListener" in this.port) {
         this.port.removeEventListener("message", onMessage);
       } else {
-        this.port.removeListener("message", onMessage);
+        this.port.off("message", onMessage);
       }
       this.listenerCount--;
       options.signal?.removeEventListener("abort", onAbort);
@@ -73,7 +73,7 @@ export class RpcClient<
     if ("addEventListener" in this.port) {
       this.port.addEventListener("message", onMessage);
     } else {
-      this.port.addListener("message", onMessage);
+      this.port.on("message", onMessage);
     }
 
     this.listenerCount++;

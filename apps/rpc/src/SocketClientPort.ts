@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "./EventEmitter";
 import net from "net";
 import type {
   ClientInfo,
@@ -110,7 +110,9 @@ class SocketExchange {
 }
 
 /** A port adapter that lets RpcClient send requests over a local socket. */
-export class SocketClientPort extends EventEmitter {
+export class SocketClientPort extends EventEmitter<{
+  message: (event: { data: Message }) => void;
+}> {
   constructor(
     private readonly socketPath: string,
     private readonly client?: ClientInfo,

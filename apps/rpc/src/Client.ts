@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "./EventEmitter";
 import {
   ConnectionsResult,
   CreateSavedQueryParams,
@@ -52,7 +52,7 @@ export interface ClientOptions {
   clientName?: string;
 }
 
-export class Client extends EventEmitter<{ error: [unknown] }> {
+export class Client extends EventEmitter<{ error: (error: unknown) => void }> {
   private readonly rpc: RpcClient<Methods>;
 
   constructor(public readonly options: ClientOptions = {}) {

@@ -44,7 +44,7 @@ export class RpcServer<
     if ("addEventListener" in this.port) {
       this.port.addEventListener("message", this.handleMessage);
     } else {
-      this.port.addListener("message", this.handleMessage);
+      this.port.on("message", this.handleMessage);
     }
   }
 

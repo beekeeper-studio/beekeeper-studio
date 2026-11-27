@@ -2,7 +2,7 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { IPlatformInfo } from "../IPlatformInfo";
 import type { KeybindingTarget, Platform } from "@/types";
-import { EventEmitter } from "@/common/EventEmitter";
+import { EventEmitter } from "@beekeeperstudio/rpc/internal";
 
 export interface BksConfigSource {
   defaultConfig: IBksConfig;

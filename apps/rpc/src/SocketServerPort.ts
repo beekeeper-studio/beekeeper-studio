@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "./EventEmitter";
 import fs from "fs";
 import net from "net";
 import { isWindowsPipePath } from "./socketPath";
@@ -79,7 +79,10 @@ export function probeSocket(
 }
 
 /** A port adapter that lets RpcServer serve requests over a local socket. */
-export class SocketServerPort extends EventEmitter {
+export class SocketServerPort extends EventEmitter<{
+  message: (event: { data: Message }) => void;
+  requestHandled: (event: RequestHandledEvent) => void;
+}> {
   private server: net.Server | null = null;
   private started = false;
   private readonly sockets = new Set<net.Socket>();

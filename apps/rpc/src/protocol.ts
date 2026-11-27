@@ -280,14 +280,10 @@ export interface CallContext {
   request?: Request;
 }
 
-/** Electron's MessagePortMain, which emits Node-style events. */
 export interface NodeMessagePort {
   postMessage(message: unknown): void;
-  addListener(event: "message", listener: (event: { data: any }) => void): unknown;
-  removeListener(
-    event: "message",
-    listener: (event: { data: any }) => void,
-  ): unknown;
+  on(event: "message", listener: (event: { data: any }) => void): unknown;
+  off(event: "message", listener: (event: { data: any }) => void): unknown;
 }
 
 export type Port = MessagePort | NodeMessagePort;
