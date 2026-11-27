@@ -57,44 +57,27 @@ export function resolveCliSocketPath(options: CliSocketPathOptions): string {
 /** The directory name electron derives from package.json `name`: appData/<name>. */
 export const APP_DATA_DIR_NAME = "beekeeper-studio";
 
-export interface HostEnvironment {
-  platform: NodeJS.Platform;
-  homedir: string;
-  env: NodeJS.ProcessEnv;
-}
-
-function hostEnvironment(overrides: Partial<HostEnvironment>): HostEnvironment {
-  return {
-    platform: overrides.platform ?? process.platform,
-    homedir: overrides.homedir ?? os.homedir(),
-    env: overrides.env ?? process.env,
-  };
-}
-
 /**
  * Where electron's app.getPath('userData') points for this app, computed
  * without electron so the CLI can find the socket from a plain node process.
  */
-export function defaultUserDirectory(
-  overrides: Partial<HostEnvironment> = {},
-): string {
-  const { platform, homedir, env } = hostEnvironment(overrides);
-  if (platform === "win32") {
+export function defaultUserDirectory(): string {
+  if (process.platform === "win32") {
     return path.join(
-      env.APPDATA || path.join(homedir, "AppData", "Roaming"),
+      process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"),
       APP_DATA_DIR_NAME,
     );
   }
-  if (platform === "darwin") {
+  if (process.platform === "darwin") {
     return path.join(
-      homedir,
+      os.homedir(),
       "Library",
       "Application Support",
       APP_DATA_DIR_NAME,
     );
   }
   return path.join(
-    env.XDG_CONFIG_HOME || path.join(homedir, ".config"),
+    process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"),
     APP_DATA_DIR_NAME,
   );
 }
@@ -110,17 +93,14 @@ function envFlag(value: string | undefined): boolean {
  * data directories, portable installs); BKS_CLI_DEV targets a development
  * build of the app.
  */
-export function defaultCliSocketPath(
-  overrides: Partial<HostEnvironment> = {},
-): string {
-  const host = hostEnvironment(overrides);
-  const override = host.env.BKS_CLI_SOCKET?.trim();
+export function defaultCliSocketPath(): string {
+  const override = process.env.BKS_CLI_SOCKET?.trim();
   if (override) {
     return override;
   }
   return resolveCliSocketPath({
-    userDirectory: defaultUserDirectory(host),
-    isWindows: host.platform === "win32",
-    isDevelopment: envFlag(host.env.BKS_CLI_DEV),
+    userDirectory: defaultUserDirectory(),
+    isWindows: process.platform === "win32",
+    isDevelopment: envFlag(process.env.BKS_CLI_DEV),
   });
 }

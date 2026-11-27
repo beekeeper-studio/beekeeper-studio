@@ -1,6 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import path from "path";
 import {
+  defaultCliSocketPath,
+  defaultUserDirectory,
   isWindowsPipePath,
   resolveCliSocketPath,
   UNIX_SOCKET_PATH_LIMIT,
@@ -91,5 +93,38 @@ describe("resolveCliSocketPath", () => {
       tmpDir: "/tmp",
     });
     expect(a).not.toBe(b);
+  });
+});
+
+describe("defaultCliSocketPath", () => {
+  beforeEach(() => {
+    vi.stubEnv("BKS_CLI_SOCKET", "");
+    vi.stubEnv("BKS_CLI_DEV", "");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("derives the production socket from the user directory", () => {
+    const expected = resolveCliSocketPath({
+      userDirectory: defaultUserDirectory(),
+      isWindows: process.platform === "win32",
+      isDevelopment: false,
+    });
+    expect(defaultCliSocketPath()).toBe(expected);
+  });
+
+  it("targets the development socket with BKS_CLI_DEV", () => {
+    vi.stubEnv("BKS_CLI_DEV", "1");
+    const dev = defaultCliSocketPath();
+    vi.stubEnv("BKS_CLI_DEV", "false");
+    expect(dev).not.toBe(defaultCliSocketPath());
+  });
+
+  it("lets BKS_CLI_SOCKET override everything", () => {
+    vi.stubEnv("BKS_CLI_SOCKET", " /tmp/custom.sock ");
+    vi.stubEnv("BKS_CLI_DEV", "1");
+    expect(defaultCliSocketPath()).toBe("/tmp/custom.sock");
   });
 });
