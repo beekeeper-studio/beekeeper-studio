@@ -19,7 +19,6 @@ import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
 import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { CliServerHandlers } from '@/handlers/cliServerHandlers';
-import { RpcClient, RpcServer } from '@beekeeperstudio/rpc';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
@@ -43,23 +42,19 @@ import {
   RegistryModule,
   LicenseModule,
 } from '@/services/plugin/modules';
-import type { Request } from '@beekeeperstudio/rpc';
-import type { Reply as RpcReply } from '@beekeeperstudio/rpc';
-import type {
-  ExtensionRegistryErrorCode,
-  ExtensionRepositoryErrorCode,
-  PluginErrorCode,
-  PluginSystemErrorCode,
-  ThemeSystemErrorCode,
-} from '@/lib/errors';
+import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCode, PluginSystemErrorCode, ThemeSystemErrorCode } from '@/lib/errors';
+import {
+  RpcClient,
+  RpcServer,
+  SocketServerPort,
+  SocketServerPortError,
+  type Request,
+  Reply as RpcReply,
+} from '@beekeeperstudio/rpc';
 
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
-import {
-  SocketServerPort,
-  SocketServerPortError,
-} from '@beekeeperstudio/rpc';
 import { UtilityApi } from '@/services/UtilityApi';
 import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';
 import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
@@ -290,7 +285,6 @@ async function init() {
   cliSocket
     .start()
     .then(() => {
-      // FIXME: is cli.log real? dont do it like this
       log.info(`CLI calls are recorded in ${auditSink.filePath() ?? 'cli.log'}`);
     })
     .catch((e) => {

@@ -12,8 +12,6 @@ import os from "os";
 import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
-import { SocketServerPort } from "@beekeeperstudio/rpc";
-import { RpcServer } from "@beekeeperstudio/rpc";
 import { UtilityApi } from "@/services/UtilityApi";
 import { getConnectedStates, newState, state, State } from "@/handlers/handlerState";
 import { createProgram } from "@/backend/cli/program";
@@ -22,6 +20,8 @@ import {
   Access,
   CliError,
   CreateTabRequest,
+  SocketServerPort,
+  RpcServer,
 } from "@beekeeperstudio/rpc";
 
 const socketPath =
