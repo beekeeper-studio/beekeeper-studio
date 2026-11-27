@@ -41,6 +41,10 @@ export const ProtocolBuilder = {
         const host = url.hostname === '.' ? '' : url.hostname
         // decodeURI is needed in case the URL contains spaces
         const pathName = decodeURI(path.posix.join('/', host, url.pathname))
+        if (pathName.includes('..')) {
+          respond({ error: -6 })
+          return;
+        }
 
         const emptySourceMap = JSON.stringify({
           version: 3,
@@ -95,6 +99,10 @@ export const ProtocolBuilder = {
       // Removes the leading "plugin://" and the query string
       const url = new URL(request.url);
       const pluginId = url.host;
+      if (pluginId.includes('..') || pluginId.includes('/') || pluginId.includes('\\')) {
+        respond({ error: -6 }) // file not found
+        return;
+      }
       const pathName = path.join(pluginId, url.pathname);
       const pluginsRoot = path.resolve(platformInfo.pluginsDirectory)
       const pluginRoot = path.resolve(path.join(pluginsRoot, pluginId))
