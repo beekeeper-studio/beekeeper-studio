@@ -76,6 +76,8 @@ let utilityProcess: Electron.UtilityProcess
 // the background while the window loads.
 let utilityReady: Promise<void> | null = null
 let newWindows: number[] = [];
+let appReady = false
+let pendingOpens: string[] = []
 
 function createUtilityProcess(): Promise<void> {
   if (utilityReady) {
@@ -164,17 +166,16 @@ protocol.registerSchemesAsPrivileged([
   {scheme: 'plugin', privileges: { secure: true, standard: true } },
   {scheme: 'theme', privileges: { secure: true, standard: true, corsEnabled: true } }
 ])
-let initialized = false
+let initPromise: Promise<IGroupedUserSettings> | null = null
 
-async function initBasics() {
-  // this creates the app:// protocol we use for loading assets
-  ProtocolBuilder.createAppProtocol()
-  // this creates the plugin:// protocol we use for loading plugins
-  ProtocolBuilder.createPluginProtocol()
-  if (initialized) return settings
-  initialized = true
-  // this creates the theme:// protocol we use for loading themes
-  ProtocolBuilder.createThemeProtocol();
+// callers can run concurrently (eg 'ready' and 'open-url'), so they all share
+// one init, and all wait for it to actually finish before getting settings.
+function initBasics() {
+  if (!initPromise) initPromise = doInitBasics()
+  return initPromise
+}
+
+async function doInitBasics() {
   await ormConnection.connect()
   console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
   log.info("running migrations!!")
@@ -231,7 +232,9 @@ ipcMain.handle('bksConfigSource', () => {
 app.on('activate', async (_event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (!hasVisibleWindows) {
+  // 'activate' also fires on first launch, where the ready handler is still
+  // building the initial window - don't race it with an empty one.
+  if (!hasVisibleWindows && appReady) {
     if (!settings) throw "No settings initialized!"
     await createUtilityProcess()
 
@@ -270,24 +273,30 @@ app.on('ready', async () => {
 
   }
 
-  // this gets positional arguments
-  const options = platformInfo.parsedArgs._.map((url: string) => ({ url }))
+  // this creates the app:// protocol we use for loading assets
+  ProtocolBuilder.createAppProtocol()
+  // this creates the plugin:// protocol we use for loading plugins
+  ProtocolBuilder.createPluginProtocol()
+  // this creates the theme:// protocol we use for loading themes
+  ProtocolBuilder.createThemeProtocol()
+
   const settings = await initBasics()
+  initializeSecurity();
+  initializeFileHelpers();
+  // Not awaited: the utility process takes a while to boot, so it boots
+  // while the window loads. The renderer's requestPorts call waits for it.
+  createUtilityProcess().catch((e) => log.error('Utility process failed to start', e))
 
-  if (options.length > 0) {
+  // positional arguments, plus anything macOS handed us via open-file /
+  // open-url before we were ready
+  const urls = [...platformInfo.parsedArgs._, ...pendingOpens]
+  pendingOpens = []
+  appReady = true
 
-    await Promise.all(options.map((option) => buildWindow(settings, option)))
-  } else {
-    if (getActiveWindows().length === 0) {
-      const settings = await initBasics()
-      initializeSecurity(app);
-      initializeFileHelpers();
-      // Not awaited: the utility process takes a while to boot, so it boots
-      // while the window loads. The renderer's requestPorts call waits for it.
-      createUtilityProcess().catch((e) => log.error('Utility process failed to start', e))
-
-      await buildWindow(settings)
-    }
+  if (urls.length > 0) {
+    await Promise.all(urls.map((url: string) => buildWindow(settings, { url })))
+  } else if (getActiveWindows().length === 0) {
+    await buildWindow(settings)
   }
 
 })
@@ -323,19 +332,27 @@ ipcMain.handle('requestPorts', async () => {
   }
 })
 
-// Open a connection from a file (e.g. ./sqlite.db)
-app.on('open-file', async (event, file) => {
-  event.preventDefault();
+// On macOS a cold start fires open-file / open-url before 'ready'. Nothing can
+// be built that early, so queue it and let the ready handler open the window.
+async function openFromUrl(url: string) {
+  if (!appReady) {
+    pendingOpens.push(url)
+    return
+  }
   const settings = await initBasics()
-  await buildWindow(settings, { url: file })
+  await buildWindow(settings, { url })
+}
+
+// Open a connection from a file (e.g. ./sqlite.db)
+app.on('open-file', (event, file) => {
+  event.preventDefault();
+  openFromUrl(file).catch((e) => log.error("error opening file", file, e))
 });
 
 // Open a connection from a url (e.g. postgres://host)
-app.on('open-url', async (event, url) => {
+app.on('open-url', (event, url) => {
   event.preventDefault();
-  const settings = await initBasics()
-
-  await buildWindow(settings, { url })
+  openFromUrl(url).catch((e) => log.error("error opening url", url, e))
 });
 
 ipcMain.handle('isMaximized', () => {

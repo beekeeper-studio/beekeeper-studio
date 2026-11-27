@@ -218,3 +218,199 @@ describe("TableTable.vue — loadPersistence filters by tableId", () => {
     expect(vm.persistenceReader(vm.tableId, "columns")).toBe(false);
   });
 });
+
+describe("TableTable.vue — column alignment and new row JSON viewer (#4843)", () => {
+  const createColumnFromProps = (TableTable as any).options.methods.createColumnFromProps;
+
+  function makeColumnCtx({
+    primaryKeys = [],
+    foreignKeys = {},
+  }: {
+    primaryKeys?: string[];
+    foreignKeys?: Record<string, any[]>;
+  } = {}) {
+    return {
+      dialectData: { disabledFeatures: {} },
+      tableKeys: foreignKeys,
+      table: { name: "test", schema: "public", columns: [] },
+      primaryKeys,
+      isPrimaryKey: (col: string) => primaryKeys.includes(col),
+      slimDataType: (t: string) => t,
+      editorType: () => "text",
+      $bksConfig: {
+        ui: {
+          tableTable: {
+            minColumnWidth: 50,
+            maxColumnWidth: 500,
+            maxInitialWidth: 200,
+            dataTypeColors: false,
+          },
+          general: { binaryEncoding: "hex" },
+        },
+      },
+      headerFormatter: () => "",
+      resolveTabulatorMutator: () => undefined,
+      connectionType: "postgresql",
+      cellEditCheck: () => true,
+      cellTooltip: () => "",
+      fkClick: () => {},
+    };
+  }
+
+  it("aligns numeric primary keys to the right with primary-key class", () => {
+    const ctx = makeColumnCtx({ primaryKeys: ["id"] });
+    const col = createColumnFromProps.call(ctx, { columnName: "id", dataType: "int4" });
+
+    expect(col.cssClass).toContain("primary-key");
+    expect(col.cssClass).toContain("text-right");
+  });
+
+  it("aligns numeric foreign keys to the right with foreign-key class", () => {
+    const ctx = makeColumnCtx({
+      foreignKeys: {
+        user_id: [{ toTable: "users", toColumn: "id", isComposite: false }],
+      },
+    });
+    const col = createColumnFromProps.call(ctx, { columnName: "user_id", dataType: "integer" });
+
+    expect(col.cssClass).toContain("foreign-key");
+    expect(col.cssClass).toContain("text-right");
+  });
+
+  it("keeps text primary keys aligned left without text-right class", () => {
+    const ctx = makeColumnCtx({ primaryKeys: ["uuid"] });
+    const col = createColumnFromProps.call(ctx, { columnName: "uuid", dataType: "varchar" });
+
+    expect(col.cssClass).toContain("primary-key");
+    expect(col.cssClass).not.toContain("text-right");
+  });
+
+  it("aligns regular numeric columns to the right", () => {
+    const ctx = makeColumnCtx();
+    const col = createColumnFromProps.call(ctx, { columnName: "amount", dataType: "numeric" });
+
+    expect(col.cssClass).toContain("text-right");
+    expect(col.cssClass).not.toContain("primary-key");
+    expect(col.cssClass).not.toContain("foreign-key");
+  });
+
+  it("cellEdited updates JSON viewer when editing cell on selected row", () => {
+    const cellEdited = (TableTable as any).options.methods.cellEdited;
+    const mockRow = {
+      invalidateForeignCache: vi.fn(),
+      getCells: () => [{ getField: () => "id", getValue: () => 1 }],
+      getData: () => ({ id: 1, name: "edited" }),
+      getElement: () => ({ classList: { add: vi.fn(), remove: vi.fn() } }),
+    };
+    const mockCell = {
+      getRow: () => mockRow,
+      getField: () => "name",
+      getOldValue: () => "old",
+      getValue: () => "new",
+      getElement: () => ({ classList: { add: vi.fn(), remove: vi.fn() } }),
+    };
+
+    const ctx = {
+      isPrimaryKey: (col: string) => col === "id",
+      selectedRow: mockRow,
+      selectedRowPosition: 0,
+      selectedRowIndex: "1",
+      positionRowOf: () => 0,
+      updateJsonViewer: vi.fn(),
+      pendingChanges: { inserts: [], updates: [] },
+      table: { name: "test", schema: "public", columns: [{ columnName: "id" }, { columnName: "name" }] },
+      dialectData: { requireDataset: false },
+      database: "test",
+      $set: Vue.set,
+    };
+
+    cellEdited.call(ctx, mockCell);
+
+    expect(ctx.updateJsonViewer).toHaveBeenCalledWith({ row: mockRow });
+  });
+
+  it("cellAddRow inserts a new row and updates JSON viewer immediately", async () => {
+    const cellAddRow = (TableTable as any).options.methods.cellAddRow;
+    const mockRow = {
+      getElement: () => ({ classList: { add: vi.fn() } }),
+      getData: () => ({}),
+      getExpandablePaths: () => [],
+    };
+
+    const ctx = {
+      editable: true,
+      tabulator: {
+        addRow: vi.fn().mockResolvedValue(mockRow),
+        scrollToRow: vi.fn(),
+      },
+      addRowToPendingInserts: vi.fn(),
+      updateJsonViewer: vi.fn(),
+    };
+
+    await cellAddRow.call(ctx);
+
+    expect(ctx.addRowToPendingInserts).toHaveBeenCalledWith(mockRow);
+    expect(ctx.updateJsonViewer).toHaveBeenCalledWith({ row: mockRow });
+  });
+});
+
+describe("TableTable.vue — issue #4843 UX fixes", () => {
+  it("updates tab.unsavedChanges when pending changes exist and clears on reset", () => {
+    const vm = mountTableTable("test");
+    expect(vm.tab.unsavedChanges).toBe(false);
+
+    vm.pendingChanges.inserts.push({ row: {} });
+    expect(vm.pendingChangesCount).toBe(1);
+    (vm as any).$options.watch.pendingChangesCount.call(vm);
+    expect(vm.tab.unsavedChanges).toBe(true);
+
+    vm.resetPendingChanges();
+    expect(vm.tab.unsavedChanges).toBe(false);
+    expect(vm.pendingChangesCount).toBe(0);
+  });
+
+  it("clears stale selectedRowData and notifies sidebar when selected row is marked deleted", () => {
+    const vm = mountTableTable("test");
+    const fakeRow = {
+      delete: vi.fn(),
+      getElement: () => ({ classList: { add: vi.fn(), remove: vi.fn(), contains: (c: string) => c === "deleted" } }),
+      getCell: () => ({ getColumn: () => ({ getDefinition: () => ({ dataType: "int" }) }), getValue: () => 1, getField: () => "id" }),
+    };
+
+    vm.primaryKeys = ["id"];
+    vm.selectedRow = fakeRow;
+    vm.selectedRowData = { id: 1, name: "Alice" };
+    vm.selectedRowIndex = "1";
+    vm.tabulator = { modules: { history: { action: vi.fn() } } };
+
+    const updateSidebarSpy = vi.spyOn(vm, "updateJsonViewerSidebar");
+
+    vm.addRowsToPendingDeletes([fakeRow]);
+
+    expect(vm.selectedRow).toBeNull();
+    expect(vm.selectedRowData).toEqual({});
+    expect(vm.selectedRowIndex).toBeNull();
+    expect(updateSidebarSpy).toHaveBeenCalled();
+  });
+
+  it("updateJsonViewer clears selection and updates sidebar if row is deleted or null", () => {
+    const vm = mountTableTable("test");
+    const fakeDeletedRow = {
+      getElement: () => ({ classList: { contains: (c: string) => c === "deleted" } }),
+    };
+
+    vm.selectedRow = fakeDeletedRow;
+    vm.selectedRowData = { id: 1 };
+    const updateSidebarSpy = vi.spyOn(vm, "updateJsonViewerSidebar");
+
+    vm.updateJsonViewer({
+      range: {
+        getRows: () => [fakeDeletedRow],
+      } as any,
+    });
+
+    expect(vm.selectedRow).toBeNull();
+    expect(vm.selectedRowData).toEqual({});
+    expect(updateSidebarSpy).toHaveBeenCalled();
+  });
+});

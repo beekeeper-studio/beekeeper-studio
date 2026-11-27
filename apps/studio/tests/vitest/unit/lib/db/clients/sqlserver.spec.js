@@ -2,9 +2,24 @@ import { describe, it, expect, vi } from "vitest";
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder';
 import { SQLServerClient } from '@/lib/db/clients/sqlserver';
 import { DatabaseElement } from '@/lib/db/types';
+import { SqlServerData } from '@shared/lib/dialects/sqlserver';
 
 describe("SQL Server alter table codegen", () => {
 
+  it("hides column comments because extended properties are not implemented", () => {
+    expect(SqlServerData.disabledFeatures.comments).toBe(true)
+    const builder = new SqlServerChangeBuilder('foo', 'dbo', [], [])
+    expect(builder.alterComments([
+      { columnName: 'a', changeType: 'comment', newValue: 'hello' }
+    ])).toEqual([])
+    expect(builder.alterTable({
+      table: 'foo',
+      schema: 'dbo',
+      alterations: [
+        { columnName: 'a', changeType: 'comment', newValue: 'hello' }
+      ]
+    })).toBeNull()
+  })
 
   it("Should generate basic changes", () => {
     const input = {

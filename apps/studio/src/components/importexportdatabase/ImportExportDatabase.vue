@@ -1,6 +1,18 @@
 <template>
   <div
-    v-if="isCommunity"
+    v-if="!isSupported"
+    class="tabcontent"
+  >
+    <div class="not-supported">
+      <div class="card-flat padding">
+        <h3 class="card-title">
+          Beekeeper does not currently support Data Export for {{ dialectTitle }} ☹️
+        </h3>
+      </div>
+    </div>
+  </div>
+  <div
+    v-else-if="isCommunity"
     class="upgrade-panel-tab-wrapper"
   >
     <upgrade-panel feature-name="Multi-Table Export" standalone />
@@ -96,6 +108,7 @@
 
   import { ExportStatus } from '../../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
+  import { DialectTitles } from '@shared/lib/dialects/models'
 
   export default {
     components: {
@@ -155,7 +168,17 @@
       ...mapGetters({
         'hasRunningExports': 'exports/hasRunningExports',
         'isCommunity': 'isCommunity',
+        'dialect': 'dialect',
+        'dialectData': 'dialectData',
       }),
+      // Same flag that disables Export To File on a table, so the wizard
+      // doesn't let you configure an export that can only fail
+      isSupported() {
+        return !this.dialectData?.disabledFeatures?.exportTable
+      },
+      dialectTitle() {
+        return DialectTitles[this.dialect] ?? this.dialect
+      },
       selectedTables() {
         return this.tablesToExport.length;
       },
@@ -194,25 +217,28 @@
         recordPaidFeatureUse('multi-table-export')
         // Hide any success modal that might be showing already
         this.$modal.hide(`success-modal-${this.tab.id}`);
-        
+
         this.tab.isRunning = true;
-        const exporters = await Promise.all(this.listTables.map(async (exportTable) => {
+        const exporters = [];
+        const pending = this.listTables.map(async (exportTable) => {
           await this.$store.dispatch('updateTableColumns', exportTable.table)
           const exporterId = await this.addExport(exportTable)
+          exporters.push(exporterId)
           this.$util.addListener(`onExportProgress/${exporterId}`, (progress) => {
             this.$store.commit('exports/updateProgressFor', { id: exporterId, progress });
           })
           return exporterId;
-        }))
+        })
 
-        this.exportSteps[2].stepperProps.exportsStarted = true
-        
         try {
-          await this.$util.send('export/batch', { ids: exporters });
-          
+          const ids = await Promise.all(pending)
+          this.exportSteps[2].stepperProps.exportsStarted = true
+
+          await this.$util.send('export/batch', { ids });
+
           // Check for any failed exports
-          const failedExports = await this.checkForFailedExports(exporters);
-          
+          const failedExports = await this.checkForFailedExports(ids);
+
           if (failedExports && failedExports.length > 0) {
             // Show fail modal if any exports failed
             this.$modal.show(`fail-modal-${this.tab.id}`);
@@ -224,6 +250,7 @@
           // Show fail modal on error
           this.$modal.show(`fail-modal-${this.tab.id}`);
         } finally {
+          await Promise.allSettled(pending)
           this.tab.isRunning = false;
           exporters.forEach((id) => {
             this.$util.removeListener(`onExportProgress/${id}`);
@@ -292,7 +319,7 @@
     async mounted() {
       // The tab content is gated behind UpgradePanel, so opening it at all is
       // use of the feature; running the export below counts again.
-      if (!this.isCommunity) recordPaidFeatureUse('multi-table-export')
+      if (this.isSupported && !this.isCommunity) recordPaidFeatureUse('multi-table-export')
       await this.$store.dispatch('multiTableExports/reset')
       await this.$store.dispatch('exports/removeInactive')
     }

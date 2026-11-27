@@ -2,6 +2,7 @@ import { BeeCursor, TableColumn } from "@/lib/db/models";
 import { CursorResult, QueryLeaf } from "@queryleaf/lib";
 import { AggregationCursor } from "mongodb";
 import _ from "lodash";
+import { objectIdsToHex } from "./utils";
 
 interface CursorOptions {
   query?: string,
@@ -65,7 +66,7 @@ export class MongoDBCursor extends BeeCursor {
       }
 
       // fields can come in any order or be missing, so build rows by field name
-      return docs.map((doc) => this.fields.map((field) => doc[field]));
+      return docs.map((doc) => this.fields.map((field) => objectIdsToHex(doc[field])));
     }
     return [];
   }

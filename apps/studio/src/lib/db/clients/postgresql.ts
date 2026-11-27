@@ -991,9 +991,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     let sql = ''
 
     if (typeOfElement === DatabaseElement.TABLE) {
-      sql = `ALTER TABLE ${elementName} RENAME TO ${newElementName};`
+      sql = `ALTER TABLE ${schema}.${elementName} RENAME TO ${newElementName};`
     } else if (typeOfElement === DatabaseElement.VIEW) {
-      sql = `ALTER VIEW ${elementName} RENAME TO ${newElementName};`
+      sql = `ALTER VIEW ${schema}.${elementName} RENAME TO ${newElementName};`
     } else if (typeOfElement === DatabaseElement.SCHEMA) {
       sql = `ALTER SCHEMA ${elementName} RENAME TO ${newElementName};`
     }

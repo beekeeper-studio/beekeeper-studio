@@ -30,6 +30,7 @@ export class PsqlConnector extends DatabaseConnector<PoolClient> {
 
     if (this.server.config.iamAuthOptions?.iamAuthenticationEnabled) {
       this.interval = setInterval(async () => {
+        let nextPool: pg.Pool | undefined;
         try {
           const newPassword = await refreshTokenIfNeeded(
             this.server.config.iamAuthOptions,
@@ -37,45 +38,60 @@ export class PsqlConnector extends DatabaseConnector<PoolClient> {
             this.server.config.port || 5432
           );
 
-          const newPool = new pg.Pool({
+          nextPool = new pg.Pool({
             ...dbConfig,
             password: newPassword,
           });
 
-          const test = await newPool.connect();
-          test.release();
+          const refreshed = await nextPool.connect();
+          refreshed.release();
 
-          if (this.conn?.pool) {
-            await this.conn.pool.end();
+          const previous = this.conn?.pool;
+          this.conn = { pool: nextPool };
+          const installed = nextPool;
+          nextPool = undefined;
+          this.attachPoolListeners(installed);
+
+          if (previous && previous !== installed && !previous.ended) {
+            previous.end().catch((endErr) => {
+              log.error("Could not close the previous connection pool", endErr);
+            });
           }
-          this.conn = { pool: newPool };
 
           log.info("Token refreshed successfully and connection pool updated.");
         } catch (err) {
           log.error("Could not refresh token or update connection pool!", err);
+          if (nextPool) {
+            nextPool.end().catch((endErr) => {
+              log.error("Could not close the replacement connection pool", endErr);
+            });
+          }
         }
         // FIXME (azmi): use BksConfig
       }, globals.iamRefreshTime);
     }
 
     test.release();
+    this.attachPoolListeners(this.conn.pool);
 
-    this.conn.pool.on("acquire", (client) => {
+    log.debug("connected");
+  }
+
+  private attachPoolListeners(pool: pg.Pool): void {
+    pool.on("acquire", (client) => {
       log.debug("Pool event: connection acquired");
       client.on("error", this.handleError);
     });
 
-    this.conn.pool.on("error", (err, _client) => {
+    pool.on("error", (err, _client) => {
       log.error("Pool event: connection error:", err.name, err.message);
     });
 
     // @ts-ignore
-    this.conn.pool.on("release", (err, client) => {
+    pool.on("release", (err, client) => {
       log.debug("Pool event: connection released");
       client.off("error", this.handleError);
     });
-
-    log.debug("connected");
   }
 
   protected async doDisconnect(): Promise<void> {
