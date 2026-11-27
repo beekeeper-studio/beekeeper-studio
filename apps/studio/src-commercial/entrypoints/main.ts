@@ -157,7 +157,12 @@ async function doInitBasics() {
   console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
   log.info("running migrations!!")
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
-  await migrator.run()
+  try {
+    await migrator.run()
+  } catch (e) {
+    log.error('Migration failed', e)
+    throw e
+  }
 
 
   log.debug("getting settings")
@@ -253,7 +258,10 @@ app.on('ready', async () => {
   // this creates the theme:// protocol we use for loading themes
   ProtocolBuilder.createThemeProtocol()
 
-  const settings = await initBasics()
+  const settings = await initBasics().catch((e) => {
+    log.error('Failed to initialize basics', e)
+    throw e
+  })
   initializeSecurity();
   initializeFileHelpers();
   // Not awaited: the utility process takes a while to boot, so it boots
@@ -312,7 +320,10 @@ async function openFromUrl(url: string) {
     pendingOpens.push(url)
     return
   }
-  const settings = await initBasics()
+  const settings = await initBasics().catch((e) => {
+    log.error('Failed to initialize basics', e)
+    throw e
+  })
   await buildWindow(settings, { url })
 }
 

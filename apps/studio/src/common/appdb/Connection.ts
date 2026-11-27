@@ -66,17 +66,21 @@ export default class Connection {
   constructor(private path: string, private logging: LoggerOptions = false) {}
 
   async connect(options: any = {}): Promise<void> {
-    this.connection = new DataSource({
-      database: this.path,
-      type: 'better-sqlite3',
-      synchronize: false,
-      migrationsRun: false,
-      entities: models,
-      logging: this.logging,
-      ...options
-    })
-    await this.connection.initialize()
-    ConnectionState.connection = this
+    try {
+      this.connection = new DataSource({
+        database: this.path,
+        type: 'better-sqlite3',
+        synchronize: false,
+        migrationsRun: false,
+        entities: models,
+        logging: this.logging,
+        ...options
+      })
+      await this.connection.initialize()
+      ConnectionState.connection = this
+    } catch (error) {
+      throw new Error(`DB connection failed: ${error.message}`)
+    }
   }
 
   async disconnect() {
