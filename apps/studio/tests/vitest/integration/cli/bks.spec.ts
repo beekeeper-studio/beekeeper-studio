@@ -12,7 +12,7 @@ import os from "os";
 import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
-import { SocketPortAdapter } from "@/services/cliServer/SocketPortAdapter";
+import { SocketServerPort } from "@/services/cliServer/SocketServerPort";
 import { RpcServer } from "@beekeeperstudio/rpc";
 import { UtilityApi } from "@/services/UtilityApi";
 import { getConnectedStates, newState, state, State } from "@/handlers/handlerState";
@@ -104,7 +104,7 @@ const approvals = {
 };
 
 let client: SqliteClient;
-let socket: SocketPortAdapter;
+let socket: SocketServerPort;
 let requests = 0;
 const created: CreateTabRequest[] = [];
 
@@ -155,7 +155,7 @@ beforeAll(async () => {
       }
     },
   };
-  socket = new SocketPortAdapter({ socketPath });
+  socket = new SocketServerPort({ socketPath });
   const server = new RpcServer(socket);
   server.initialize();
   const utilityApi = new TestUtilityApi(backend);

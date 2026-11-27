@@ -7,17 +7,17 @@ import { CliRequestEvent } from "./auditLog";
 import { serializeBigInt } from "@/services/plugin/utils";
 import rawLog from "@bksLogger";
 
-const log = rawLog.scope("SocketPortAdapter");
+const log = rawLog.scope("SocketServerPort");
 
 const DEFAULT_MAX_REQUEST_BYTES = 16 * 1024 * 1024;
 
-export interface SocketPortAdapterOptions {
+export interface SocketServerPortOptions {
   socketPath: string;
   /** A request line longer than this is rejected. SQL text is the only sizeable input. */
   maxRequestBytes?: number;
 }
 
-export class SocketPortAdapterError extends Error {
+export class SocketServerPortError extends Error {
   static readonly SocketPathNotProvided = "SOCKET_PATH_NOT_PROVIDED";
 
   constructor(
@@ -25,7 +25,7 @@ export class SocketPortAdapterError extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "SocketPortAdapterError";
+    this.name = "SocketServerPortError";
   }
 }
 
@@ -63,14 +63,14 @@ export function probeSocket(
  * its request came in on, which then closes. Emits "requestHandled" after
  * every reply, malformed requests included, to feed the audit log.
  */
-export class SocketPortAdapter extends EventEmitter {
+export class SocketServerPort extends EventEmitter {
   private server: net.Server | null = null;
   private started = false;
   private readonly sockets = new Set<net.Socket>();
   private readonly pending = new Map<string, PendingRequest>();
   private readonly maxRequestBytes: number;
 
-  constructor(private readonly options: SocketPortAdapterOptions) {
+  constructor(private readonly options: SocketServerPortOptions) {
     super();
     this.maxRequestBytes = options.maxRequestBytes ?? DEFAULT_MAX_REQUEST_BYTES;
     this.handleConnection = this.handleConnection.bind(this);
@@ -86,7 +86,7 @@ export class SocketPortAdapter extends EventEmitter {
   }
 
   /**
-   * @throws {SocketPortAdapterError} without a socket path
+   * @throws {SocketServerPortError} without a socket path
    * @throws {Error} with code EADDRINUSE when another instance serves the socket
    */
   async start(): Promise<void> {
@@ -96,8 +96,8 @@ export class SocketPortAdapter extends EventEmitter {
     }
     const socketPath = this.options.socketPath;
     if (!socketPath) {
-      throw new SocketPortAdapterError(
-        SocketPortAdapterError.SocketPathNotProvided,
+      throw new SocketServerPortError(
+        SocketServerPortError.SocketPathNotProvided,
         "No CLI socket path was provided.",
       );
     }

@@ -1,4 +1,4 @@
-import { CancelError } from "./protocol";
+import { CancelError, CliError } from "./protocol";
 import type {
   Method,
   Notification,
@@ -55,6 +55,13 @@ export class RpcClient<
 
       if (reply.errorName === "CancelError") {
         reject(new CancelError(id, reply.error));
+      } else if (reply.errorName === "CliError") {
+        reject(
+          new CliError(reply.errorCode, reply.error, {
+            hint: reply.errorHint,
+            details: reply.errorDetail,
+          }),
+        );
       } else if (reply.type === "error") {
         const error = new Error(reply.error);
         reject(Object.assign(error, { code: reply.errorCode }));

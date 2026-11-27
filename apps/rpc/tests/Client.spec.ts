@@ -13,7 +13,7 @@ import { CancelError, Message, OpenConnection } from "../src/protocol";
  * Each connection carries one message; a response goes back on the socket
  * its request came in on.
  */
-class SocketPortAdapter extends EventEmitter {
+class SocketServerPort extends EventEmitter {
   private readonly sockets = new Map<string, net.Socket>();
 
   accept(socket: net.Socket): void {
@@ -44,7 +44,7 @@ let dir: string | null = null;
 async function startApp(): Promise<{ socketPath: string; app: RpcServer }> {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-rpc-"));
   const socketPath = path.join(dir, "rpc.sock");
-  const port = new SocketPortAdapter();
+  const port = new SocketServerPort();
   const app = new RpcServer(port);
   app.initialize();
   server = net.createServer(port.accept.bind(port));

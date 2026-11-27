@@ -215,6 +215,22 @@ export interface UpdateSavedQueryParams {
   text?: string;
 }
 
+/** The app's CLI methods, by name: what each takes and returns. */
+export interface Methods {
+  getConnections: (params: ConnectionsParams) => ConnectionsResult;
+  getSchemas: (params: SchemasParams) => SchemasResult;
+  getEntities: (params: EntitiesParams) => EntitiesResult;
+  getTableStructure: (params: StructureParams) => StructureResult;
+  runQuery: (params: QueryParams) => QueryResult;
+  openTab: (params: OpenTabParams) => OpenTabResult;
+  switchTab: (params: SwitchTabParams) => void;
+  getSavedQueries: (params: SavedQueriesParams) => SavedQueriesResult;
+  getSavedQuery: (params: SavedQueryParams) => SavedQueryResult;
+  createSavedQuery: (params: CreateSavedQueryParams) => SavedQueryResult;
+  updateSavedQuery: (params: UpdateSavedQueryParams) => void;
+  requestApproval: (params: RequestApprovalParams) => RequestApprovalResult;
+}
+
 /** What the renderer is asked to open. */
 export interface CreateTabRequest {
   tab: TabType;

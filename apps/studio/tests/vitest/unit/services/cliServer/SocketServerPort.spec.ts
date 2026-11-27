@@ -5,10 +5,10 @@ import net from "net";
 import os from "os";
 import path from "path";
 import {
-  SocketPortAdapter,
-  SocketPortAdapterError,
-  SocketPortAdapterOptions,
-} from "@/services/cliServer/SocketPortAdapter";
+  SocketServerPort,
+  SocketServerPortError,
+  SocketServerPortOptions,
+} from "@/services/cliServer/SocketServerPort";
 import { CliRequestEvent } from "@/services/cliServer/auditLog";
 import { CliError, RpcServer } from "@beekeeperstudio/rpc";
 import type { CallContext } from "@beekeeperstudio/rpc";
@@ -17,15 +17,15 @@ const unix = process.platform !== "win32";
 
 let dir: string;
 let socketPath: string;
-let adapters: SocketPortAdapter[];
+let adapters: SocketServerPort[];
 
 interface App {
-  adapter: SocketPortAdapter;
+  adapter: SocketServerPort;
   server: RpcServer;
 }
 
-function createApp(options: Partial<SocketPortAdapterOptions> = {}): App {
-  const port = new SocketPortAdapter({ socketPath, ...options });
+function createApp(options: Partial<SocketServerPortOptions> = {}): App {
+  const port = new SocketServerPort({ socketPath, ...options });
   adapters.push(port);
   const server = new RpcServer(port);
   server.initialize();
@@ -76,9 +76,9 @@ afterEach(async () => {
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-describe("SocketPortAdapter", () => {
+describe("SocketServerPort", () => {
   it("answers each registered method and turns errors into error replies", async () => {
-    const port = new SocketPortAdapter({ socketPath });
+    const port = new SocketServerPort({ socketPath });
     const server = new RpcServer(port);
     server.initialize();
     server.register("method1", () => ({ big: BigInt("9007199254740993")}) );
@@ -289,13 +289,13 @@ describe("SocketPortAdapter", () => {
   });
 
   it("refuses to start without a socket path", async () => {
-    const adapter = new SocketPortAdapter({ socketPath: "" });
+    const adapter = new SocketServerPort({ socketPath: "" });
     const error = await adapter.start().then(
       () => null,
       (e) => e,
     );
-    expect(error).toBeInstanceOf(SocketPortAdapterError);
-    expect(error.code).toBe(SocketPortAdapterError.SocketPathNotProvided);
+    expect(error).toBeInstanceOf(SocketServerPortError);
+    expect(error.code).toBe(SocketServerPortError.SocketPathNotProvided);
   });
 
   it.runIf(unix)(

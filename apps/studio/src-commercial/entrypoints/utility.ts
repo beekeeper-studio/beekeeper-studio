@@ -57,9 +57,9 @@ import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
 import {
-  SocketPortAdapter,
-  SocketPortAdapterError,
-} from '@/services/cliServer/SocketPortAdapter';
+  SocketServerPort,
+  SocketServerPortError,
+} from '@/services/cliServer/SocketServerPort';
 import { UtilityApi } from '@/services/UtilityApi';
 import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';
 import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
@@ -258,7 +258,7 @@ async function init() {
 
   const auditSink = createElectronLogSink(rawLog);
   const auditLog = new CliAuditLog(auditSink, (e) => log.warn('Could not write the CLI audit log', e));
-  const cliSocket = new SocketPortAdapter({
+  const cliSocket = new SocketServerPort({
     socketPath: platformInfo.cliSocketPath,
   });
   const cliServer = new RpcServer(cliSocket);
@@ -293,8 +293,8 @@ async function init() {
       log.info(`CLI calls are recorded in ${auditSink.filePath() ?? 'cli.log'}`);
     })
     .catch((e) => {
-      if (e instanceof SocketPortAdapterError) {
-        if (e.code === SocketPortAdapterError.SocketPathNotProvided) {
+      if (e instanceof SocketServerPortError) {
+        if (e.code === SocketServerPortError.SocketPathNotProvided) {
           // we can ignore this error
           return;
         }

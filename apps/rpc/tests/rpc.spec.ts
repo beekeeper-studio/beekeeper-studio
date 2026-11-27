@@ -130,6 +130,24 @@ describe("Basic RPC Tests", () => {
     });
   });
 
+  it("rejects with a CliError that keeps its code, hint and details", async () => {
+    server.register("ping", () => {
+      throw new CliError("NOT_FOUND", "nope", {
+        hint: "look elsewhere",
+        details: { tried: 1 },
+      });
+    });
+
+    const promise = client.request("ping");
+    await expect(promise).rejects.toBeInstanceOf(CliError);
+    await expect(promise).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "nope",
+      hint: "look elsewhere",
+      details: { tried: 1 },
+    });
+  });
+
   it("internally add listener only when needed", async () => {
     const { resolve: pong, promise } = Promise.withResolvers<void>();
     server.register("ping", () => promise);
