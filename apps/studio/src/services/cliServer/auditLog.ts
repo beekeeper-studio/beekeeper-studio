@@ -1,15 +1,6 @@
 import { redactMessage } from '@/lib/log/redact'
-import { Request, Reply } from '@beekeeperstudio/rpc'
+import { Request, RequestHandledEvent } from '@beekeeperstudio/rpc'
 import { clientInfo } from './commands'
-
-/** What the socket server reports after answering one request. */
-export interface CliRequestEvent {
-  /** Null when the request line was not valid JSON. */
-  request: Request | null
-  response: Reply
-  durationMs: number
-  responseBytes: number
-}
 
 export interface CliAuditEntry {
   time: string
@@ -84,7 +75,7 @@ function auditParams(request: Request | null): Record<string, unknown> | null {
   return params
 }
 
-export function buildAuditEntry(event: CliRequestEvent, now: Date = new Date()): CliAuditEntry {
+export function buildAuditEntry(event: RequestHandledEvent, now: Date = new Date()): CliAuditEntry {
   const method = typeof event.request?.name === 'string' ? event.request.name : null
   const entry: CliAuditEntry = {
     time: now.toISOString(),
@@ -115,7 +106,7 @@ export class CliAuditLog {
     private readonly onError: (error: unknown) => void = () => undefined
   ) {}
 
-  record(event: CliRequestEvent): CliAuditEntry | null {
+  record(event: RequestHandledEvent): CliAuditEntry | null {
     try {
       const entry = buildAuditEntry(event)
       // Same redaction as the other log files, in case a value with a

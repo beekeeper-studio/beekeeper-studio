@@ -12,7 +12,7 @@ import os from "os";
 import path from "path";
 import { Readable } from "stream";
 import { SqliteClient } from "@/lib/db/clients/sqlite";
-import { SocketServerPort } from "@/services/cliServer/SocketServerPort";
+import { SocketServerPort } from "@beekeeperstudio/rpc";
 import { RpcServer } from "@beekeeperstudio/rpc";
 import { UtilityApi } from "@/services/UtilityApi";
 import { getConnectedStates, newState, state, State } from "@/handlers/handlerState";

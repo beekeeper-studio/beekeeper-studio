@@ -109,11 +109,7 @@ class SocketExchange {
   }
 }
 
-/**
- * A port for RpcClient that sends each message over its own connection to
- * the app's socket. Requests carry the client's identity; a failed
- * connection or a bad reply comes back as an error reply.
- */
+/** A port adapter that lets RpcClient send requests over a local socket. */
 export class SocketClientPort extends EventEmitter {
   constructor(
     private readonly socketPath: string,

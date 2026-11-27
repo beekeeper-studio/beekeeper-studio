@@ -59,7 +59,7 @@ import { ConfigHandlers } from '@/handlers/configHandlers';
 import {
   SocketServerPort,
   SocketServerPortError,
-} from '@/services/cliServer/SocketServerPort';
+} from '@beekeeperstudio/rpc';
 import { UtilityApi } from '@/services/UtilityApi';
 import { CliAuditLog, createElectronLogSink } from '@/services/cliServer/auditLog';
 import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
@@ -260,6 +260,7 @@ async function init() {
   const auditLog = new CliAuditLog(auditSink, (e) => log.warn('Could not write the CLI audit log', e));
   const cliSocket = new SocketServerPort({
     socketPath: platformInfo.cliSocketPath,
+    logger: rawLog.scope("SocketServerPort"),
   });
   const cliServer = new RpcServer(cliSocket);
   cliServer.initialize();

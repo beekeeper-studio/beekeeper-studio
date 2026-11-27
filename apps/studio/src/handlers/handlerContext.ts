@@ -1,6 +1,6 @@
 import { PluginManager } from "@/services/plugin";
 import { ThemeManager } from "@/services/theme/ThemeManager";
-import { SocketServerPort } from "@/services/cliServer/SocketServerPort";
+import { SocketServerPort } from "@beekeeperstudio/rpc";
 import { UtilityApi } from "@/services/UtilityApi";
 
 class Context {

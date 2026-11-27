@@ -1,20 +1,41 @@
 import { EventEmitter } from "events";
 import fs from "fs";
 import net from "net";
-import { isWindowsPipePath } from "@beekeeperstudio/rpc";
-import type { Message, Reply, Request } from "@beekeeperstudio/rpc";
-import { CliRequestEvent } from "./auditLog";
-import { serializeBigInt } from "@/services/plugin/utils";
-import rawLog from "@bksLogger";
-
-const log = rawLog.scope("SocketServerPort");
+import { isWindowsPipePath } from "./socketPath";
+import type { Message, Reply, Request } from "./protocol";
 
 const DEFAULT_MAX_REQUEST_BYTES = 16 * 1024 * 1024;
+
+/** What the port reports after answering one request. */
+export interface RequestHandledEvent {
+  /** Null when the request line was not valid JSON. */
+  request: Request | null;
+  response: Reply;
+  durationMs: number;
+  responseBytes: number;
+}
+
+export interface Logger {
+  info(...args: unknown[]): void;
+  warn(...args: unknown[]): void;
+  error(...args: unknown[]): void;
+}
+
+/** JSON has no bigint; keep it a number when that loses nothing. */
+function serializeBigInt(_key: string, value: unknown): unknown {
+  if (typeof value === "bigint") {
+    const num = Number(value);
+    return Number.isSafeInteger(num) ? num : value.toString();
+  }
+  return value;
+}
 
 export interface SocketServerPortOptions {
   socketPath: string;
   /** A request line longer than this is rejected. SQL text is the only sizeable input. */
   maxRequestBytes?: number;
+  /** Defaults to the console. */
+  logger?: Logger;
 }
 
 export class SocketServerPortError extends Error {
@@ -57,22 +78,19 @@ export function probeSocket(
   });
 }
 
-/**
- * A port over a local socket server, for RpcServer. Each connection carries
- * one newline-terminated message; the response goes back on the connection
- * its request came in on, which then closes. Emits "requestHandled" after
- * every reply, malformed requests included, to feed the audit log.
- */
+/** A port adapter that lets RpcServer serve requests over a local socket. */
 export class SocketServerPort extends EventEmitter {
   private server: net.Server | null = null;
   private started = false;
   private readonly sockets = new Set<net.Socket>();
   private readonly pending = new Map<string, PendingRequest>();
   private readonly maxRequestBytes: number;
+  private readonly log: Logger;
 
   constructor(private readonly options: SocketServerPortOptions) {
     super();
     this.maxRequestBytes = options.maxRequestBytes ?? DEFAULT_MAX_REQUEST_BYTES;
+    this.log = options.logger ?? console;
     this.handleConnection = this.handleConnection.bind(this);
     this.handleError = this.handleError.bind(this);
   }
@@ -91,7 +109,7 @@ export class SocketServerPort extends EventEmitter {
    */
   async start(): Promise<void> {
     if (this.started) {
-      log.warn("Calling start when already started");
+      this.log.warn("Calling start when already started");
       return;
     }
     const socketPath = this.options.socketPath;
@@ -121,13 +139,13 @@ export class SocketServerPort extends EventEmitter {
       try {
         fs.chmodSync(socketPath, 0o600);
       } catch (error) {
-        log.warn(`Could not restrict permissions on ${socketPath}`, error);
+        this.log.warn(`Could not restrict permissions on ${socketPath}`, error);
       }
     }
 
     this.server = server;
     this.started = true;
-    log.info(`CLI listening at ${socketPath}`);
+    this.log.info(`CLI listening at ${socketPath}`);
   }
 
   async stop(): Promise<void> {
@@ -185,7 +203,7 @@ export class SocketServerPort extends EventEmitter {
         reply.errorName !== "CliError" &&
         reply.errorName !== "CancelError"
       ) {
-        log.error("CLI request failed", reply.error);
+        this.log.error("CLI request failed", reply.error);
         reply.errorCode = "INTERNAL";
       }
     }
@@ -204,7 +222,7 @@ export class SocketServerPort extends EventEmitter {
       });
     } catch (error) {
       if (error?.code === "EADDRINUSE") {
-        log.warn(
+        this.log.warn(
           `Another Beekeeper Studio instance is serving the CLI at ${socketPath}`,
         );
       }
@@ -213,7 +231,7 @@ export class SocketServerPort extends EventEmitter {
   }
 
   private handleError(error: Error): void {
-    log.error("CLI socket server error", error);
+    this.log.error("CLI socket server error", error);
   }
 
   private async removeStaleSocketFile(): Promise<void> {
@@ -228,9 +246,9 @@ export class SocketServerPort extends EventEmitter {
     }
     try {
       fs.unlinkSync(socketPath);
-      log.info(`Removed stale CLI socket ${socketPath}`);
+      this.log.info(`Removed stale CLI socket ${socketPath}`);
     } catch (error) {
-      log.warn(`Could not remove stale CLI socket ${socketPath}`, error);
+      this.log.warn(`Could not remove stale CLI socket ${socketPath}`, error);
     }
   }
 
@@ -244,7 +262,7 @@ export class SocketServerPort extends EventEmitter {
         fs.unlinkSync(socketPath);
       }
     } catch (error) {
-      log.warn(`Could not remove CLI socket ${socketPath}`, error);
+      this.log.warn(`Could not remove CLI socket ${socketPath}`, error);
     }
   }
 
@@ -252,7 +270,7 @@ export class SocketServerPort extends EventEmitter {
     this.sockets.add(socket);
     socket.on("close", () => this.sockets.delete(socket));
     socket.on("error", (error) =>
-      log.warn("CLI client socket error", error?.message ?? error),
+      this.log.warn("CLI client socket error", error?.message ?? error),
     );
     socket.setEncoding("utf8");
 
@@ -374,9 +392,7 @@ export class SocketServerPort extends EventEmitter {
     let payload: string;
     try {
       const message: Message = { type: "response", input: response };
-      payload = JSON.stringify(message, (_key, value) =>
-        serializeBigInt(value),
-      );
+      payload = JSON.stringify(message, serializeBigInt);
     } catch (error) {
       response = {
         id: reply.id,
@@ -390,7 +406,7 @@ export class SocketServerPort extends EventEmitter {
     if (!socket.destroyed) {
       socket.end(payload + "\n");
     }
-    const event: CliRequestEvent = {
+    const event: RequestHandledEvent = {
       request,
       response,
       durationMs: Date.now() - started,
@@ -399,7 +415,7 @@ export class SocketServerPort extends EventEmitter {
     try {
       this.emit("requestHandled", event);
     } catch (error) {
-      log.warn("CLI request observer failed", error);
+      this.log.warn("CLI request observer failed", error);
     }
   }
 }

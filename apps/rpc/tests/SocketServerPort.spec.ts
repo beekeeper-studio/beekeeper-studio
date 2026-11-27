@@ -1,17 +1,19 @@
-// @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import net from "net";
 import os from "os";
 import path from "path";
 import {
+  RequestHandledEvent,
   SocketServerPort,
   SocketServerPortError,
   SocketServerPortOptions,
-} from "@/services/cliServer/SocketServerPort";
-import { CliRequestEvent } from "@/services/cliServer/auditLog";
-import { CliError, RpcServer } from "@beekeeperstudio/rpc";
-import type { CallContext } from "@beekeeperstudio/rpc";
+} from "../src/SocketServerPort";
+import { RpcServer } from "../src/RpcServer";
+import { CliError } from "../src/protocol";
+import type { CallContext } from "../src/protocol";
+
+const quiet = { info() {}, warn() {}, error() {} };
 
 const unix = process.platform !== "win32";
 
@@ -25,7 +27,7 @@ interface App {
 }
 
 function createApp(options: Partial<SocketServerPortOptions> = {}): App {
-  const port = new SocketServerPort({ socketPath, ...options });
+  const port = new SocketServerPort({ socketPath, logger: quiet, ...options });
   adapters.push(port);
   const server = new RpcServer(port);
   server.initialize();
@@ -134,7 +136,7 @@ describe("SocketServerPort", () => {
 
   it("answers a malformed line and reports it with no request", async () => {
     const server = createApp();
-    const events: CliRequestEvent[] = [];
+    const events: RequestHandledEvent[] = [];
     server.adapter.on("requestHandled", (event) => events.push(event));
     await server.adapter.start();
 
