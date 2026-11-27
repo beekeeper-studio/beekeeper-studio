@@ -6,18 +6,18 @@
     @before-close="handleBeforeClose"
   >
     <template #title> CLI access request </template>
-    <div v-if="current" class="cli-access-request">
+    <div v-if="requester" class="cli-access-request">
       <div class="cli-access-client">
         <i class="material-icons">smart_toy</i>
-        <span class="cli-access-client-name">{{ current.clientName }}</span>
+        <span class="cli-access-client-name">{{ requester.clientName }}</span>
       </div>
       <p class="cli-access-summary">
-        Requests access to <strong>{{ current.connectionName }}</strong
+        Requests access to <strong>{{ requester.connectionName }}</strong
         >. Choose what it may do. Access lasts until the connection is closed.
       </p>
       <cli-access-form
         v-model="access"
-        :read-only-mode="current.readOnlyMode"
+        :read-only-mode="requester.readOnlyMode"
       />
     </div>
     <template #footer>
@@ -88,6 +88,7 @@ export default Vue.extend({
 
       this.reset();
       this.requester = params;
+      this.resolvers = Promise.withResolvers<Access>();
       this.$modal.show(this.modalName);
 
       return this.resolvers.promise;
@@ -104,7 +105,7 @@ export default Vue.extend({
       this.$modal.hide(this.modalName);
     },
     handleAbort() {
-    this.aborted = true;
+      this.aborted = true;
       this.$modal.hide(this.modalName);
     },
     handleBeforeClose() {
@@ -119,6 +120,8 @@ export default Vue.extend({
       } else {
         this.resolvers.resolve(this.access);
       }
+      this.requester = null;
+      this.resolvers = null;
     },
   },
 });
