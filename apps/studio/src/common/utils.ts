@@ -182,8 +182,9 @@ function splitListFilterValue(text: string): string[] {
 }
 
 // The text inside a parenthesized list, or null when the parentheses do not
-// wrap the whole text, eg `(555) 123-4567, (555) 987-6543`. A single value
-// with no comma or line break, eg `(none)`, is kept as it is.
+// wrap the whole text, eg `(555) 123-4567, (555) 987-6543`. A single value is
+// only unwrapped when it is a number or a quoted string, so `( 4182 )` copied
+// from one cell is read and `(none)` is kept as it is.
 function unwrapSqlList(text: string): string | null {
   if (!text.startsWith('(') || !text.endsWith(')')) return null
   let depth = 0
@@ -198,7 +199,11 @@ function unwrapSqlList(text: string): string | null {
   }
   if (depth !== 0) return null
   const inner = text.slice(1, -1)
-  return /[,\n]/.test(inner) ? inner : null
+  return /[,\n]/.test(inner) || isSqlLiteral(inner.trim()) ? inner : null
+}
+
+function isSqlLiteral(value: string): boolean {
+  return /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(value) || /^'[\s\S]*'$/.test(value)
 }
 
 function splitOutsideQuotes(list: string): string[] {
