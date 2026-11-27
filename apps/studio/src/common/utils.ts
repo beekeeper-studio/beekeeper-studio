@@ -152,7 +152,7 @@ export function normalizeFilters(filters: TableFilter[]) {
       // Quick Filter sets the value to an array of the selected cell values
       const value = _.isArray(filter.value)
         ? filter.value
-        : filter.value.toString().split(/\s*,\s*/);
+        : splitListFilterValue(filter.value.toString());
       normalized.push({ ...filter, value });
       // Leave the caller's value alone: joining an array would split values
       // that contain commas the next time it is normalized
@@ -167,6 +167,59 @@ export function normalizeFilters(filters: TableFilter[]) {
     filter.value = filter.value.toString();
   }
   return normalized;
+}
+
+/**
+ * Splits the text of an `in` / `not in` filter into its values. Besides the
+ * plain `foo, bar` form it reads the SQL list that "Copy for IN statement"
+ * produces, eg `(1, 2)` or `('a', 'it''s')`, one value per line: the wrapping
+ * parentheses and the quotes around each value are removed.
+ */
+function splitListFilterValue(text: string): string[] {
+  const list = unwrapSqlList(text.trim())
+  if (list === null) return text.split(/\s*,\s*/)
+  return splitOutsideQuotes(list).map((value) => unquoteSqlString(value.trim()))
+}
+
+// The text inside a parenthesized list, or null when the parentheses do not
+// wrap the whole text, eg `(555) 123-4567, (555) 987-6543`. A single value is
+// only unwrapped when it is a number or a quoted string, so `( 4182 )` copied
+// from one cell is read and `(none)` is kept as it is.
+function unwrapSqlList(text: string): string | null {
+  if (!text.startsWith('(') || !text.endsWith(')')) return null
+  let depth = 0
+  let inQuotes = false
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]
+    if (char === "'") inQuotes = !inQuotes
+    if (inQuotes) continue
+    if (char === '(') depth++
+    if (char === ')') depth--
+    if (depth === 0 && i < text.length - 1) return null
+  }
+  if (depth !== 0) return null
+  const inner = text.slice(1, -1)
+  return /[,\n]/.test(inner) || isSqlLiteral(inner.trim()) ? inner : null
+}
+
+function isSqlLiteral(value: string): boolean {
+  return /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(value) || /^'[\s\S]*'$/.test(value)
+}
+
+function splitOutsideQuotes(list: string): string[] {
+  const values = ['']
+  let inQuotes = false
+  for (const char of list) {
+    if (char === "'") inQuotes = !inQuotes
+    if (char === ',' && !inQuotes) values.push('')
+    else values[values.length - 1] += char
+  }
+  return values
+}
+
+function unquoteSqlString(value: string): string {
+  const quoted = value.length >= 2 && value.startsWith("'") && value.endsWith("'")
+  return quoted ? value.slice(1, -1).replaceAll("''", "'") : value
 }
 
 /** Create an object for filter used in Row Filter Builder */

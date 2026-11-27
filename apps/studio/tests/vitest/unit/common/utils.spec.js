@@ -89,6 +89,47 @@ describe("normalizeFilters", () => {
     expect(normalizeFilters(filters)[0].value).toEqual(["New York, NY", "LA"])
   })
 
+  // Pasting into the filter input turns the copied line breaks into spaces,
+  // so "(\n4182,\n4190\n)" arrives as "( 4182, 4190 )"
+  it("reads the list copied with Copy for IN statement", () => {
+    const result = normalizeFilters([
+      { field: "a", type: "in", value: "( 4182, 4190, 4207 )" },
+      { field: "b", type: "not in", value: "( 4182 )" },
+      { field: "c", type: "in", value: "(\n1,\n2,\n3\n)" },
+      { field: "d", type: "in", value: "(\r\n7,\r\n8\r\n)" },
+      { field: "e", type: "in", value: "( -1.5, 2e3 )" },
+    ])
+    expect(result.map((f) => f.value)).toStrictEqual([
+      ["4182", "4190", "4207"],
+      ["4182"],
+      ["1", "2", "3"],
+      ["7", "8"],
+      ["-1.5", "2e3"],
+    ])
+  })
+
+  it("removes the quotes Copy for IN statement adds to text values", () => {
+    const result = normalizeFilters([
+      { field: "city", type: "in", value: "( 'New York, NY', 'LA', 'it''s' )" },
+      { field: "city", type: "not in", value: "( 'LA' )" },
+      { field: "city", type: "in", value: "(\n'a (b)',\n'c'\n)" },
+    ])
+    expect(result.map((f) => f.value)).toStrictEqual([["New York, NY", "LA", "it's"], ["LA"], ["a (b)", "c"]])
+  })
+
+  it("keeps parentheses and quotes that are not a copied list", () => {
+    const result = normalizeFilters([
+      { field: "phone", type: "in", value: "(555) 123-4567, (555) 987-6543" },
+      { field: "note", type: "in", value: "(none)" },
+      { field: "name", type: "in", value: "'a', 'b'" },
+    ])
+    expect(result.map((f) => f.value)).toStrictEqual([
+      ["(555) 123-4567", "(555) 987-6543"],
+      ["(none)"],
+      ["'a'", "'b'"],
+    ])
+  })
+
   it("drops incomplete filters", () => {
     expect(normalizeFilters([{ field: "id", type: "=", value: "" }, { field: "id", type: "is", value: "null" }])).toEqual([
       { field: "id", type: "is", value: "null" },
