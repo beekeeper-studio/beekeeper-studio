@@ -133,6 +133,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
     cliSocketPath: resolveCliSocketPath({ userDirectory, isWindows, isDevelopment: isDevEnv }),
+    bksPath: join(resourcesPath, 'bin', isWindows ? 'bks.cmd' : 'bks'),
     updatesDisabled,
     appVersion,
     parsedAppVersion,

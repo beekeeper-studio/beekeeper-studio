@@ -28,8 +28,8 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
-import { cliArgsFromProcessArgv } from '@/services/cliServer/args'
-import { cliFallbackHelp } from '@/services/cliServer/fallbackHelp'
+import { isCliLaunch } from '@/services/cliServer/args'
+import { Command } from '@commander-js/extra-typings'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -38,36 +38,25 @@ if (platformInfo.env.development || platformInfo.env.test) {
 log.transports.console.level = platformInfo.logLevel;
 log.transports.file.level = platformInfo.logLevel;
 
-// `beekeeper-studio cli ...`: the CLI is the separate bks command bundled with
-// the app (resources/bin), running under node. Booting Electron just to proxy
-// a command would cost a second per call, so this process only prints where
-// bks is and exits before any window opens.
-const cliArgs = cliArgsFromProcessArgv()
-const cliMode = cliArgs !== null
+// Prints the bks help and exits before any window opens.
+const cliMode = isCliLaunch()
 if (cliMode) {
   // Only the help text belongs on the terminal (mainLogger already silenced
   // the console transport while the modules loaded).
   log.transports.console.level = false
   app.dock?.hide()
-  printCliHelpAndExit(cliArgs)
-}
-
-function printCliHelpAndExit(args: string[]) {
-  const help = cliFallbackHelp({
-    resourcesPath: platformInfo.resourcesPath,
-    isWindows: platformInfo.isWindows,
-    isMac: platformInfo.isMac,
-    isDevelopment: platformInfo.isDevelopment,
-    socketPath: platformInfo.cliSocketPath,
-  })
-  const wantsHelp = args.length === 0 || args[0] === 'help' || args.includes('--help') || args.includes('-h')
-  // A command that was not run is an error: say so on stderr and leave stdout
-  // empty, so a script does not mistake the help text for a result.
-  const text = wantsHelp
-    ? help
-    : `beekeeper-studio cli does not run commands itself. Use bks:\n\n${help}`
-  const stream = wantsHelp ? process.stdout : process.stderr
-  stream.write(text + '\n', () => app.exit(wantsHelp ? 0 : 2))
+  new Command('beekeeper-studio cli')
+    .configureHelp({
+      formatHelp: (cmd, helper) =>
+        `${helper.boxWrap(cmd.description(), helper.helpWidth ?? 80)}\n`,
+    })
+    .description(
+      'The Beekeeper Studio command line interface is the separate `bks` ' +
+        `command that ships with the app, located at ${platformInfo.bksPath}. ` +
+        'It talks to the running app over a local socket.'
+    )
+    .helpOption(false)
+    .help()
 }
 
 electron.nativeTheme.on('updated', () => {
