@@ -52,10 +52,6 @@ export interface ClientOptions {
   clientName?: string;
 }
 
-/**
- * The app's CLI methods over its socket. Emits "error" when the socket
- * cannot be reached, i.e. the app is not running.
- */
 export class Client extends EventEmitter<{ error: [unknown] }> {
   private readonly rpc: RpcClient<Methods>;
 
@@ -74,14 +70,14 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
   }
 
   getSchemas(
-    params: SchemasParams,
+    params: SchemasParams = {},
     options: RequestOptions = {},
   ): Promise<SchemasResult> {
     return this.request("getSchemas", params, options);
   }
 
   getEntities(
-    params: EntitiesParams,
+    params: EntitiesParams = {},
     options: RequestOptions = {},
   ): Promise<EntitiesResult> {
     return this.request("getEntities", params, options);
@@ -116,7 +112,7 @@ export class Client extends EventEmitter<{ error: [unknown] }> {
   }
 
   requestApproval(
-    params: RequestApprovalParams,
+    params: RequestApprovalParams = {},
     options: RequestOptions = {},
   ): Promise<RequestApprovalResult> {
     return this.request("requestApproval", params, options);

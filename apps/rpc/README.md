@@ -20,15 +20,17 @@
 ```ts
 import { Client } from "@beekeeperstudio/rpc";
 
-const client = new Client();
+const client = new Client({ clientName: "My Script" });
 await client.requestApproval();
-const connections = await client.getConnections();
-const queryResult = await client.runQuery({
-  sql: "select id, email from users limit 5",
-});
 
-console.log(connections.markdown());
-console.log(queryResult.json().results);
+const connectionsResult = await client.getConnections();
+console.log(connectionsResult.connections);
+
+const queryResult = await client.runQuery(
+  { sql: "select id, email from users limit 5" },
+  { signal: AbortSignal.timeout(10_000) },
+);
+console.log(queryResult.results);
 ```
 
 ## Contributing

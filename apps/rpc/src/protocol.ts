@@ -1,13 +1,3 @@
-/**
- * Shared types for the `beekeeper-studio cli` interface.
- *
- * The CLI is a thin client. The Beekeeper Studio binary, started with `cli`
- * as its first argument, sends a single JSON request over a local socket to
- * the running app (the utility process, which owns the live database
- * connections) and prints the JSON reply. Both ends and the tests import this
- * file, so nothing in here may depend on electron.
- */
-
 /** Hard cap on the number of rows a single `runQuery` result returns. */
 export const MAX_QUERY_ROWS = 20000;
 
