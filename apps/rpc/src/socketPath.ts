@@ -19,15 +19,6 @@ export function isWindowsPipePath(socketPath: string): boolean {
   return /^\\\\[.?]\\pipe\\/.test(socketPath);
 }
 
-/**
- * Where the running app listens for `beekeeper-studio cli` requests. Both the
- * app and the CLI client derive it from the same inputs, so there is nothing
- * to discover or configure.
- *
- * Windows gets a named pipe. Everything else gets a unix socket in the user
- * data directory, falling back to the temp directory when that path would be
- * too long for the kernel.
- */
 export function resolveCliSocketPath(options: CliSocketPathOptions): string {
   const suffix = options.isDevelopment ? "-dev" : "";
   const resolved = path.resolve(options.userDirectory);
@@ -57,11 +48,7 @@ export function resolveCliSocketPath(options: CliSocketPathOptions): string {
 /** The directory name electron derives from package.json `name`: appData/<name>. */
 export const APP_DATA_DIR_NAME = "beekeeper-studio";
 
-/**
- * Where electron's app.getPath('userData') points for this app, computed
- * without electron so the CLI can find the socket from a plain node process.
- */
-export function defaultUserDirectory(): string {
+function defaultUserDirectory(): string {
   if (process.platform === "win32") {
     return path.join(
       process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"),
@@ -82,25 +69,17 @@ export function defaultUserDirectory(): string {
   );
 }
 
-function envFlag(value: string | undefined): boolean {
-  return (
-    !!value && !["0", "false", "no", ""].includes(value.trim().toLowerCase())
-  );
-}
-
-/**
- * The socket the CLI connects to. BKS_CLI_SOCKET overrides everything (odd
- * data directories, portable installs); BKS_CLI_DEV targets a development
- * build of the app.
- */
+/** The socket the CLI connects to. Return value can be overriden by `BKS_CLI_SOCKET`. */
 export function defaultCliSocketPath(): string {
   const override = process.env.BKS_CLI_SOCKET?.trim();
   if (override) {
     return override;
   }
+  const dev = process.env.BKS_CLI_DEV;
   return resolveCliSocketPath({
     userDirectory: defaultUserDirectory(),
     isWindows: process.platform === "win32",
-    isDevelopment: envFlag(process.env.BKS_CLI_DEV),
+    isDevelopment:
+      dev && !["0", "false", "no", ""].includes(dev.trim().toLowerCase()),
   });
 }

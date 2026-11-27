@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import path from "path";
 import {
   defaultCliSocketPath,
-  defaultUserDirectory,
   isWindowsPipePath,
   resolveCliSocketPath,
   UNIX_SOCKET_PATH_LIMIT,
@@ -10,15 +8,13 @@ import {
 
 describe("resolveCliSocketPath", () => {
   it("puts the socket in the user directory", () => {
-    const result = resolveCliSocketPath({
+    const path = resolveCliSocketPath({
       userDirectory: "/home/me/.config/beekeeper-studio",
       isWindows: false,
       isDevelopment: false,
     });
-    expect(result).toBe(
-      path.join("/home/me/.config/beekeeper-studio", "cli.sock"),
-    );
-    expect(isWindowsPipePath(result)).toBe(false);
+    expect(path).toBe("/home/me/.config/beekeeper-studio/cli.sock");
+    expect(isWindowsPipePath(path)).toBe(false);
   });
 
   it("keeps dev and production sockets apart", () => {
@@ -33,19 +29,19 @@ describe("resolveCliSocketPath", () => {
       isDevelopment: true,
     });
     expect(dev).not.toBe(prod);
-    expect(dev).toContain("cli-dev.sock");
+    expect(dev).toBe("/data/cli-dev.sock");
   });
 
   it("falls back to the temp directory when the path would be too long", () => {
     const userDirectory = "/" + "x".repeat(UNIX_SOCKET_PATH_LIMIT);
-    const result = resolveCliSocketPath({
+    const path = resolveCliSocketPath({
       userDirectory,
       isWindows: false,
       isDevelopment: false,
       tmpDir: "/tmp",
     });
-    expect(result.startsWith("/tmp/beekeeper-studio-cli-")).toBe(true);
-    expect(result.length).toBeLessThan(UNIX_SOCKET_PATH_LIMIT);
+    expect(path.startsWith("/tmp/beekeeper-studio-cli-")).toBe(true);
+    expect(path.length).toBeLessThan(UNIX_SOCKET_PATH_LIMIT);
     // the same user directory always maps to the same socket
     expect(
       resolveCliSocketPath({
@@ -54,17 +50,17 @@ describe("resolveCliSocketPath", () => {
         isDevelopment: false,
         tmpDir: "/tmp",
       }),
-    ).toBe(result);
+    ).toBe(path);
   });
 
   it("uses a named pipe on windows", () => {
-    const result = resolveCliSocketPath({
+    const path = resolveCliSocketPath({
       userDirectory: "C:\\Users\\me\\AppData\\Roaming\\beekeeper-studio",
       isWindows: true,
       isDevelopment: false,
     });
-    expect(result.startsWith("\\\\.\\pipe\\beekeeper-studio-cli-")).toBe(true);
-    expect(isWindowsPipePath(result)).toBe(true);
+    expect(path.startsWith("\\\\.\\pipe\\beekeeper-studio-cli-")).toBe(true);
+    expect(isWindowsPipePath(path)).toBe(true);
   });
 
   it("ignores path casing on windows", () => {
@@ -106,20 +102,17 @@ describe("defaultCliSocketPath", () => {
     vi.unstubAllEnvs();
   });
 
-  it("derives the production socket from the user directory", () => {
-    const expected = resolveCliSocketPath({
-      userDirectory: defaultUserDirectory(),
-      isWindows: process.platform === "win32",
-      isDevelopment: false,
-    });
-    expect(defaultCliSocketPath()).toBe(expected);
+  it("defaults to the production socket", () => {
+    const path = defaultCliSocketPath();
+    expect(path).not.toContain("cli-dev");
+    expect(isWindowsPipePath(path)).toBe(process.platform === "win32");
   });
 
   it("targets the development socket with BKS_CLI_DEV", () => {
     vi.stubEnv("BKS_CLI_DEV", "1");
-    const dev = defaultCliSocketPath();
+    const path = defaultCliSocketPath();
     vi.stubEnv("BKS_CLI_DEV", "false");
-    expect(dev).not.toBe(defaultCliSocketPath());
+    expect(path).not.toBe(defaultCliSocketPath());
   });
 
   it("lets BKS_CLI_SOCKET override everything", () => {
