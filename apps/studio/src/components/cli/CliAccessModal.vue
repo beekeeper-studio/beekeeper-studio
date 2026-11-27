@@ -46,7 +46,7 @@ import type { CallContext } from "@beekeeperstudio/rpc";
 
 function defaultAccess(): Access {
   return {
-    queryTypes: ["select"],
+    queryTypes: ["SELECT"],
     savedQueriesRead: false,
     savedQueriesWrite: false,
     openTabs: false,

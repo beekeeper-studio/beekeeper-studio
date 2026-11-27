@@ -21,7 +21,7 @@
           <input
             type="checkbox"
             :checked="hasQueryType(type.value)"
-            :disabled="disabled || isBlocked(type.value) || (type.value !== 'anything' && allowsAnything)"
+            :disabled="disabled || isBlocked(type.value) || (type.value !== 'ANYTHING' && allowsAnything)"
             @change="toggleQueryType(type.value, $event.target.checked)"
           >
           <span>{{ type.label }}</span>
@@ -73,9 +73,16 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
+import {
+  QUERY_PERMISSIONS,
+  WRITE_QUERY_PERMISSIONS,
+} from "@beekeeperstudio/rpc";
 import type { Access, QueryPermission } from "@beekeeperstudio/rpc";
 
-const WRITE_TYPES: QueryPermission[] = ["update", "delete", "alter", "anything"];
+function queryTypeOption(type: QueryPermission) {
+  const label = type === "ANYTHING" ? "Allow anything" : type.replace(/_/g, " ");
+  return { value: type, label };
+}
 
 export default Vue.extend({
   props: {
@@ -88,24 +95,17 @@ export default Vue.extend({
   },
   data() {
     return {
-      queryTypes: [
-        { value: "select", label: "SELECT" },
-        { value: "explain-analyze", label: "EXPLAIN ANALYZE" },
-        { value: "update", label: "UPDATE" },
-        { value: "delete", label: "DELETE" },
-        { value: "alter", label: "ALTER" },
-        { value: "anything", label: "Allow anything" },
-      ] as { value: QueryPermission; label: string }[],
+      queryTypes: QUERY_PERMISSIONS.map(queryTypeOption),
     };
   },
   computed: {
     allowsAnything(): boolean {
-      return this.value.queryTypes.includes("anything");
+      return this.value.queryTypes.includes("ANYTHING");
     },
   },
   methods: {
     isBlocked(type: QueryPermission): boolean {
-      return this.readOnlyMode && WRITE_TYPES.includes(type);
+      return this.readOnlyMode && WRITE_QUERY_PERMISSIONS.includes(type);
     },
     hasQueryType(type: QueryPermission): boolean {
       if (this.isBlocked(type)) {
@@ -145,8 +145,10 @@ export default Vue.extend({
 
 .cli-access-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.25rem 1rem;
+  max-height: 16rem;
+  overflow-y: auto;
 }
 
 .cli-access-group {

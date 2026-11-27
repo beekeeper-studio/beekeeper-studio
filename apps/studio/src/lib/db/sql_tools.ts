@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { identify, Options, Dialect as IdentifierDialect } from 'sql-query-identifier'
+import { identify, Options, Dialect as IdentifierDialect, StatementType } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { EntityFilter } from '@/store/models'
 import { RoutineTypeNames } from "./models"
@@ -136,3 +136,90 @@ export function isTextSelected(
   return false;
 }
 
+/** A statement type that may run, or ANYTHING for all of them. */
+export type Permission = StatementType | 'ANYTHING'
+
+export interface StatementPermissions {
+  /** The statement as written, for error messages. */
+  text: string
+  needs: Permission[]
+}
+
+/** Thrown when a query has statements the given permissions do not cover. */
+export class QueryPermissionError extends Error {
+  /** The permissions missing across all statements. */
+  readonly needs: Permission[]
+
+  constructor(readonly statements: StatementPermissions[]) {
+    const needs = _.uniq(statements.flatMap((s) => s.needs))
+    super(`Not allowed to run ${needs.join(', ')} statements on this connection.`)
+    this.name = 'QueryPermissionError'
+    this.needs = needs
+  }
+}
+
+const TRANSACTION_CONTROL = ['BEGIN_TRANSACTION', 'COMMIT', 'ROLLBACK']
+
+const EXPLAIN_ANALYZE = /^\s*explain\s+(\([^)]*\banaly[sz]e\b[^)]*\)|(verbose\s+)?analy[sz]e\b)/i
+const EXPLAIN_OPTIONS = /^\s*explain\s+(\([^)]*\)\s*|(analy[sz]e|verbose|buffers|costs|format\s+\w+)\s+)*/i
+
+// A WITH query can carry an INSERT/UPDATE/DELETE in a CTE and still identify as SELECT.
+const CTE_WRITES: [RegExp, Permission][] = [
+  [/\bupdate\s+[\w."`[\]]+\s+set\b/i, 'UPDATE'],
+  [/\bdelete\s+from\b/i, 'DELETE'],
+  [/\binsert\s+into\b/i, 'INSERT'],
+  [/\bmerge\s+into\b/i, 'MERGE'],
+]
+
+/** Checks queries against the statement types a client may run. */
+export class QueryPermissionChecker {
+  constructor(
+    private readonly dialect: IdentifierDialect,
+    private readonly permissions: Permission[]
+  ) {}
+
+  /** @throws {QueryPermissionError} when the permissions do not cover every statement in `sql` */
+  assert(sql: string): void {
+    const disallowed = this.disallowedStatements(sql)
+    if (disallowed.length > 0) {
+      throw new QueryPermissionError(disallowed)
+    }
+  }
+
+  /** The statements the permissions do not cover, each with the permissions it is missing. */
+  private disallowedStatements(sql: string): StatementPermissions[] {
+    if (this.permissions.includes('ANYTHING')) {
+      return []
+    }
+    return this.permissionsFor(sql)
+      .map((s) => ({ text: s.text, needs: s.needs.filter((n) => !this.permissions.includes(n)) }))
+      .filter((s) => s.needs.length > 0)
+  }
+
+  /** What each statement in `sql` needs to be allowed to run. */
+  private permissionsFor(sql: string): StatementPermissions[] {
+    if (!sql.trim()) {
+      return []
+    }
+    const { queries } = safelyIdentify(sql, { dialect: this.dialect })
+    return queries.map((statement) => ({ text: statement.text, needs: this.statementNeeds(statement) }))
+  }
+
+  private statementNeeds(statement: IdentifyResult): Permission[] {
+    const type = statement.type ?? 'UNKNOWN'
+    if (TRANSACTION_CONTROL.includes(type)) {
+      return []
+    }
+    if (type === 'EXPLAIN' && EXPLAIN_ANALYZE.test(statement.text)) {
+      const inner = statement.text.replace(EXPLAIN_OPTIONS, '')
+      const innerNeeds = this.permissionsFor(inner).flatMap((s) => s.needs)
+      // EXPLAIN ANALYZE runs the statement, so the statement itself has to be allowed too.
+      return _.uniq(['EXPLAIN', ...innerNeeds])
+    }
+    if (type === 'SELECT' && /^\s*with\b/i.test(statement.text)) {
+      const writes = CTE_WRITES.filter(([pattern]) => pattern.test(statement.text)).map(([, needs]) => needs)
+      return _.uniq(['SELECT', ...writes])
+    }
+    return [type]
+  }
+}

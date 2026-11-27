@@ -3,7 +3,12 @@ import { getConnectedStates, state, State } from "@/handlers/handlerState";
 import _ from "lodash";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { errorMessages as clientErrorMessages } from "@/lib/db/clients/utils";
-import { NgQueryResult, TableProperties } from "@/lib/db/models";
+import {
+  CancelableQuery,
+  NgQueryResult,
+  TableProperties,
+} from "@/lib/db/models";
+import rawLog from "@bksLogger";
 import {
   READ_ONLY_HINT,
   attempt,
@@ -52,9 +57,23 @@ import {
 import type { CallContext } from "@beekeeperstudio/rpc";
 import type { RendererMethods } from "@/lib/utility/RendererMethods";
 import { AuthorizedClient } from "./cliServer/AuthorizedClient";
-import { disallowedStatements } from "./cliServer/queryPermissions";
+import {
+  QueryPermissionChecker,
+  QueryPermissionError,
+} from "@/lib/db/sql_tools";
 
 const EXCERPT_LENGTH = 250;
+
+const log = rawLog.scope("UtilityApi");
+
+function logCancelFailure(error: unknown): void {
+  log.warn("Could not cancel a CLI query", error);
+}
+
+/** Cancelling is best effort: the request is already being abandoned. */
+function cancelQuery(query: CancelableQuery): void {
+  query.cancel().catch(logCancelFailure);
+}
 
 /** For calls made without a socket, e.g. from tests. */
 const NO_CONTEXT: CallContext = {
@@ -148,7 +167,7 @@ export class UtilityApi {
     params: SchemasParams,
     context: CallContext = NO_CONTEXT,
   ): Promise<SchemasResult> {
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const schemas = await state.connection.listSchemas();
     return { schemas: schemas || [] };
   }
@@ -164,7 +183,7 @@ export class UtilityApi {
         });
       }
     }
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const warnings: string[] = [];
     const types = params.entityTypes || [...ENTITY_TYPES];
     const filter = { schema: params.schema ?? null };
@@ -215,7 +234,7 @@ export class UtilityApi {
     params: StructureParams,
     context: CallContext = NO_CONTEXT,
   ): Promise<StructureResult> {
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     if (!params.name) {
       throw new CliError(
         "USAGE",
@@ -306,51 +325,37 @@ export class UtilityApi {
     if (!params.sql || !params.sql.trim()) {
       throw new CliError("USAGE", "No SQL was given to run.");
     }
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const access = state.cliClients.get(client.name).access;
-    const disallowed = disallowedStatements(
-      params.sql,
-      state.connection.dialect,
-      access.queryTypes,
-    );
-    if (disallowed.length > 0) {
-      const needs = [...new Set(disallowed.flatMap((s) => s.needs))];
-      throw new CliError(
-        "NOT_PERMITTED",
-        `${client.name} is not allowed to run ${needs.join(", ")} statements on this connection.`,
-        { hint: CHANGE_ACCESS_HINT, details: { statements: disallowed } },
+    try {
+      const checker = new QueryPermissionChecker(
+        state.connection.dialect,
+        access.queryTypes,
       );
+      checker.assert(params.sql);
+    } catch (error) {
+      if (error instanceof QueryPermissionError) {
+        throw new CliError("NOT_PERMITTED", error.message, {
+          hint: CHANGE_ACCESS_HINT,
+          details: { statements: error.statements },
+        });
+      }
+      throw error;
     }
-    const canWrite = access.queryTypes.some((type) =>
-      WRITE_QUERY_PERMISSIONS.includes(type),
-    );
+    const query = await state.connection.query(params.sql, undefined);
+    const onAbort = cancelQuery.bind(null, query);
+    context.signal.addEventListener("abort", onAbort, { once: true });
     let results: NgQueryResult[];
     try {
-      // A state.connection that may only read also gets the database state.connection's own
-      // read only check. arrayMode (postgres, sqlite) and rowsAsArray (mysql)
-      // keep duplicate column names apart; clients that don't know them ignore them.
-      results = await state.connection.executeQuery(params.sql, {
-        forceReadOnly: !canWrite,
-        arrayMode: true,
-        rowsAsArray: true,
-      });
+      results = await query.execute();
     } catch (error) {
       const message: string = error?.message ?? String(error);
       if (message === clientErrorMessages.readOnly) {
-        if (state.connection.readOnlyMode) {
-          throw new CliError(
-            "READ_ONLY",
-            "This connection is in read only mode, so the statement was rejected.",
-            {
-              hint: READ_ONLY_HINT,
-            },
-          );
-        }
         throw new CliError(
-          "NOT_PERMITTED",
-          `${client.name} may only read on this connection.`,
+          "READ_ONLY",
+          "This connection is in read only mode, so the statement was rejected.",
           {
-            hint: CHANGE_ACCESS_HINT,
+            hint: READ_ONLY_HINT,
           },
         );
       }
@@ -365,6 +370,8 @@ export class UtilityApi {
           _.isNil,
         ),
       });
+    } finally {
+      context.signal.removeEventListener("abort", onAbort);
     }
     return { results: (results || []).map(formatQueryResult) };
   }
@@ -380,7 +387,7 @@ export class UtilityApi {
         hint: `Tab types: ${TAB_TYPES.join(", ")}.`,
       });
     }
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const access = state.cliClients.get(client.name).access;
     this.require(access, "openTabs", context);
     const request: CreateTabRequest = { tab, sql: params.sql };
@@ -396,7 +403,7 @@ export class UtilityApi {
     if (!params.tabId) {
       throw new CliError("USAGE", "switch-tab needs the id of a tab.");
     }
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const access = state.cliClients.get(client.name).access;
     this.require(access, "openTabs", context);
     await this.askRendererToSwitchTab(state, params.tabId);
@@ -407,7 +414,7 @@ export class UtilityApi {
     context: CallContext = NO_CONTEXT,
   ): Promise<SavedQueriesResult> {
     const client = clientInfo(context.request?.client);
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const access = state.cliClients.get(client.name).access;
     this.require(access, "savedQueriesRead", context);
     const queries = await FavoriteQuery.find({ order: { title: "ASC" } });
@@ -420,7 +427,7 @@ export class UtilityApi {
   ): Promise<SavedQueryResult> {
     const client = clientInfo(context.request?.client);
     const id = this.savedQueryId(params.id);
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const access = state.cliClients.get(client.name).access;
     this.require(access, "savedQueriesRead", context);
     return { savedQuery: await this.loadSavedQuery(id) };
@@ -438,7 +445,7 @@ export class UtilityApi {
     if (!params.text?.trim()) {
       throw new CliError("USAGE", "A saved query needs SQL text.");
     }
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const access = state.cliClients.get(client.name).access;
     this.require(access, "savedQueriesWrite", context);
     const query = new FavoriteQuery().withProps({
@@ -471,7 +478,7 @@ export class UtilityApi {
         "Nothing to update: pass a new title, new SQL, or both.",
       );
     }
-    const state = await this.findState(context, params.connection);
+    const state = await this.findActiveState(context, params.connection);
     const access = state.cliClients.get(client.name).access;
     this.require(access, "savedQueriesWrite", context);
     const query = await this.findSavedQuery(id);
@@ -683,13 +690,13 @@ export class UtilityApi {
     await this.askRenderer(connectionState, "cli/switchTab", { tabId });
   }
 
-  /** The open connection the params name (or the only candidate), once the client is approved for it. */
-  private async findState(
+  /** Return a state that has opened a connection */
+  private async findActiveState(
     context: CallContext,
-    requested?: string,
+    connection?: string,
   ): Promise<State> {
     const client = clientInfo(context.request?.client);
-    const selected = await this.selectConnection(context, requested);
+    const selected = await this.selectConnection(context, connection);
     const connectionState = state(selected.id);
     if (!connectionState.cliClients.has(client.name)) {
       throw new CliError(
@@ -802,7 +809,7 @@ export class UtilityApi {
 
   private async selectConnection(
     context: CallContext,
-    requested: string | undefined,
+    nameOrId?: string,
   ): Promise<OpenConnection> {
     const result = await this.getConnections({}, context);
     const all = result.connections;
@@ -819,17 +826,17 @@ export class UtilityApi {
       );
     }
 
-    if (requested) {
-      const needle = requested.trim().toLowerCase();
+    if (nameOrId) {
+      const needle = nameOrId.trim().toLowerCase();
       const matches = all.filter(
         (item) =>
-          item.id === requested.trim() ||
+          item.id === nameOrId.trim() ||
           item.name.toLowerCase() === needle,
       );
       if (matches.length === 0) {
         throw new CliError(
           "UNKNOWN_CONNECTION",
-          `No open connection is named "${requested}".`,
+          `No open connection is named "${nameOrId}".`,
           {
             hint: `Open connections: ${openNames}. Run \`connections\` to list them with their ids.`,
             details,
@@ -839,7 +846,7 @@ export class UtilityApi {
       if (matches.length > 1) {
         throw new CliError(
           "AMBIGUOUS_CONNECTION",
-          `${matches.length} open connections are named "${requested}".`,
+          `${matches.length} open connections are named "${nameOrId}".`,
           {
             hint: "Pass --connection <id> instead. Run `connections` to see the ids.",
             details,

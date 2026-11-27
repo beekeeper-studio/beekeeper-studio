@@ -29,7 +29,7 @@ bks request-approval --connection "Local Postgres"
 The dialog shows the client's name and lets you choose what it may do:
 
 - **Schemas and table structure** are always allowed.
-- **Query types**: `SELECT`, `EXPLAIN ANALYZE`, `UPDATE`, `DELETE`, `ALTER`, or **Allow anything**. Statements of any other type, such as `INSERT`, `CREATE` or `DROP`, need **Allow anything**. `EXPLAIN ANALYZE` runs the statement it explains, so that statement's type has to be allowed too.
+- **Query types**: one checkbox per statement type, such as `SELECT`, `INSERT`, `UPDATE`, `CREATE TABLE` or `DROP TABLE`, or **Allow anything**. Transaction control (`BEGIN`, `COMMIT`, `ROLLBACK`) is always allowed. `EXPLAIN ANALYZE` runs the statement it explains, so that statement's type has to be allowed too.
 - **Saved queries**: read them, create and edit them, or both.
 - **Open and switch tabs** in the app.
 

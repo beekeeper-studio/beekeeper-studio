@@ -89,7 +89,7 @@ class TestUtilityApi extends UtilityApi {
 }
 
 const APPROVED: Access = {
-  queryTypes: ["select"],
+  queryTypes: ["SELECT"],
   savedQueriesRead: false,
   savedQueriesWrite: false,
   openTabs: true,

@@ -1,3 +1,5 @@
+import type { StatementType } from "sql-query-identifier";
+
 /** Hard cap on the number of rows a single `runQuery` result returns. */
 export const MAX_QUERY_ROWS = 20000;
 
@@ -31,28 +33,54 @@ export const TAB_TYPES = ["query"] as const;
 
 export type TabType = (typeof TAB_TYPES)[number];
 
-/**
- * Statement kinds a client can be allowed to run. Anything that is not one of
- * the named kinds (INSERT, CREATE, DROP, ...) needs `anything`.
- */
-export const QUERY_PERMISSIONS = [
-  "select",
-  "explain-analyze",
-  "update",
-  "delete",
-  "alter",
-  "anything",
-] as const;
+export type QueryPermission = StatementType | "ANYTHING";
 
-export type QueryPermission = (typeof QUERY_PERMISSIONS)[number];
+/**
+ * Every permission the approval dialog offers. Transaction control (BEGIN,
+ * COMMIT, ROLLBACK) needs none, so it is not listed.
+ */
+// prettier-ignore
+export const QUERY_PERMISSIONS: readonly QueryPermission[] = [
+  "INSERT", "UPDATE", "DELETE", "SELECT", "SELECT_INTO", "TRUNCATE",
+  "CREATE_DATABASE", "CREATE_SCHEMA", "CREATE_TABLE", "CREATE_VIEW",
+  "CREATE_TRIGGER", "CREATE_FUNCTION", "CREATE_INDEX", "CREATE_PROCEDURE",
+  "SHOW_BINARY", "SHOW_BINLOG", "SHOW_CHARACTER", "SHOW_COLLATION",
+  "SHOW_CREATE", "SHOW_ENGINE", "SHOW_ENGINES", "SHOW_ERRORS", "SHOW_EVENTS",
+  "SHOW_FUNCTION", "SHOW_GRANTS", "SHOW_MASTER", "SHOW_OPEN", "SHOW_PLUGINS",
+  "SHOW_PRIVILEGES", "SHOW_PROCEDURE", "SHOW_PROCESSLIST", "SHOW_PROFILE",
+  "SHOW_PROFILES", "SHOW_RELAYLOG", "SHOW_REPLICAS", "SHOW_SLAVE",
+  "SHOW_REPLICA", "SHOW_STATUS", "SHOW_TRIGGERS", "SHOW_VARIABLES",
+  "SHOW_WARNINGS", "SHOW_DATABASES", "SHOW_KEYS", "SHOW_INDEX", "SHOW_TABLE",
+  "SHOW_WAREHOUSES", "SHOW_USERS", "SHOW_ROLES", "SHOW_SCHEMAS", "SHOW_STAGES",
+  "SHOW_INTEGRATIONS", "SHOW_STREAMS", "SHOW_TASKS", "SHOW_PIPES",
+  "SHOW_SEQUENCES", "SHOW_TABLES", "SHOW_COLUMNS", "DROP_DATABASE",
+  "DROP_SCHEMA", "DROP_TABLE", "DROP_VIEW", "DROP_TRIGGER", "DROP_FUNCTION",
+  "DROP_INDEX", "DROP_PROCEDURE", "ALTER_DATABASE", "ALTER_SCHEMA",
+  "ALTER_TABLE", "ALTER_VIEW", "ALTER_TRIGGER", "ALTER_FUNCTION", "ALTER_INDEX",
+  "ALTER_PROCEDURE", "ANON_BLOCK", "MERGE", "CALL", "GRANT", "REVOKE",
+  "EXPLAIN", "DESCRIBE", "USE", "COPY", "PUT", "GET", "LIST", "REMOVE",
+  "UNKNOWN", "ANYTHING",
+];
+
+// Statements that only read; a read only connection grants nothing else.
+// prettier-ignore
+const READ_QUERY_PERMISSIONS: readonly QueryPermission[] = [
+  "SELECT", "EXPLAIN", "DESCRIBE", "USE", "LIST", "GET", "SHOW_BINARY",
+  "SHOW_BINLOG", "SHOW_CHARACTER", "SHOW_COLLATION", "SHOW_CREATE",
+  "SHOW_ENGINE", "SHOW_ENGINES", "SHOW_ERRORS", "SHOW_EVENTS", "SHOW_FUNCTION",
+  "SHOW_GRANTS", "SHOW_MASTER", "SHOW_OPEN", "SHOW_PLUGINS", "SHOW_PRIVILEGES",
+  "SHOW_PROCEDURE", "SHOW_PROCESSLIST", "SHOW_PROFILE", "SHOW_PROFILES",
+  "SHOW_RELAYLOG", "SHOW_REPLICAS", "SHOW_SLAVE", "SHOW_REPLICA", "SHOW_STATUS",
+  "SHOW_TRIGGERS", "SHOW_VARIABLES", "SHOW_WARNINGS", "SHOW_DATABASES",
+  "SHOW_KEYS", "SHOW_INDEX", "SHOW_TABLE", "SHOW_WAREHOUSES", "SHOW_USERS",
+  "SHOW_ROLES", "SHOW_SCHEMAS", "SHOW_STAGES", "SHOW_INTEGRATIONS",
+  "SHOW_STREAMS", "SHOW_TASKS", "SHOW_PIPES", "SHOW_SEQUENCES", "SHOW_TABLES",
+  "SHOW_COLUMNS",
+];
 
 /** The query permissions that can change data or schema; a read only connection never grants them. */
-export const WRITE_QUERY_PERMISSIONS: readonly QueryPermission[] = [
-  "update",
-  "delete",
-  "alter",
-  "anything",
-];
+export const WRITE_QUERY_PERMISSIONS: readonly QueryPermission[] =
+  QUERY_PERMISSIONS.filter((type) => !READ_QUERY_PERMISSIONS.includes(type));
 
 /** What the user approved a client to do on one connection. Schemas and structure are always allowed. */
 export interface Access {
