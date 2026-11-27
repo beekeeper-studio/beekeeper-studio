@@ -120,8 +120,6 @@ export default Vue.extend({
       } else {
         this.resolvers.resolve(this.access);
       }
-      this.requester = null;
-      this.resolvers = null;
     },
   },
 });

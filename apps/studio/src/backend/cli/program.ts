@@ -43,6 +43,7 @@ export function createProgram(options: {
   version: string;
   /** Who the app is told is calling. Detected from the parent processes when left out. */
   clientName?: string;
+  signal?: AbortSignal;
 }): Command {
   const program = new Command("bks")
     .version(options.version, "-v, --version", "Output the version number")
@@ -76,6 +77,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     );
 
   let client: Client;
+  const requestOptions = { signal: options.signal };
 
   program.hook("preAction", () => {
     const globals = program.opts();
@@ -108,7 +110,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const result = await client.getConnections();
+        const result = await client.getConnections(requestOptions);
         if (opts.format === "md") {
           return toMarkdown("connections", result);
         }
@@ -123,7 +125,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const result = await client.getSchemas({ connection: opts.connection });
+        const result = await client.getSchemas({ connection: opts.connection }, requestOptions);
         if (opts.format === "md") {
           return toMarkdown("schemas", result);
         }
@@ -143,7 +145,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
           connection: opts.connection,
           schema: opts.schema,
           entityTypes: ["table"],
-        });
+        }, requestOptions);
         if (opts.format === "md") {
           return toMarkdown("entities", result);
         }
@@ -168,7 +170,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
           connection: opts.connection,
           schema: opts.schema,
           entityTypes: resolveEntityTypes(opts.type),
-        });
+        }, requestOptions);
         if (opts.format === "md") {
           return toMarkdown("entities", result);
         }
@@ -195,7 +197,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
         const result = await client.getTableStructure({
           connection: opts.connection,
           ...tableTarget(name, opts.schema),
-        });
+        }, requestOptions);
         if (opts.format === "md") {
           return toMarkdown("structure", result);
         }
@@ -222,7 +224,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
         const result = await client.runQuery({
           connection: opts.connection,
           sql: sql as string,
-        });
+        }, requestOptions);
         if (opts.format === "md") {
           return toMarkdown("query", result);
         }
@@ -255,7 +257,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
         connection: opts.connection,
         tab: "query",
         sql,
-      }));
+      }, requestOptions));
     });
 
   program
@@ -267,7 +269,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
       await send(command, () => client.switchTab({
         connection: opts.connection,
         tabId: Number(id),
-      }));
+      }, requestOptions));
     });
 
   program
@@ -280,7 +282,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .action(async (opts, command) => {
       await send(command, () => client.requestApproval({
         connection: opts.connection,
-      }));
+      }, requestOptions));
     });
 
   const savedQueries = program
@@ -294,7 +296,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
     .addOption(formatOption)
     .action(async (opts, command) => {
       await send(command, async () => {
-        const result = await client.getSavedQueries({ connection: opts.connection });
+        const result = await client.getSavedQueries({ connection: opts.connection }, requestOptions);
         if (opts.format === "md") {
           return toMarkdown("savedQueries", result);
         }
@@ -311,7 +313,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
       await send(command, () => client.getSavedQuery({
         connection: opts.connection,
         id,
-      }));
+      }, requestOptions));
     });
 
   savedQueries
@@ -329,7 +331,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
         connection: opts.connection,
         title,
         text: sql as string,
-      }));
+      }, requestOptions));
     });
 
   savedQueries
@@ -352,7 +354,7 @@ processes. Set BKS_CLI_CLIENT to name it explicitly.`,
         id,
         title: opts.title,
         text: sql,
-      }));
+      }, requestOptions));
     });
 
   return program;

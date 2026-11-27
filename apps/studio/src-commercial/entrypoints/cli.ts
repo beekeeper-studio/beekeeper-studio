@@ -8,9 +8,10 @@
  * target enforces it.
  */
 import { createProgram } from "@/backend/cli/program";
+import { abortOnInterrupt } from "@/backend/cli/interrupt";
 import { version } from "../../package.json";
 
-const program = createProgram({ version });
+const program = createProgram({ version, signal: abortOnInterrupt() });
 
 program
   .parseAsync(process.argv, { from: "node" })

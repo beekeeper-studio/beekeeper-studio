@@ -7,6 +7,7 @@ import {
   Option,
 } from "@commander-js/extra-typings";
 import {
+  CancelError,
   EntityType,
   ErrorPayload,
   isCliError,
@@ -191,6 +192,10 @@ export async function send(
   } catch (error) {
     if (isCliError(error)) {
       command.error(formatErrorPayload(error.toPayload()));
+    }
+    if (error instanceof CancelError) {
+      // 130 is what shells report for a command stopped with Ctrl+C
+      command.error(`error: ${error.message}`, { exitCode: 130 });
     }
     throw error;
   }

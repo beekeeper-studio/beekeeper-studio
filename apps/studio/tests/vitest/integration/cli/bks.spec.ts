@@ -3,6 +3,7 @@ import {
   it,
   expect,
   beforeAll,
+  beforeEach,
   afterAll,
   afterEach,
   vi,
@@ -15,6 +16,7 @@ import { SqliteClient } from "@/lib/db/clients/sqlite";
 import { UtilityApi } from "@/services/UtilityApi";
 import { getConnectedStates, newState, state, State } from "@/handlers/handlerState";
 import { createProgram } from "@/backend/cli/program";
+import { abortOnInterrupt } from "@/backend/cli/interrupt";
 import {
   ApprovalRequester,
   Access,
@@ -180,7 +182,11 @@ afterEach(() => {
 });
 
 /** Runs `bks <str>` against the test server and returns what it printed. */
-async function bks(str: string, clientName = "Test Agent") {
+async function bks(
+  str: string,
+  clientName = "Test Agent",
+  signal?: AbortSignal,
+) {
   let out = "";
   let err = "";
 
@@ -191,6 +197,7 @@ async function bks(str: string, clientName = "Test Agent") {
       version: "1.2.3",
       preventExit: true,
       clientName,
+      signal,
       output: {
         writeOut: (str) => (out += str),
         writeErr: (str) => (err += str),
@@ -223,6 +230,56 @@ describe("bks approval", () => {
       'bks request-approval --connection "Local Dev"',
     );
     expect(approvals.asked.some((a) => a.clientName === "Fresh Agent")).toBe(false);
+  });
+
+  describe("Ctrl+C", () => {
+    let listenersBefore: NodeJS.SignalsListener[];
+
+    beforeEach(() => {
+      listenersBefore = process.listeners("SIGINT");
+      vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+      approvals.delayMs = 5000;
+    });
+
+    afterEach(() => {
+      for (const listener of process.listeners("SIGINT")) {
+        if (!listenersBefore.includes(listener)) {
+          process.off("SIGINT", listener);
+        }
+      }
+    });
+
+    it("cancels the request on the first interruption and waits for the app's reply", async () => {
+      const result = bks("request-approval", "Ctrl C Agent", abortOnInterrupt());
+      await vi.waitFor(() =>
+        expect(approvals.asked.at(-1)?.clientName).toBe("Ctrl C Agent"),
+      );
+
+      process.emit("SIGINT");
+      const interrupted = await result;
+
+      expect(process.exit).not.toHaveBeenCalled();
+      expect(interrupted.error?.exitCode).toBe(130);
+      expect(interrupted.error?.message).toContain("The request was cancelled.");
+      expect(approvals.dialogs.at(-1)?.aborted).toBe(true);
+    });
+
+    it("exits on the second interruption without waiting for the app", async () => {
+      let settled = false;
+      const result = bks("request-approval", "Impatient Agent", abortOnInterrupt());
+      result.finally(() => (settled = true));
+      await vi.waitFor(() =>
+        expect(approvals.asked.at(-1)?.clientName).toBe("Impatient Agent"),
+      );
+
+      process.emit("SIGINT");
+      process.emit("SIGINT");
+
+      expect(process.exit).toHaveBeenCalledWith(130);
+      expect(settled).toBe(false);
+      await result;
+    });
   });
 
   it("answers r as an alias of request-approval", async () => {
